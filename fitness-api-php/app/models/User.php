@@ -26,10 +26,10 @@ class User {
   public function getUserInfoByEmail($email){
     try{
       $userInfo = $this->db
-                  ->select()
+                  ->select("*")
                   ->where("email","=",$email)
                   ->getRow();
-      print_r($userInfo);
+      // print_r($userInfo);
       return $userInfo?:false;  
     }catch(Exception $e){
       return false;
@@ -55,10 +55,9 @@ class User {
         return false;
       }
       $_SESSION['user'] = [
-        'id'=>$user['id'],
+        'id'=>$user['user_id'],
         'name'=>$user['name'],
-        'email'=>$user['email'],
-        'level'=>$user['level']
+        'email'=>$user['email']
       ];
       return $_SESSION['user'];
     }catch(Exception $e){

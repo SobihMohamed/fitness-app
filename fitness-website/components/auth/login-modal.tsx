@@ -66,19 +66,32 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     }
 
     try {
-      const result = await login(loginData.email, loginData.password)
-      if (result.success) {
-        setMessage({ type: "success", text: result.message })
+      const response = await axios.post(`${baseURL}/auth/login`,{
+        email:loginData.email,
+        password:loginData.password
+      },{
+        headers:{
+          "Content-Type": "application/json"
+        }
+      }
+    )
+      
+      if (response.data.status === "success") {
+        setMessage({ type: "success", text: response.data.message })
         setTimeout(() => {
           onClose()
           setLoginData({ email: "", password: "" })
           setMessage(null)
         }, 1500)
       } else {
-        setMessage({ type: "error", text: result.message })
+        setMessage({ type: "error", text: response.data.message })
       }
-    } catch (error) {
-      setMessage({ type: "error", text: "An unexpected error occurred" })
+    } catch (error: any) {
+      if (error.response && error.response.data) {
+        setMessage({ type: "error", text: error.response.data.message });
+      } else {
+        setMessage({ type: "error", text: "Unexpected error occurred" });
+      }
     } finally {
       setIsLoading(false)
     }

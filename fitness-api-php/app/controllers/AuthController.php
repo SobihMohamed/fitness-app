@@ -55,7 +55,7 @@ class AuthController extends AbstractController{
     $user= $this->userModel
                   ->login($data['email'],$data['password']);
     if(!$user){
-      return $this->sendError("Error During Login",401);
+      return $this->sendError("Incorrect Email or Password",401);
     }
     $this->json([
       "message"=> "user Login Successfully",
