@@ -1,0 +1,16 @@
+{
+    "name": "sobih/fitness-api-php",
+    "description": "fitness PHP MVC backend",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sobih",
+            "email": "sobihmohamedsobih@gmail.com"
+        }
+    ],
+    "require": {}
+}

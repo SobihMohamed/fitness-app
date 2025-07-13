@@ -1,0 +1,16 @@
+# Node.js (React)
+fitness-website/node_modules/
+fitness-website/.env
+fitness-website/.next/
+fitness-website/.turbo/
+fitness-website/build/
+
+# PHP (backend)
+fitness-api-php/vendor/
+fitness-api-php/.env
+
+# Common
+.DS_Store
+*.log
+.env
+*.lock
