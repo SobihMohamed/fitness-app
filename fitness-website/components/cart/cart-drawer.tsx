@@ -34,7 +34,7 @@ export function CartDrawer() {
             <ShoppingCart className="h-16 w-16 text-muted" />
             <p className="text-lg font-medium text-foreground">Your cart is empty</p>
             <p className="text-sm text-center text-muted">Add some products to get started</p>
-            <Button asChild onClick={closeCart} className="bg-primary">
+            <Button  onClick={closeCart} className="bg-primary">
               <Link href="/products">Shop Now</Link>
             </Button>
           </div>
@@ -89,10 +89,10 @@ export function CartDrawer() {
                 <span className="text-xl font-bold text-primary">${total.toFixed(2)}</span>
               </div>
               <div className="space-y-2">
-                <Button asChild className="w-full bg-primary" onClick={closeCart}>
+                <Button  className="w-full bg-primary" onClick={closeCart}>
                   <Link href="/checkout">Proceed to Checkout</Link>
                 </Button>
-                <Button asChild variant="outline" className="w-full bg-transparent" onClick={closeCart}>
+                <Button  variant="outline" className="w-full bg-transparent" onClick={closeCart}>
                   <Link href="/cart">View Cart</Link>
                 </Button>
               </div>

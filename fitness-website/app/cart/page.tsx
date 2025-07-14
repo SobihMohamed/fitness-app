@@ -42,7 +42,7 @@ export default function CartPage() {
             <p className="text-lg" style={{ color: "#6C757D" }}>
               Looks like you haven't added any items to your cart yet.
             </p>
-            <Button asChild size="lg" style={{ backgroundColor: "#007BFF" }}>
+            <Button  size="lg" style={{ backgroundColor: "#007BFF" }}>
               <Link href="/products">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Continue Shopping
@@ -58,7 +58,7 @@ export default function CartPage() {
     <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <Button asChild variant="ghost" className="mb-4">
+          <Button  variant="ghost" className="mb-4">
             <Link href="/products">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
@@ -217,7 +217,7 @@ export default function CartPage() {
               </CardContent>
             </Card>
 
-            <Button asChild className="w-full" size="lg" style={{ backgroundColor: "#007BFF" }}>
+            <Button  className="w-full" size="lg" style={{ backgroundColor: "#007BFF" }}>
               <Link href="/checkout">Proceed to Checkout</Link>
             </Button>
 
