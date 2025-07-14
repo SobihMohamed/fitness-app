@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Star, ShoppingCart, Search } from "lucide-react"
+import { Star, ShoppingCart, Search, Filter } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import Image from "next/image"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const products = [
   {
@@ -90,6 +91,7 @@ export default function ProductsPage() {
   const { addItem, openCart } = useCart()
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [searchTerm, setSearchTerm] = useState("")
+  const [sortBy, setSortBy] = useState("name")
 
   const handleAddToCart = (product: any) => {
     addItem({
@@ -107,7 +109,18 @@ export default function ProductsPage() {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesCategory && matchesSearch
-  })
+  }) .sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.price - b.price
+        case "price-high":
+          return b.price - a.price
+        case "rating":
+          return b.rating - a.rating
+        default:
+          return a.name.localeCompare(b.name)
+      }
+    })
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,8 +139,9 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      {/* Filters and Search */}
-      <section className="py-8 bg-white border-b">
+      {/* Filters and Search replace with new one */}
+      
+      {/* <section className="py-8 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -140,7 +154,10 @@ export default function ProductsPage() {
                   className="pl-10"
                 />
               </div>
+
               <div className="flex gap-2">
+                
+                
                 {categories.map((category) => (
                   <Button
                     key={category}
@@ -152,7 +169,54 @@ export default function ProductsPage() {
                   </Button>
                 ))}
               </div>
+              
             </div>
+          </div>
+        </div>
+      </section> */}
+      <section className="py-8 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4"
+                  style={{ color: "#6C757D" }}
+                />
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Name A-Z</SelectItem>
+                <SelectItem value="price-low">Price: Low to High</SelectItem>
+                <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </section>
