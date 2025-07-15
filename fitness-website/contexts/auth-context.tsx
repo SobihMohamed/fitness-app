@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("fitpro_user")
+    const savedUser = localStorage.getItem("fitpro_user");
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     }
