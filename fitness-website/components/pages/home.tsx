@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Play, Star, Users, Award, TrendingUp, ArrowRight, Heart, ShoppingCart, BookOpen, Settings } from "lucide-react"
+import { ProtectedAction } from "../auth/Protected-Route"
+import { useCart } from "@/contexts/cart-context"
 
+// Sample data for featured products and courses
+// In a real application, this data would come from an API or database
 const featuredProducts = [
   {
     id: 1,
@@ -35,6 +39,8 @@ const featuredProducts = [
   },
 ]
 
+// Sample data for featured courses
+// In a real application, this data would come from an API or database
 const featuredCourses = [
   {
     id: 1,
@@ -68,6 +74,8 @@ const featuredCourses = [
   },
 ]
 
+// Statistics data for the stats section
+// In a real application, this data would come from an API or database
 const stats = [
   { icon: Users, label: "Active Members", value: "50K+" },
   { icon: Award, label: "Certified Trainers", value: "200+" },
@@ -75,6 +83,8 @@ const stats = [
   { icon: Star, label: "Average Rating", value: "4.9" },
 ]
 
+// Features data for the features section
+// In a real application, this data would come from an API or database
 const features = [
   {
     icon: ShoppingCart,
@@ -116,6 +126,22 @@ export function HomePage() {
   useEffect(() => {
     setIsVisible(true)
   }, [])
+
+
+  // Function to handle course enrollment
+  // This is a placeholder function. In a real application, you would integrate this with your payment system.
+  // It could redirect to a payment page or open a payment modal.
+   const handleCourseEnrollment = (course: any) => {
+    alert(`Enrolling in "${course.title}" for $${course.price}... (This would integrate with your payment system)`)
+  }
+
+  // Function to handle adding a product to the cart
+  // This is a placeholder function. In a real application, you would integrate this with your cart system.
+  // It could add the product to the cart context or redirect to a cart page.
+   const handleHomeAddToCart = (course: any) => {
+    alert(`Enrolling in "${course.title}" for $${course.price}... (This would integrate with your payment system)`)
+  }
+
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
@@ -241,7 +267,7 @@ export function HomePage() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <Button
-                    asChild
+                    
                     variant="outline"
                     className="inline-flex items-center justify-center gap-2 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-300 bg-transparent"
                     style={{ borderColor: "#007BFF", color: "#007BFF" }}
@@ -329,10 +355,13 @@ export function HomePage() {
                     <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
                       ${course.price}
                     </span>
+                  <ProtectedAction onAction={() => handleCourseEnrollment(course)}>
+                    
                     <Button style={{ backgroundColor: "#007BFF" }}>
                       <Play className="h-4 w-4 mr-2" />
                       Enroll Now
                     </Button>
+                  </ProtectedAction>
                   </div>
                 </CardContent>
               </Card>
@@ -340,7 +369,7 @@ export function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="outline" size="lg" >
               <Link href="/courses" className="inline-flex items-center gap-2">
                 View All Courses
                 <ArrowRight className="h-5 w-5" />
@@ -394,10 +423,15 @@ export function HomePage() {
                     <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
                       ${product.price}
                     </span>
+
+                  
+                  <ProtectedAction onAction={() => handleHomeAddToCart(product)}>
+
                     <Button style={{ backgroundColor: "#007BFF" }}>
                       <ShoppingCart className="h-4 w-4 mr-2" />
                       Add to Cart
                     </Button>
+                  </ProtectedAction>
                   </div>
                 </CardContent>
               </Card>
@@ -405,7 +439,7 @@ export function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg" asChild>
+            <Button variant="outline" size="lg">
               <Link href="/products" className="inline-flex items-center gap-2">
                 View All Products
                 <ArrowRight className="h-5 w-5" />
@@ -445,3 +479,4 @@ export function HomePage() {
     </div>
   )
 }
+

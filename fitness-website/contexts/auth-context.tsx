@@ -1,8 +1,14 @@
+
 "use client"
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
 
+// Define the User interface with all necessary properties
+// It uses localStorage to persist user data across sessions
+// for the backend, you would typically use a database and API calls
+// Here, we simulate this with localStorage for simplicity
+// instead of localstorage, you could use a more secure method like cookies or JWT tokens
 interface User {
   id: string
   email: string
@@ -13,8 +19,14 @@ interface User {
   progress: { [courseId: number]: number }
   achievements: string[]
   joinDate: string
+  
 }
 
+// Define the AuthContextType interface
+// This interface includes methods for authentication and course management
+//it uses localStorage to persist user data across sessions
+// for the backend, you would typically use a database and API calls
+//instead of localstorage, you could use a more secure method like cookies or JWT tokens
 interface AuthContextType {
   user: User | null
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
@@ -26,6 +38,8 @@ interface AuthContextType {
   completeLesson: (courseId: number, lessonId: number) => void
   isLessonCompleted: (courseId: number, lessonId: number) => boolean
   updateProfile: (updates: Partial<User>) => void
+  isInitialized: boolean
+  isLoading: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -33,6 +47,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
 
+
+  // Load user data from localStorage when the component mounts
+  // This simulates fetching user data from a backend service
+  // In a real application, you would replace this with an API call to fetch user data
   useEffect(() => {
     const savedUser = localStorage.getItem("fitpro_user")
     if (savedUser) {
@@ -195,6 +213,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     completeLesson,
     isLessonCompleted,
     updateProfile,
+    isInitialized: false,
+    isLoading: false, // Assuming loading state is not implemented yet
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
