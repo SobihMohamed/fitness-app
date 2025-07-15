@@ -74,8 +74,24 @@ class User {
     } catch(Exception $e){
       return false;
     }
-}
-
-
+  }
+  public function saveOtp($email ,$otp){
+    $_SESSION['otp'][$email] = $otp;
+    return true;
+  }
+  public function verifyOtp($email,$otp){
+    return isset($_SESSION['otp'][$email]) && $_SESSION['otp'][$email] === $otp;
+  }
+  public function updateUserInfoByEmail($email,$data){
+    try{
+      $this->db
+          ->update($data)
+          ->where("email","=",$email)
+          ->excute();
+      return true;
+    }catch(Exception $e){
+      return false;
+    }
+  }
 }
 ?>

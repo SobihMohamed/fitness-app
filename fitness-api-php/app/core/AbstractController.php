@@ -32,6 +32,11 @@ abstract class AbstractController{
       'message' => $message
     ],$code);
   }
-  
+  public function requireLogin() {
+    if(!isset($_SESSION['user'])){
+        $this->sendError("Unauthorized - Please Login", 401);
+        exit; 
+    }
+  }
 }
 ?>

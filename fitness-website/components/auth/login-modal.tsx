@@ -19,7 +19,7 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { login, register } = useAuth()
+  // const { login, register } = useAuth()
   const [activeTab, setActiveTab] = useState("login")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -31,6 +31,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     email: "",
     password: "",
   })
+
+// use effect : check every time on the session that include user data or nor 
+// include : profile appear and picture 
+// not include 
 
   // Register form state
   const [registerData, setRegisterData] = useState({
@@ -77,6 +81,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     )
       
       if (response.data.status === "success") {
+        // session storage store user data 
         setMessage({ type: "success", text: response.data.message })
         setTimeout(() => {
           onClose()

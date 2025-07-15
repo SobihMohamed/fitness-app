@@ -2,6 +2,9 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\User;
+use Exception;
+use PHPMailer\PHPMailer\PHPMailer;
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 class AuthController extends AbstractController{
   protected $userModel;
@@ -75,6 +78,84 @@ class AuthController extends AbstractController{
       "status"=>"success"
     ]);
   }
+
+  // after enter email to send otp
+  public function forgetPassword(){
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+      return $this->sendError("Method Not Allowed From Not Post Request", 405);
+    }
+    header("Content-Type: application/json");
+    //? get all data in body of request
+    $data = json_decode(file_get_contents("php://input"),true);
+    if(!isset($data['email'])){
+      return $this->sendError("Email is Required",400);
+    }
+
+    $user = $this->userModel
+            ->getUserInfoByEmail($data['email']);
+    if(!$user){
+      return $this->sendError("User Not Found",404);
+    }
+    // بعد  ما أتأكدت ان الايميل موجود هعمل الكود اللي يتعبت علي ايميله بعد كدا
+  
+    $otp = rand(100000,999999);
+    $this ->userModel
+          ->saveOtp($data['email'],$otp);
+    //! خطوات ارسال الكود لل الايميل 
+    $mail = new PHPMailer(true);
+    try{
+      $mail->isSMTP();
+      $mail->Host='smtp.gmail.com';
+      $mail->SMTPAuth=true;
+      $mail->Username='sobihmohamedsobih@gmail.com';
+      $mail->Password='dpxctdbonnagdprc';
+      $mail->SMTPSecure = 'tls';
+      $mail->Port = 587;
+      $mail->setFrom('sobihmohamedsobih@gmail.com', 'Gym OTP Sender'); 
+      $mail->addAddress($data['email']);                 
+      $mail->Subject = 'Reset Your Password - OTP';
+      $mail->Body    = "Hello,\nYour OTP code is: $otp\n.";
+      $mail->send();
+
+      $this->json([
+        "status" => "success",
+        "message" => "OTP sent ot your email",
+        // "otp"=>$otp // مؤقت هيتشال
+      ],200);
+    }catch(Exception $e){
+      return $this->sendError("Email could not be sent. Mailer Error: {$mail->ErrorInfo}", 500);
+    }
+  }
+
+  // after enter the otp and new password
+  public function verifyOtpAndUpdatePassword(){
+    if($_SERVER["REQUEST_METHOD"] !== "POST"){
+      return $this->sendError("Method Not Allowed From Not Post Request", 405);
+    }
+    // get all data 
+    $data = json_decode(file_get_contents("php://input"),true);
+    if(empty($data['email']) || empty($data['otp']) || empty($data['newPassword']) ){
+      return $this->sendError("All field are required", 422);
+    }
+    $isValid = $this->userModel
+                    ->verifyOtp($data['email'],$data['otp']);
+    if(!$isValid){
+      return $this->sendError("Incorrect OTP", 422);
+    }
+    $isupdated = $this -> userModel
+          ->updatePassword($data['email'],$data['newPassword']);
+    if(!$isupdated){
+      return $this->sendError("Error During Update Password", 500);
+    }
+    // الغي ال session 
+    unset($_SESSION['otp'][$data['email']]);
+
+    $this->json([
+      "status" => "success",
+      "message" => "password Updated Successfully"
+    ]);
+  }
+
 }
 
 ?>
