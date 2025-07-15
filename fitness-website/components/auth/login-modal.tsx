@@ -13,6 +13,10 @@ import { useAuth } from "@/contexts/auth-context"
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import axios from "axios"
 
+// LoginModal component
+// This component provides a modal for users to log in or register.
+// It includes form validation, API requests for login and registration,
+// and displays success or error messages based on the API response.
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
@@ -44,31 +48,45 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     confirmPassword: "",
   })
 
+  // Validate email format 
+  // This function checks if the email is in a valid format using a regular expression
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
+  // Validate password length
+  // This function checks if the password meets the minimum length requirement
   const validatePassword = (password: string) => {
     return password.length >= 6
   }
 
+  // Handle login
+  // This function handles the login process when the user submits the login form.
+  // It validates the input data, makes an API request to log in the user,
+  // and handles the response to display appropriate messages.
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setMessage(null)
 
+
+    // Validate login data
+    // This function checks if the email is in a valid format
     if (!validateEmail(loginData.email)) {
       setMessage({ type: "error", text: "Please enter a valid email address" })
       setIsLoading(false)
       return
     }
-
+    // Validate password length
+    // This function checks if the password meets the minimum length requirement
     if (!validatePassword(loginData.password)) {
       setMessage({ type: "error", text: "Password must be at least 6 characters long" })
       setIsLoading(false)
       return
     }
 
+    // Make API request to login
+    // Adjust the API endpoint and request body as per your backend implementation 
     try {
       const response = await axios.post(`${baseURL}/auth/login`,{
         email:loginData.email,
@@ -79,7 +97,11 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
       }
     )
-      
+     
+    // Handle response
+      // Assuming the API returns a status field in the response
+      // and a message field for success or error messages
+      // Adjust based on your actual API response structure\
       if (response.data.status === "success") {
         // session storage store user data 
         setMessage({ type: "success", text: response.data.message })
@@ -101,36 +123,43 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setIsLoading(false)
     }
   }
-
+  // Handle registration
+  // This function handles the registration process when the user submits the registration form.
+  // It validates the input data, makes an API request to register the user,
+  // and handles the response to display appropriate messages.
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setMessage(null)
+
+    // Validate registration data
 
     if (!registerData.name.trim()) {
       setMessage({ type: "error", text: "Please enter your name" })
       setIsLoading(false)
       return
     }
-
+    // Validate email format
     if (!validateEmail(registerData.email)) {
       setMessage({ type: "error", text: "Please enter a valid email address" })
       setIsLoading(false)
       return
     }
-
+    // Validate password length
     if (!validatePassword(registerData.password)) {
       setMessage({ type: "error", text: "Password must be at least 6 characters long" })
       setIsLoading(false)
       return
     }
-
+    // Check if passwords match
     if (registerData.password !== registerData.confirmPassword) {
       setMessage({ type: "error", text: "Passwords do not match" })
       setIsLoading(false)
       return
     }
 
+    // Make API request to register
+    // Adjust the API endpoint and request body as per your backend implementation
     
     try {
       const response = await axios.post(`${baseURL}/auth/register`, {
@@ -142,7 +171,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             "Content-Type": "application/json"
           }
         });
-
+      // Handle response
+      // Assuming the API returns a status field in the response
+      // and a message field for success or error messages
+      // Adjust based on your actual API response structure
       if(response.data.status === "success"){
         console.log(response.data)
         setMessage({ type: "success", text: response.data.message })
@@ -155,13 +187,22 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setMessage({ type: "error", text: response.data.message })
       }
     } catch (error: any) {
-        setMessage({ type: "error", text: "Error on youe email or password" });
+        setMessage({ type: "error", text: "Error on your email or password" });
     }
     finally {
       setIsLoading(false)
     }
-}
-
+} //---------------------------------------------------W
+  // Handle tab change
+  // Reset form data and message when switching tabs
+  // This ensures that when a user switches from login to register or vice versa, the form is reset
+  // and any previous messages are cleared
+  // This is important for a good user experience, preventing confusion from previous form states
+  // and messages persisting when they shouldn't.
+  // This function is called when the user clicks on a tab to switch between login and register forms
+  // It updates the active tab state and resets the form data and message state.
+  // This ensures that the form is always in a clean state when switching tabs.
+  // It also clears any previous messages to avoid confusion.
   const handleTabChange = (value: string) => {
     setActiveTab(value)
     setMessage(null)
