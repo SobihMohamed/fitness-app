@@ -18,6 +18,8 @@ export function UserMenu() {
 
   if (!user) return null
 
+    // Function to get the initials from the user's name
+    // This function splits the user's name into words, takes the first letter of each word,
   const getInitials = (name: string) => {
     return name
       .split(" ")
