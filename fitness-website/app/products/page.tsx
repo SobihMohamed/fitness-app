@@ -9,7 +9,11 @@ import { Star, ShoppingCart, Search, Filter } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import Image from "next/image"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ProtectedAction } from "@/components/auth/Protected-Route"
 
+// Products data
+// This is a placeholder data array. In a real application, you would fetch this data from an API or a database.
+// It contains a list of products with their details such as name, category, price, rating, and description.
 const products = [
   {
     id: 1,
@@ -85,6 +89,9 @@ const products = [
   },
 ]
 
+// Categories for filtering products
+// This is a static list of categories. In a real application, you might fetch this from an API or database.
+// It allows users to filter products based on their category.
 const categories = ["All", "Supplements", "Equipment", "Technology", "Apparel"]
 
 export default function ProductsPage() {
@@ -93,6 +100,9 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("name")
 
+  // Function to handle adding items to the cart
+  // This is a placeholder function. In a real application, you would integrate this with your cart system.
+  // It could add the product to the cart context or redirect to a cart page.
   const handleAddToCart = (product: any) => {
     addItem({
       id: product.id,
@@ -105,6 +115,10 @@ export default function ProductsPage() {
     openCart()
   }
 
+  // Filter and sort products based on selected category, search term, and sort option
+  // This is a placeholder function. In a real application, you would integrate this with your
+  // product management system. It could fetch products from an API or a database.
+  // It filters products based on the selected category and search term,
   const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -140,40 +154,6 @@ export default function ProductsPage() {
       </section>
 
       {/* Filters and Search replace with new one */}
-      
-      {/* <section className="py-8 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                
-                
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category)}
-                    className={selectedCategory === category ? "bg-primary" : ""}
-                  >
-                    {category}
-                  </Button>
-                ))}
-              </div>
-              
-            </div>
-          </div>
-        </div>
-      </section> */}
       <section className="py-8 bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -276,14 +256,18 @@ export default function ProductsPage() {
                         <span className="text-sm line-through text-muted">${product.originalPrice}</span>
                       )}
                     </div>
-                    <Button
-                      disabled={!product.inStock}
-                      className={`w-full ${product.inStock ? "bg-primary hover:bg-primary/90" : ""}`}
-                      onClick={() => handleAddToCart(product)}
-                    >
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      {product.inStock ? "Add to Cart" : "Out of Stock"}
-                    </Button>
+                    
+                <ProtectedAction onAction={() => handleAddToCart(product)}>
+                  <Button
+                    disabled={!product.inStock}
+                    className={`w-full flex items-center justify-center gap-2 ${
+                      !product.inStock ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+                    }`}
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    {product.inStock ? "Add to Cart" : "Out of Stock"}
+                  </Button>
+                </ProtectedAction>
                   </div>
                 </CardContent>
               </Card>

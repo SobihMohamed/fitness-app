@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Dumbbell, Users, Clock, Target, Heart, Zap, Calendar } from "lucide-react"
+import { ProtectedAction } from "@/components/auth/Protected-Route"
 
 const services = [
   {
@@ -61,6 +62,9 @@ const services = [
   },
 ]
 
+// Function to handle service booking
+// This is a placeholder function. In a real application, you would integrate this with your booking system.
+// It could redirect to a booking page or open a booking modal.
 const packages = [
   {
     name: "Starter",
@@ -120,7 +124,18 @@ const classSchedule = [
   { time: "7:00 PM", class: "Evening Yoga", instructor: "David W.", duration: "60 min" },
 ]
 
-export default function ServicesPage() {
+const handlePackageSelection = (packageName: string) => {
+   // Here you would typically handle the package selection logic
+   alert(`Selecting ${packageName} package... (This would integrate with your payment system)`)
+ }
+
+const handleServiceBooking = (serviceName: string) => {
+    // Here you would typically handle the booking logic
+    alert(`Booking ${serviceName}... (This would integrate with your booking system)`)}
+ 
+ export default function ServicesPage() {
+   
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -178,7 +193,10 @@ export default function ServicesPage() {
                   </ul>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-primary">{service.price}</span>
-                    <Button className="bg-primary hover:bg-primary/90">Learn More</Button>
+                      <ProtectedAction onAction={() => handleServiceBooking(service.title)}>
+                      <Button className="bg-primary hover:bg-primary/90">Book Now</Button>
+                    </ProtectedAction>
+                    {/* <Button className="bg-primary hover:bg-primary/90">Learn More</Button> */}
                   </div>
                 </CardContent>
               </Card>
@@ -267,11 +285,18 @@ export default function ServicesPage() {
                     ))}
                   </ul>
 
-                  <Button
+                     <ProtectedAction onAction={() => handlePackageSelection(`${pkg.name} Membership`)}>
+                    <Button
+                      className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-secondary hover:bg-secondary/90"}`}
+                    >
+                      Choose Plan
+                    </Button>
+                  </ProtectedAction>
+                  {/* <Button
                     className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-secondary hover:bg-secondary/90"}`}
                   >
                     Choose Plan
-                  </Button>
+                  </Button> */}
                 </CardContent>
               </Card>
             ))}
