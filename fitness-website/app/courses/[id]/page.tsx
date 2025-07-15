@@ -30,6 +30,7 @@ import {
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
 import { LoginModal } from "@/components/auth/login-modal"
+import { ProtectedAction } from "@/components/auth/Protected-Route"
 
 interface Lesson {
   id: number
@@ -205,7 +206,7 @@ export default function CourseDetailPage() {
   const params = useParams()
   const courseId = params.id as string
   const course = courseData[courseId]
-  const { user, isEnrolled, enrollInCourse, getProgress, loading } = useAuth()
+  const { user, isEnrolled, enrollInCourse, getProgress, isLoading } = useAuth()
 
   const [expandedModules, setExpandedModules] = useState<number[]>([1])
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -226,8 +227,8 @@ export default function CourseDetailPage() {
     )
   }
 
-  const enrolled = isEnrolled(courseId)
-  const progress = getProgress(courseId)
+  const enrolled = isEnrolled(Number(courseId))
+  const progress = getProgress(Number(courseId))
 
   const handleEnrollment = async () => {
     if (!user) {
@@ -236,8 +237,8 @@ export default function CourseDetailPage() {
     }
 
     setEnrolling(true)
-    const success = await enrollInCourse(courseId)
-    if (success) {
+    const result = await enrollInCourse(Number(courseId))
+    if (result !== undefined && result) {
       setEnrollmentSuccess(true)
       setTimeout(() => setEnrollmentSuccess(false), 3000)
     }
@@ -273,6 +274,11 @@ export default function CourseDetailPage() {
         return <BookOpen className="h-4 w-4" />
     }
   }
+    const ProtectedHandleEnrollment = (courseTitle: string, price: number) => {
+    // Here you would typically handle the enrollment logic
+    alert(`Enrolling in "${courseTitle}" for $${price}... (This would integrate with your payment system)`)
+  }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -396,7 +402,7 @@ export default function CourseDetailPage() {
                         </div>
                         <Progress value={progress} className="h-2" />
                       </div>
-                      <Button className="w-full" size="lg" asChild>
+                      <Button className="w-full" size="lg" >
                         <Link href={`/courses/${courseId}/learn`}>Continue Learning</Link>
                       </Button>
                     </div>
@@ -420,13 +426,15 @@ export default function CourseDetailPage() {
                       </div>
 
                       <div className="space-y-3 mb-6">
+                         <ProtectedAction onAction={() => ProtectedHandleEnrollment(course.title, course.price)}>
+
                         <Button
                           className="w-full"
                           size="lg"
                           onClick={handleEnrollment}
-                          disabled={enrolling || loading}
+                          disabled={enrolling || isLoading}
                           style={{ backgroundColor: "#007BFF" }}
-                        >
+                          >
                           {enrolling ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -442,6 +450,7 @@ export default function CourseDetailPage() {
                         <Button variant="outline" className="w-full bg-transparent">
                           Add to Cart
                         </Button>
+                          </ProtectedAction>
                       </div>
                     </>
                   )}
@@ -737,14 +746,14 @@ export default function CourseDetailPage() {
                         <Progress value={enrolled ? progress : 0} className="h-2" />
                       </div>
                       {enrolled ? (
-                        <Button className="w-full" asChild>
+                        <Button className="w-full" >
                           <Link href={`/courses/${courseId}/learn`}>Continue Learning</Link>
                         </Button>
                       ) : (
                         <Button
                           className="w-full"
                           onClick={handleEnrollment}
-                          disabled={enrolling || loading}
+                          disabled={enrolling || isLoading}
                           style={{ backgroundColor: "#007BFF" }}
                         >
                           {enrolling ? (

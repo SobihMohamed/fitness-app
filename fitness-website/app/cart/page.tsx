@@ -11,6 +11,7 @@ import { useCart } from "@/contexts/cart-context"
 import { Plus, Minus, Trash2, ShoppingCart, ArrowLeft, Tag } from "lucide-react"
 import { useState } from "react"
 
+// This is the main cart page component
 export default function CartPage() {
   const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart()
   const [promoCode, setPromoCode] = useState("")
@@ -20,6 +21,9 @@ export default function CartPage() {
   const tax = total * 0.08
   const finalTotal = total + shipping + tax - discount
 
+  // Function to handle promo code application
+  // This function checks the promo code and applies the discount if valid
+  // In a real application, you would likely validate this against a database or API
   const handlePromoCode = () => {
     if (promoCode.toLowerCase() === "fitpro10") {
       setDiscount(total * 0.1)
