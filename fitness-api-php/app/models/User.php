@@ -54,11 +54,7 @@ class User {
       if(!$user || !password_verify($Password,$user['password'])){
         return false;
       }
-      $_SESSION['user'] = [
-        'id'=>$user['user_id'],
-        'name'=>$user['name'],
-        'email'=>$user['email']
-      ];
+      $_SESSION['user'] = $user;
       return $_SESSION['user'];
     }catch(Exception $e){
       return false;
@@ -84,6 +80,9 @@ class User {
   }
   public function updateUserInfoByEmail($email,$data){
     try{
+      if(empty($data)){
+        return false;
+      }
       $this->db
           ->update($data)
           ->where("email","=",$email)

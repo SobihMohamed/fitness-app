@@ -32,11 +32,16 @@ abstract class AbstractController{
       'message' => $message
     ],$code);
   }
-  public function requireLogin() {
+  protected function requireLogin() {
     if(!isset($_SESSION['user'])){
         $this->sendError("Unauthorized - Please Login", 401);
         exit; 
     }
   }
+  protected function isSuperAdmin() {
+    $this->requireLogin();
+    return isset($_SESSION['user']) && $_SESSION['user']['is_super_admin'];
+  }
+
 }
 ?>

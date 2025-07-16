@@ -30,8 +30,27 @@ class UserController extends AbstractController{
     $this->requireLogin();
 
     $data = json_decode(file_get_contents("php://input"),true);
+    // $allowFields = ['name','phone','address','gender'];
+    if (!$data || !is_array($data)) {
+      return $this->sendError("Invalid data", 422);
+    }
     $email = $_SESSION['user']['email'];
-    // ? data based on DB
+    if (!$email) {
+      return $this->sendError("Unauthorized", 401);
+    }
+
+    $isUpdated = $this ->userModel
+                        ->updateUserInfoByEmail($email,$data);
+    if($isUpdated){
+      $newuser = $this->userModel->getUserInfoByEmail($email);
+      unset($newUser['password']);
+      return $this->json([
+        "status" => "success",
+        "message" => "updated Successfully",
+        "user" => $newuser
+      ]);
+    }
+    return $this->sendError("Error While Updating Data",400);
   }
 }
 ?>
