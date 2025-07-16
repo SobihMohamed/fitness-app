@@ -1,13 +1,25 @@
 {
   "baseUrl": "http://localhost:8000",
   "auth": {
-    "register": "/auth/register",
-    "login": "/auth/login",
-    "logout": "/auth/logout",
-    "forgetPassword": "/auth/forgetPassword",
-    "verifyOtp": "/auth/verifyOtpAndUpdatePassword"
+    "register": { "method": "POST", "path": "/auth/register" },
+    "login": { "method": "POST", "path": "/auth/login" },
+    "logout": { "method": "POST", "path": "/auth/logout" },
+    "forgetPassword": { "method": "POST", "path": "/auth/forgetPassword" },
+    "verifyOtp": {
+      "method": "POST",
+      "path": "/auth/verifyOtpAndUpdatePassword"
+    }
   },
   "user": {
-    "profile": "/user/getProfileInfo"
+    "profile": { "method": "GET", "path": "/user/getProfileInfo" },
+    "updateProfile": { "method": "POST", "path": "/user/updateProfile" }
+  },
+  "admin": {
+    "getAllUsers": { "method": "GET", "path": "/admin/getAllUsers" },
+    "getUserById": { "method": "GET", "path": "/admin/getUserById/{id}" },
+    "searchUser": { "method": "POST", "path": "/admin/searchUser" },
+    "addUser": { "method": "POST", "path": "/admin/addUser" },
+    "updateUser": { "method": "PUT", "path": "/admin/updateUser/{id}" },
+    "deleteUser": { "method": "DELETE", "path": "/admin/deleteUser/{id}" }
   }
 }

@@ -12,7 +12,6 @@ class AuthController extends AbstractController{
     parent::__construct(); // to put the headers
     $this->userModel = new User();
   }
-
   public function register(){
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return $this->sendError("Method Not Allowed", 405);
@@ -43,7 +42,6 @@ class AuthController extends AbstractController{
       "status"=>"success"
     ],201);
   }
-
   public function login(){
     $data = json_decode(file_get_contents("php://input"),true);
     if(empty($data['email']) || empty($data['password']) ){
@@ -66,7 +64,6 @@ class AuthController extends AbstractController{
       "status"=>"success"
     ]);
   }
-
   public function logout(){
     $isLoggedout = $this->userModel
                 ->logout();
@@ -78,7 +75,6 @@ class AuthController extends AbstractController{
       "status"=>"success"
     ]);
   }
-
   // after enter email to send otp
   public function forgetPassword(){
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -126,7 +122,6 @@ class AuthController extends AbstractController{
       return $this->sendError("Email could not be sent. Mailer Error: {$mail->ErrorInfo}", 500);
     }
   }
-
   // after enter the otp and new password
   public function verifyOtpAndUpdatePassword(){
     if($_SERVER["REQUEST_METHOD"] !== "POST"){
@@ -155,7 +150,6 @@ class AuthController extends AbstractController{
       "message" => "password Updated Successfully"
     ]);
   }
-
 }
 
 ?>
