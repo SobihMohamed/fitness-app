@@ -14,12 +14,23 @@
     "profile": { "method": "GET", "path": "/user/getProfileInfo" },
     "updateProfile": { "method": "POST", "path": "/user/updateProfile" }
   },
+  "adminUsers": {
+    "getAll": { "method": "GET", "path": "/ManageUsers/getAllUsers" },
+    "getById": { "method": "GET", "path": "/ManageUsers/getUserById/{id}" },
+    "search": { "method": "POST", "path": "/ManageUsers/searchUser" },
+    "add": { "method": "POST", "path": "/ManageUsers/addUser" },
+    "update": { "method": "PUT", "path": "/ManageUsers/updateUser/{id}" },
+    "delete": { "method": "DELETE", "path": "/ManageUsers/deleteUser/{id}" }
+  },
   "admin": {
-    "getAllUsers": { "method": "GET", "path": "/admin/getAllUsers" },
-    "getUserById": { "method": "GET", "path": "/admin/getUserById/{id}" },
-    "searchUser": { "method": "POST", "path": "/admin/searchUser" },
-    "addUser": { "method": "POST", "path": "/admin/addUser" },
-    "updateUser": { "method": "PUT", "path": "/admin/updateUser/{id}" },
-    "deleteUser": { "method": "DELETE", "path": "/admin/deleteUser/{id}" }
+    "register": { "method": "POST", "path": "/admin/register" },
+    "login": { "method": "POST", "path": "/admin/login" },
+    "logout": { "method": "POST", "path": "/admin/logout" },
+    "getAll": { "method": "GET", "path": "/admin/getAllAdmins" },
+    "getById": { "method": "GET", "path": "/admin/getAdminById/{id}" },
+    "search": { "method": "POST", "path": "/admin/searchAdmin" },
+    "add": { "method": "POST", "path": "/admin/addAdmin" },
+    "update": { "method": "PUT", "path": "/admin/updateAdmin/{id}" },
+    "delete": { "method": "DELETE", "path": "/admin/deleteAdmin/{id}" }
   }
 }

@@ -35,6 +35,18 @@ class User {
       return false;
     }
   }
+  public function getUserInfoByPhone($phone) {
+    try{
+      $userInfo = $this->db
+                  ->select("*")
+                  ->where("phone","=",$phone)
+                  ->getRow();
+      // print_r($userInfo);
+      return $userInfo?:false;  
+    }catch(Exception $e){
+      return false;
+    }
+  }
   public function updatePassword($email,$updatedPassword){
     try{
       $updatedPassword = password_hash($updatedPassword,PASSWORD_BCRYPT);
@@ -48,7 +60,7 @@ class User {
     }
 
   }
-    public function login($email,$Password){
+  public function login($email,$Password){
     try{
       $user = $this->getUserInfoByEmail($email);
       if(!$user || !password_verify($Password,$user['password'])){

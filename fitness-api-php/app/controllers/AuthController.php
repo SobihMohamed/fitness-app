@@ -19,17 +19,34 @@ class AuthController extends AbstractController{
     //? get all data in body of request
     $data = json_decode(file_get_contents("php://input"),true);
     file_put_contents("debug.txt", json_encode($data)); // Debug
-    if(empty($data['email']) || empty($data['name']) || empty($data['password']) ){
-      return $this->sendError("All Fields are required" , 422);
+    // Check required fields
+    $requiredFields = ['email', 'name', 'password', 'phone', 'user_type'];
+    foreach ($requiredFields as $field) {
+        if (empty($data[$field])) {
+            return $this->sendError("Field '$field' is required", 422);
+        }
     }
     // Normalize email
-    $data['email'] = strtolower($data['email']);
+    $data['email'] = strtolower(trim($data['email']));
+    $data['phone'] = trim($data['phone']);
+    $data['user_type'] = ucfirst(strtolower(trim($data['user_type'])));
 
-    $isExist =  $this->userModel
-                ->getUserInfoByEmail($data['email']);
-    if($isExist){
-      return $this->sendError("Email Already Exist",409);
+    if (!in_array($data['user_type'], ['Coach', 'Trainee'])) {
+        return $this->sendError("Invalid user_type. Must be 'Choach' or 'Trainee'", 422);
     }
+
+    // Check if email already exists
+    if ($this->userModel->getUserInfoByEmail($data['email'])) {
+        return $this->sendError("Email already exists", 409);
+    }
+
+    // Check if phone already exists
+    if ($this->userModel->getUserInfoByPhone($data['phone'])) {
+        return $this->sendError("Phone number already exists", 409);
+    }
+
+    // Hash password before storing
+    $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
 
     $regesterSuccess = $this->userModel
                 ->register($data);

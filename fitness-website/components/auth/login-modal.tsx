@@ -23,12 +23,21 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  // const { login, register } = useAuth()
   const [activeTab, setActiveTab] = useState("login")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  const initialRegisterData = {
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    address: "",
+    country: "",
+    user_type: ""
+  };
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -41,12 +50,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 // not include 
 
   // Register form state
-  const [registerData, setRegisterData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  })
+const [registerData, setRegisterData] = useState(initialRegisterData)
+
 
   // Validate email format 
   // This function checks if the email is in a valid format using a regular expression
@@ -97,7 +102,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
       }
     )
-     
+
     // Handle response
       // Assuming the API returns a status field in the response
       // and a message field for success or error messages
@@ -162,15 +167,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Adjust the API endpoint and request body as per your backend implementation
     
     try {
-      const response = await axios.post(`${baseURL}/auth/register`, {
-          name: registerData.name,
-          email: registerData.email,
-          password: registerData.password
-        }, {
-          headers: {
-            "Content-Type": "application/json"
-          }
-        });
+    const response = await axios.post(`${baseURL}/auth/register`, {
+      name: registerData.name,
+      email: registerData.email,
+      password: registerData.password,
+      phone: registerData.phone,
+      address: registerData.address,
+      country: registerData.country,
+      user_type: registerData.user_type
+    }, {
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+
       // Handle response
       // Assuming the API returns a status field in the response
       // and a message field for success or error messages
@@ -180,19 +190,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setMessage({ type: "success", text: response.data.message })
         setTimeout(() => {
           onClose()
-          setRegisterData({ name: "", email: "", password: "", confirmPassword: "" })
+          setRegisterData(initialRegisterData)
           setMessage(null)
         }, 1500)
-      } else {
-        setMessage({ type: "error", text: response.data.message })
       }
     } catch (error: any) {
-        setMessage({ type: "error", text: "Error on your email or password" });
+      const errorMessage =
+        error.response?.data?.message || "An unexpected error occurred.";
+      setMessage({ type: "error", text: errorMessage });
     }
+
     finally {
       setIsLoading(false)
     }
-} //---------------------------------------------------W
+  } //---------------------------------------------------W
   // Handle tab change
   // Reset form data and message when switching tabs
   // This ensures that when a user switches from login to register or vice versa, the form is reset
@@ -207,12 +218,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setActiveTab(value)
     setMessage(null)
     setLoginData({ email: "", password: "" })
-    setRegisterData({ name: "", email: "", password: "", confirmPassword: "" })
+    setRegisterData(initialRegisterData)
+
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="md:max-w-xl">
         <DialogHeader>
           <DialogTitle>Welcome to FitPro</DialogTitle>
           <DialogDescription>Sign in to your account or create a new one to get started</DialogDescription>
@@ -368,6 +380,55 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-phone">Phone</Label>
+                <Input
+                  id="register-phone"
+                  type="text"
+                  placeholder="Enter your phone"
+                  value={registerData.phone}
+                  onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-address">Address</Label>
+                <Input
+                  id="register-address"
+                  type="text"
+                  placeholder="Enter your address"
+                  value={registerData.address}
+                  onChange={(e) => setRegisterData({ ...registerData, address: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-country">Country</Label>
+                <Input
+                  id="register-country"
+                  type="text"
+                  placeholder="Enter your country"
+                  value={registerData.country}
+                  onChange={(e) => setRegisterData({ ...registerData, country: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="register-user-type">User Type</Label>
+                <select
+                  id="register-user-type"
+                  value={registerData.user_type}
+                  onChange={(e) => setRegisterData({ ...registerData, user_type: e.target.value })}
+                  required
+                  className="w-full rounded-md border border-gray-300 p-2"
+                >
+                  <option value="">Select user type</option>
+                  <option value="Coach">Coach</option>
+                  <option value="Trainee">Trainee</option>
+                </select>
               </div>
 
               {message && (
