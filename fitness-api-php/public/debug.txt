@@ -1,1 +1,1 @@
-{"name":"adminTest","email":"adminTest@gmail.com","password":"111111"}
+{"name":"Sobih Mohamed Sobih","email":"sobihmohamedsobih@gmail.com","password":"111111","phone":"01225831025","address":"16 QALAA","country":"Egypt","user_type":"Coach"}
