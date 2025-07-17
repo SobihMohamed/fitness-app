@@ -18,13 +18,16 @@ const navigation = [
   { name: "Courses", href: "/courses" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
+  
 ]
+
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
   const { user } = useAuth()
-
+  
+  console.log("User in Navigation:", user)
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50">
