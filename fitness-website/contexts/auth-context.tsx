@@ -3,6 +3,9 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useEffect } from "react"
+import axios from "axios"
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";//"http://localhost/fitness-api-php/public"
+
 
 // Define the User interface with all necessary properties
 // It uses localStorage to persist user data across sessions
@@ -42,11 +45,13 @@ interface AuthContextType {
   isLoading: boolean
 }
 
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   // Load user data from localStorage when the component mounts
   // This simulates fetching user data from a backend service
@@ -55,95 +60,88 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedUser = localStorage.getItem("fitpro_user")
     if (savedUser) {
       setUser(JSON.parse(savedUser))
-    }
+    } 
+  setIsInitialized(true)
+  setIsLoading(false)
   }, [])
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+    
+    
     try {
-      // Demo accounts
-      if (email === "demo@fitpro.com" && password === "demo123") {
-        const demoUser: User = {
-          id: "demo-user",
-          email: "demo@fitpro.com",
-          name: "Demo User",
-          role: "user",
-          enrolledCourses: [1, 2],
-          completedLessons: { 1: [1, 2], 2: [1] },
-          progress: { 1: 25, 2: 15 },
-          achievements: ["First Course", "Quick Learner"],
-          joinDate: "2024-01-01",
-        }
-        setUser(demoUser)
-        localStorage.setItem("fitpro_user", JSON.stringify(demoUser))
-        return { success: true, message: "Welcome back!" }
-      }
+      const response = await axios.post(`${baseURL}/auth/login`, 
+        { 
+          email, 
+          password 
 
-      if (email === "admin@fitpro.com" && password === "admin123") {
-        const adminUser: User = {
-          id: "admin-user",
-          email: "admin@fitpro.com",
-          name: "Admin User",
-          role: "admin",
-          enrolledCourses: [],
-          completedLessons: {},
-          progress: {},
-          achievements: ["Admin Access"],
-          joinDate: "2024-01-01",
-        }
-        setUser(adminUser)
-        localStorage.setItem("fitpro_user", JSON.stringify(adminUser))
-        return { success: true, message: "Admin login successful!" }
-      }
-
-      // For any other email/password, create a new user
-      const newUser: User = {
-        id: Date.now().toString(),
-        email,
-        name: email.split("@")[0],
-        role: "user",
-        enrolledCourses: [],
-        completedLessons: {},
-        progress: {},
-        achievements: [],
-        joinDate: new Date().toISOString().split("T")[0],
-      }
-      setUser(newUser)
-      localStorage.setItem("fitpro_user", JSON.stringify(newUser))
-      return { success: true, message: "Account created and logged in successfully!" }
-    } catch (error) {
-      return { success: false, message: "Login failed. Please try again." }
+        },  
+        {
+      headers: { "Content-Type": "application/json" },
+      withCredentials: true  //sobieh answer this question  why we did this?
     }
+        // Include credentials for cookie-based auth}
+       )
+      
+        if (response.data.status === "success") {
+      const userData = response.data.user;
+      setUser(userData);
+      localStorage.setItem("fitpro_user", JSON.stringify(userData));
+      return { success: true, message: response.data.message };
+    } else {
+      return { success: false, message: response.data.message || "Login failed." };
+    }
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Login error." };
   }
+};
 
+
+  // Register a new user
+  // This function handles user registration by sending a POST request to the server
   const register = async (
     email: string,
     password: string,
     name: string,
+    // address: string ,
+    // phone: any
   ): Promise<{ success: boolean; message: string }> => {
     try {
-      const newUser: User = {
-        id: Date.now().toString(),
-        email,
-        name,
-        role: "user",
-        enrolledCourses: [],
-        completedLessons: {},
-        progress: {},
-        achievements: ["Welcome Bonus"],
-        joinDate: new Date().toISOString().split("T")[0],
-      }
-      setUser(newUser)
-      localStorage.setItem("fitpro_user", JSON.stringify(newUser))
-      return { success: true, message: "Account created successfully!" }
-    } catch (error) {
-      return { success: false, message: "Registration failed. Please try again." }
-    }
-  }
+      const response = await axios.post(`${baseURL}/auth/register`, 
+        { 
+          email, 
+          password, 
+          name 
+        }, 
+        {
+      headers: { "Content-Type": "application/json" },
+      withCredentials: true  
+       })
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("fitpro_user")
+       if (response.data.status === "success") {
+      return { success: true, message: response.data.message };
+    } else {
+      return { success: false, message: response.data.message || "Registration failed." };
+    }
+  } catch (error: any) {
+    return { success: false, message: error.response?.data?.message || "Registration error." };
   }
+};
+  
+
+  // Logout the user
+  const logout = async () => {
+  try {
+    await axios.post(`${baseURL}/auth/logout`);
+  } catch (error) {
+    console.error("Logout failed", error);
+  } finally {
+    setUser(null);
+    localStorage.removeItem("fitpro_user");
+  }
+};
+
+
+
 
   const isEnrolled = (courseId: number): boolean => {
     return user?.enrolledCourses.includes(courseId) || false
@@ -204,7 +202,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value: AuthContextType = {
     user,
-    login,
+    login,//tmam
     logout,
     register,
     isEnrolled,
@@ -213,8 +211,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     completeLesson,
     isLessonCompleted,
     updateProfile,
-    isInitialized: false,
-    isLoading: false, // Assuming loading state is not implemented yet
+    isInitialized,
+    isLoading 
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
