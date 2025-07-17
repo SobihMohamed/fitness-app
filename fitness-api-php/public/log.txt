@@ -1,1 +1,2 @@
-URL Detected: auth
+URL Detected: auth/register
+

@@ -35,6 +35,18 @@ class User {
       return false;
     }
   }
+  public function getUserInfoByPhone($phone) {
+    try{
+      $userInfo = $this->db
+                  ->select("*")
+                  ->where("phone","=",$phone)
+                  ->getRow();
+      // print_r($userInfo);
+      return $userInfo?:false;  
+    }catch(Exception $e){
+      return false;
+    }
+  }
   public function updatePassword($email,$updatedPassword){
     try{
       $updatedPassword = password_hash($updatedPassword,PASSWORD_BCRYPT);
@@ -48,17 +60,13 @@ class User {
     }
 
   }
-    public function login($email,$Password){
+  public function login($email,$Password){
     try{
       $user = $this->getUserInfoByEmail($email);
       if(!$user || !password_verify($Password,$user['password'])){
         return false;
       }
-      $_SESSION['user'] = [
-        'id'=>$user['user_id'],
-        'name'=>$user['name'],
-        'email'=>$user['email']
-      ];
+      $_SESSION['user'] = $user;
       return $_SESSION['user'];
     }catch(Exception $e){
       return false;
@@ -74,8 +82,27 @@ class User {
     } catch(Exception $e){
       return false;
     }
-}
-
-
+  }
+  public function saveOtp($email ,$otp){
+    $_SESSION['otp'][$email] = $otp;
+    return true;
+  }
+  public function verifyOtp($email,$otp){
+    return isset($_SESSION['otp'][$email]) && $_SESSION['otp'][$email] === $otp;
+  }
+  public function updateUserInfoByEmail($email,$data){
+    try{
+      if(empty($data)){
+        return false;
+      }
+      $this->db
+          ->update($data)
+          ->where("email","=",$email)
+          ->excute();
+      return true;
+    }catch(Exception $e){
+      return false;
+    }
+  }
 }
 ?>

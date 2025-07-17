@@ -69,7 +69,8 @@ class DB implements dbContract{
       if(is_int($value)){
         $rows.="$key = $value,";
       }else{
-        $rows.="$key = '$value',";
+        $safeValue = addslashes($value);
+        $rows.="$key = '$safeValue',";
       }
     }
     $rows = rtrim($rows,",");
@@ -95,6 +96,10 @@ class DB implements dbContract{
   }
   public function andWhere($coulmn,$operator,$value){
     $this->sql .=" AND $coulmn $operator '$value'";
+    return $this;
+  }
+    public function orWhere($coulmn,$operator,$value){
+    $this->sql .=" OR $coulmn $operator '$value'";
     return $this;
   }
   public function excute(){

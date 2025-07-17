@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // This simulates fetching user data from a backend service
   // In a real application, you would replace this with an API call to fetch user data
   useEffect(() => {
-    const savedUser = localStorage.getItem("fitpro_user")
+    const savedUser = localStorage.getItem("fitpro_user");
     if (savedUser) {
       setUser(JSON.parse(savedUser))
     } 
