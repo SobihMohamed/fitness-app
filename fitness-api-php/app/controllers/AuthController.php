@@ -32,7 +32,7 @@ class AuthController extends AbstractController{
     $data['user_type'] = ucfirst(strtolower(trim($data['user_type'])));
 
     if (!in_array($data['user_type'], ['Coach', 'Trainee'])) {
-        return $this->sendError("Invalid user_type. Must be 'Choach' or 'Trainee'", 422);
+        return $this->sendError("Invalid user_type. Must be 'Coach' or 'Trainee'", 422);
     }
 
     // Check if email already exists
@@ -45,9 +45,6 @@ class AuthController extends AbstractController{
         return $this->sendError("Phone number already exists", 409);
     }
 
-    // Hash password before storing
-    $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
-
     $regesterSuccess = $this->userModel
                 ->register($data);
     if(!$regesterSuccess){
@@ -59,28 +56,30 @@ class AuthController extends AbstractController{
       "status"=>"success"
     ],201);
   }
-  public function login(){
-    $data = json_decode(file_get_contents("php://input"),true);
-    if(empty($data['email']) || empty($data['password']) ){
-      return $this->sendError("All Fields are required" , 422);
-    }
-    $isExist =  $this->userModel
-                ->getUserInfoByEmail($data['email']);
-    if(!$isExist){
-      return $this->sendError("Email Not Exist ",422);
-    }
-    // ? return user 
-    $user= $this->userModel
-                  ->login($data['email'],$data['password']);
-    if(!$user){
-      return $this->sendError("Incorrect Email or Password",401);
-    }
-    $this->json([
-      "message"=> "user Login Successfully",
-      "user"=>$user,
-      "status"=>"success"
-    ]);
+  public function login() {
+      $data = json_decode(file_get_contents("php://input"), true);
+
+      if (empty($data['email']) || empty($data['password'])) {
+          return $this->sendError("All Fields are required", 422);
+      }
+
+      $user = $this->userModel->getUserInfoByEmail($data['email']);
+
+      if (!$user) {
+          return $this->sendError("Email Not Exist", 422);
+      }
+
+      if (!password_verify($data['password'], $user['password'])) {
+          return $this->sendError("Incorrect Email or Password", 401);
+      }
+
+      $this->json([
+          "message" => "User Login Successfully",
+          "user" => $user,
+          "status" => "success"
+      ]);
   }
+
   public function logout(){
     $isLoggedout = $this->userModel
                 ->logout();
