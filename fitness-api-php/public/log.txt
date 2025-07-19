@@ -1,1 +1,6 @@
+<<<<<<< HEAD
 URL Detected: auth/login
+=======
+URL Detected: auth/register
+
+>>>>>>> 60793048d5b7ff6c97d574bc2cb1e0c548e2cde3

@@ -34,3 +34,4 @@
     "delete": { "method": "DELETE", "path": "/admin/deleteAdmin/{id}" }
   }
 }
+
