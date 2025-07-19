@@ -14,9 +14,10 @@ import { User, Settings, BookOpen, LogOut, Shield } from "lucide-react"
 import Link from "next/link"
 
 export function UserMenu() {
-  const { user, logout } = useAuth()
+  const { user, logout,  isInitialized  } = useAuth()
 
   if (!user) return null
+  if (!isInitialized) return null // Ensure user data is loaded before rendering
 
     // Function to get the initials from the user's name
     // This function splits the user's name into words, takes the first letter of each word,

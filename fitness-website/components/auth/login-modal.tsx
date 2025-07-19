@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
-import { Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
 import axios from "axios"
 
 // LoginModal component
@@ -27,6 +27,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
   const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
   const initialRegisterData = {
     name: "",
@@ -38,6 +39,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     country: "",
     user_type: ""
   };
+
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -119,9 +121,13 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
         setMessage({ type: "error", text: response.data.message })
       }
     } catch (error: any) {
+      console.log("Register response:", error.response.data)
+
       if (error.response && error.response.data) {
+        console.log("Register response:", error.response.data)
         setMessage({ type: "error", text: error.response.data.message });
       } else {
+        console.log("Register response:", error.response.data)
         setMessage({ type: "error", text: "Unexpected error occurred" });
       }
     } finally {
@@ -194,6 +200,7 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
           setMessage(null)
         }, 1500)
       }
+
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || "An unexpected error occurred.";
@@ -204,6 +211,7 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
       setIsLoading(false)
     }
   } //---------------------------------------------------W
+
   // Handle tab change
   // Reset form data and message when switching tabs
   // This ensures that when a user switches from login to register or vice versa, the form is reset
@@ -234,6 +242,7 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Sign In</TabsTrigger>
             <TabsTrigger value="register">Sign Up</TabsTrigger>
+             <TabsTrigger value="forgot-password">Reset Password</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login" className="space-y-4">
@@ -294,14 +303,22 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing In..." : "Sign In"}
               </Button>
+               <Button
+                type="button"
+                variant="link"
+                className="w-full text-sm text-blue-600 hover:underline"
+                onClick={() => setActiveTab("forgot-password")}
+              >
+                Forgot Password?
+              </Button>
             </form>
 
             <div className="text-sm text-gray-600 space-y-2">
-              <p>
+              {/* <p>
                 <strong>Demo Accounts:</strong>
               </p>
               <p>User: demo@fitpro.com / demo123</p>
-              <p>Admin: admin@fitpro.com / admin123</p>
+              <p>Admin: admin@fitpro.com / admin123</p> */}
             </div>
           </TabsContent>
 
@@ -445,6 +462,166 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
+          </TabsContent>
+            <TabsContent value="forgot-password">
+            {/* {resetStep === "email" && (
+            )
+              onSubmit={handleForgotPasswordRequest} */}
+              <form  className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="Enter your registered email"
+                      // value={resetEmail}
+                      // onChange={(e) => setResetEmail(e.target.value)}
+                      className="pl-10"
+                      required
+                      />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending OTP...
+                    </>
+                  ) : (
+                    "Send OTP"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm text-blue-600 hover:underline"
+                  onClick={() => {
+                    // setActiveTab("login")
+                    // setError("")
+                    // setSuccess("")
+                    // setResetEmail("")
+                  }}
+                >
+                  Back to Sign In
+                </Button>
+              </form>
+            
+
+            {/* {resetStep === "otp" && (
+              onSubmit={handleVerifyOtp} */}
+              <form  className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">OTP</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="otp"
+                      type="text"
+                      placeholder="Enter the OTP sent to your email"
+                      // value={otp}
+                      // onChange={(e) => setOtp(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying OTP...
+                    </>
+                  ) : (
+                    "Verify OTP"
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm text-blue-600 hover:underline"
+                  onClick={() => {
+                    // setResetStep("email")
+                    // setError("")
+                    // setSuccess("")
+                    // setOtp("")
+                  }}
+                >
+                  Resend OTP / Change Email
+                </Button>
+              </form>
+            
+
+            {/* {resetStep === "new-password" && (
+              //onSubmit={handleResetPassword} */}
+              <form  className="space-y-4"> 
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="new-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password"
+                      // value={newPassword}
+                      // onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-new-password">Confirm New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="confirm-new-password"
+                      // type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm new password"
+                      // value={confirmNewPassword}
+                      // onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                    />
+                    <button
+                      type="button"
+                     // onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                    >
+                     {/* {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400" />
+                      )} */}
+                    </button>
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Resetting Password...
+                    </>
+                  ) : (
+                    "Reset Password"
+                  )}
+                </Button>
+              </form>
+            
           </TabsContent>
         </Tabs>
       </DialogContent>

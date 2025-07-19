@@ -1,1 +1,7 @@
+<<<<<<< HEAD
 {"name":"Sobih Mohamed Sobih","email":"sobihmohamedsobih@gmail.com","password":"111111","phone":"01225831022","address":"16 QALAA","country":"Egypt","user_type":"Coach"}
+=======
+
+{"name":"Sobih Mohamed Sobih","email":"sobihmohamedsobih@gmail.com","password":"111111","phone":"01225831025","address":"16 QALAA","country":"Egypt","user_type":"Coach"}
+
+>>>>>>> 60793048d5b7ff6c97d574bc2cb1e0c548e2cde3
