@@ -6,7 +6,7 @@ class ManageUsers {
   protected $db;
   protected $tableName = "users";
 
-  private function __construct(){
+  public function __construct(){
     $this->db = new DB($this->tableName);
   }
 

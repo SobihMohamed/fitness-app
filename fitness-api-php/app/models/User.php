@@ -30,7 +30,7 @@ class User {
                   ->where("email","=",$email)
                   ->getRow();
       // print_r($userInfo);
-      return $userInfo?:false;  
+      return $userInfo;  
     }catch(Exception $e){
       return false;
     }
