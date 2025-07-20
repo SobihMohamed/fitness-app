@@ -2,12 +2,14 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\User;
+use App\Core\JWTHandler;
 use Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 class AuthController extends AbstractController{
   protected $userModel;
+
   public function __construct(){
     parent::__construct(); // to put the headers
     $this->userModel = new User();
@@ -68,29 +70,20 @@ class AuthController extends AbstractController{
       if (!$user) {
           return $this->sendError("Email Not Exist", 422);
       }
-
-      if (!password_verify($data['password'], $user['password'])) {
-          return $this->sendError("Incorrect Email or Password", 401);
-      }
-
+      // Create JWT token
+      $jwt = new JWTHandler();
+      $token = $jwt->generateToken([
+          "id" => $user['user_id'],
+          "email" => $user['email']
+      ]);
       $this->json([
           "message" => "User Login Successfully",
           "user" => $user,
+          "token" => $token,
           "status" => "success"
       ]);
   }
 
-  public function logout(){
-    $isLoggedout = $this->userModel
-                ->logout();
-    if(!$isLoggedout){
-      return $this->sendError("Error During Logout",500);
-    }
-    $this->json([
-      "message"=>"loggedOut Success",
-      "status"=>"success"
-    ]);
-  }
   // after enter email to send otp
   public function forgetPassword(){
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -105,6 +98,7 @@ class AuthController extends AbstractController{
 
     $user = $this->userModel
             ->getUserInfoByEmail($data['email']);
+
     if(!$user){
       return $this->sendError("User Not Found",404);
     }
@@ -145,7 +139,7 @@ class AuthController extends AbstractController{
     }
     // get all data 
     $data = json_decode(file_get_contents("php://input"),true);
-    if(empty($data['email']) || empty($data['otp']) || empty($data['newPassword']) ){
+    if(empty($data['email'])||empty($data['otp']) || empty($data['newPassword'])){
       return $this->sendError("All field are required", 422);
     }
     $isValid = $this->userModel
@@ -158,8 +152,6 @@ class AuthController extends AbstractController{
     if(!$isupdated){
       return $this->sendError("Error During Update Password", 500);
     }
-    // الغي ال session 
-    unset($_SESSION['otp'][$data['email']]);
 
     $this->json([
       "status" => "success",

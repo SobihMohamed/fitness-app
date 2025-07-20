@@ -122,9 +122,16 @@ const features = [
 
 export function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    setIsVisible(true)
+    useEffect(() => {
+      setIsVisible(true)
+    const token = sessionStorage.getItem("token");
+    const user = sessionStorage.getItem("user");
+    
+    if (token && user) {
+      console.log("User logged in:", JSON.parse(user));
+    } else {
+      console.log("No user logged in");
+    }
   }, [])
 
 

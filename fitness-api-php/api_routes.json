@@ -3,7 +3,6 @@
   "auth": {
     "register": { "method": "POST", "path": "/auth/register" },
     "login": { "method": "POST", "path": "/auth/login" },
-    "logout": { "method": "POST", "path": "/auth/logout" },
     "forgetPassword": { "method": "POST", "path": "/auth/forgetPassword" },
     "verifyOtp": {
       "method": "POST",

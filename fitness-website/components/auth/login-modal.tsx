@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useAuth } from "@/contexts/auth-context"
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
 import axios from "axios"
 
@@ -92,8 +91,6 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
       return
     }
 
-    // Make API request to login
-    // Adjust the API endpoint and request body as per your backend implementation 
     try {
       const response = await axios.post(`${baseURL}/auth/login`,{
         email:loginData.email,
@@ -104,13 +101,12 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
         }
       }
     )
-
-    // Handle response
-      // Assuming the API returns a status field in the response
-      // and a message field for success or error messages
-      // Adjust based on your actual API response structure\
+      console.log("Full response:", response.data);
       if (response.data.status === "success") {
-        // session storage store user data 
+        
+        sessionStorage.setItem("token", response.data.token);
+        sessionStorage.setItem("user", JSON.stringify(response.data.user));
+
         setMessage({ type: "success", text: response.data.message })
         setTimeout(() => {
           onClose()
@@ -120,20 +116,19 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
       } else {
         setMessage({ type: "error", text: response.data.message })
       }
-    } catch (error: any) {
-      console.log("Register response:", error.response.data)
-
-      if (error.response && error.response.data) {
-        console.log("Register response:", error.response.data)
-        setMessage({ type: "error", text: error.response.data.message });
-      } else {
-        console.log("Register response:", error.response.data)
-        setMessage({ type: "error", text: "Unexpected error occurred" });
+    }  catch (error: any) {
+        console.log("Login Error:", error);
+        if (error.response) {
+          console.log("Error Data:", error.response.data);
+          setMessage({ type: "error", text: error.response.data.message });
+        } else {
+          setMessage({ type: "error", text: "Unexpected error occurred" });
+        }
       }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+      finally {
+          setIsLoading(false)
+        }
+      }
   // Handle registration
   // This function handles the registration process when the user submits the registration form.
   // It validates the input data, makes an API request to register the user,

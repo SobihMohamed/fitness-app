@@ -1,32 +1,33 @@
 <?php
 namespace App\Controllers;
+use App\models\ManageAdmins;
 use App\Core\AbstractController;
-use App\models\ManageUsers;
 
-class ManageUsersController extends AbstractController{
-  protected $userModel;
-
-  public function __construct(){
-      parent::__construct();
-      $this->userModel = new ManageUsers();
+class ManageAdminsController extends AbstractController{
+  
+  public $adminModel;
+  public function __construct() {
+          parent::__construct();
+    $this->adminModel= new ManageAdmins();
   }
-      //! Admin Services On Users in dashboard
-    public function getAllUsers(){
+
+      //! Super Admin Services On Admins in dashboard
+    public function getAllAdmins(){
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
 
-      $users = $this->userModel
-                    ->getAllUsers();
-      if($users !== false){
+      $admins = $this->adminModel
+                    ->getAllAdmins();
+      if($admins !== false){
         return $this->json([
           "status" => "success",
-          "users" => $users
+          "users" => $admins
         ]);
       }
-      return $this->sendError("No Users",400);
+      return $this->sendError("No Admins",400);
     }
-    public function searchUser(){
+    public function searchAdmin(){
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
@@ -34,8 +35,8 @@ class ManageUsersController extends AbstractController{
       if(!isset($data["keyword"])){
         $this->sendError("keyword Require");
       }
-      $result = $this->userModel
-                ->searchUser($data["keyword"]);
+      $result = $this->adminModel
+                ->searchAdmin($data["keyword"]);
       if($result === false){
         $this->sendError("Error During Search");
       }
@@ -44,27 +45,27 @@ class ManageUsersController extends AbstractController{
         "data" => $result,
       ]);
     }
-    public function getUserById($id){
+    public function getAdminById($id){
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
-      $user = $this->userModel
-              ->getUserById($id);
-      if($user === false){
+      $admin = $this->adminModel
+              ->getAdminById($id);
+      if($admin === false){
         $this->sendError("Error During Find User");
         return;
       }
       return $this->json([
         "status" => "success",
-        "user" => $user
+        "user" => $admin
       ]);
     }
-    public function deleteUser($id){
+    public function deleteAdmin($id){
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
-      $isDeleted = $this->userModel
-                        ->deleteUser($id);
+      $isDeleted = $this->adminModel
+                        ->deleteAdmin($id);
       if(!$isDeleted) {
         $this->sendError("Error During Delete User");
         return;
@@ -74,13 +75,13 @@ class ManageUsersController extends AbstractController{
         "message"=>"Delete User Successfully"
       ]);
     }
-    public function updateUser($id){
+    public function updateAdmin($id){
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
       $data = json_decode(file_get_contents("php://input"),true);
-      $updated = $this->userModel
-                      ->updateUser($id,$data);
+      $updated = $this->adminModel
+                      ->updateAdmin($id,$data);
       if(!$updated){
         $this->sendError("Error During Update User");
         return;
@@ -90,33 +91,19 @@ class ManageUsersController extends AbstractController{
         "message" => "User Updated Successfully"
       ]);
     }
-    public function addUser() {
+    public function addAdmin() {
       if (!$this->isSuperAdmin()) {
         return $this->sendError("You are not authorized", 403);
       }
       $data = json_decode(file_get_contents("php://input"), true);
-      $added = $this->userModel->addUser($data);
+      $added = $this->adminModel->addAdmin($data);
       if ($added) {
         return $this->json([
           "status" => "success",
           "message" => "User added successfully"
         ]);
       }
-      return $this->sendError("User already exists or error occurred");
-    }
-    public function getUsersByType($type) {
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
-      $users = $this->userModel->getUsersByType($type);
-      if ($users) {
-        return $this->json([
-          "status" => "success",
-          "users" => $users
-        ]);
-      }
-      return $this->sendError("No users of this type found");
+      return $this->sendError("Admin already exists or error occurred");
     }
 }
-
 ?>
