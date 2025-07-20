@@ -1,227 +1,239 @@
 
 "use client"
 
-import type React from "react"
-import { createContext, useContext, useState, useEffect } from "react"
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react"
 import axios from "axios"
-const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";//"http://localhost/fitness-api-php/public"
+// ────────────────────────────────────────────────────────────────
+// 0) Base URL for your API
 
+const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
-// Define the User interface with all necessary properties
-// It uses localStorage to persist user data across sessions
-// for the backend, you would typically use a database and API calls
-// Here, we simulate this with localStorage for simplicity
-// instead of localstorage, you could use a more secure method like cookies or JWT tokens
+// ────────────────────────────────────────────────────────────────
+// 1) Shape of user data (returned from your API)
+// ────────────────────────────────────────────────────────────────
 interface User {
+  avatar: string
   id: string
-  email: string
   name: string
+  email: string
   role: "user" | "admin"
-  enrolledCourses: number[]
-  completedLessons: { [courseId: number]: number[] }
-  progress: { [courseId: number]: number }
-  achievements: string[]
-  joinDate: string
-  
+  // add any other fields your API returns
 }
 
-// Define the AuthContextType interface
-// This interface includes methods for authentication and course management
-//it uses localStorage to persist user data across sessions
-// for the backend, you would typically use a database and API calls
-//instead of localstorage, you could use a more secure method like cookies or JWT tokens
+// ────────────────────────────────────────────────────────────────
+// 2) What the AuthContext provides
+// ────────────────────────────────────────────────────────────────
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
-  logout: () => void
-  register: (email: string, password: string, name: string) => Promise<{ success: boolean; message: string }>
-  isEnrolled: (courseId: number) => boolean
-  enrollInCourse: (courseId: number) => void
-  getProgress: (courseId: number) => number
-  completeLesson: (courseId: number, lessonId: number) => void
-  isLessonCompleted: (courseId: number, lessonId: number) => boolean
-  updateProfile: (updates: Partial<User>) => void
-  isInitialized: boolean
   isLoading: boolean
-}
+  isInitialized: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; message: string }>
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    // confirmPassword: string,
+    phone: string,
+    address: string,
+    country: string,
+    user_type: string
+  ) => Promise<{ success: boolean; message: string }>
 
+  forgetPassword: (email: string) => Promise<{ success: boolean; message: string }>
+  verifyOtp: (email: string, otp: string, newPassword: string) => Promise<{ success: boolean; message: string }>
+
+  logout: () => Promise<void>
+ 
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+// ────────────────────────────────────────────────────────────────
+// 3) Provider component
+// ────────────────────────────────────────────────────────────────
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
-  // Load user data from localStorage when the component mounts
-  // This simulates fetching user data from a backend service
-  // In a real application, you would replace this with an API call to fetch user data
+  // On mount, try to load user from sessionStorage or re‑validate session
+ 
   useEffect(() => {
-    const savedUser = localStorage.getItem("fitpro_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
-    } 
-  setIsInitialized(true)
-  setIsLoading(false)
-  }, [])
-
-  const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
-    
-    
+  const initializeAuth = async () => {
     try {
-      const response = await axios.post(`${baseURL}/auth/login`, 
-        { 
-          email, 
-          password 
-
-        },  
-        {
-      headers: { "Content-Type": "application/json" },
-      withCredentials: true  //sobieh answer this question  why we did this?
-    }
-        // Include credentials for cookie-based auth}
-       )
+      const storedUser = sessionStorage.getItem("user")
+      if (storedUser ) {
+        setUser(JSON.parse(storedUser))
+      }
+    } catch (error) {
+     
+      sessionStorage.removeItem("user")
+      sessionStorage.removeItem("token")
+      console.error("Error initializing auth from sessionStorage:", error)
+    } finally {
       
-        if (response.data.status === "success") {
-      const userData = response.data.user;
-      setUser(userData);
-      localStorage.setItem("fitpro_user", JSON.stringify(userData));
-      return { success: true, message: response.data.message };
-    } else {
-      return { success: false, message: response.data.message || "Login failed." };
+      setIsInitialized(true)
     }
-  } catch (error: any) {
-    return { success: false, message: error.response?.data?.message || "Login error." };
   }
-};
 
+  initializeAuth()
+}, [])
 
-  // Register a new user
-  // This function handles user registration by sending a POST request to the server
-  const register = async (
+  // ────────────────────────────────────────────────────────────────
+  // LOGIN
+  // ────────────────────────────────────────────────────────────────
+  const login = async (email: string, password: string) => {
+    try {
+      console.log(`Logging in with email: ${email} and password: ${password}`);
+
+      const res = await axios.post(
+        `${baseURL}/auth/login`,
+        { email, password },
+        { 
+          // withCredentials: true,  // Important for session handling
+          headers: { "Content-Type": "application/json" }
+         } 
+        )
+        console.log(res)
+      if (res.data.status === "success") {
+        setUser(res.data.user) // Set user in context
+        sessionStorage.setItem("user", JSON.stringify(res.data.user))
+        sessionStorage.setItem("token", res.data.token) // Store token if needed
+        return { success: true, message: res.data.message }
+      }
+      console.log("Login successful:", res.data.message)
+      console.log("Login failed:", res.data.message)
+      return { success: false, message: res.data.message }
+    } catch (err: any) {
+      return { success: false, message: err.response?.data?.message || "Login failed." }
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // REGISTER
+  // ────────────────────────────────────────────────────────────────
+  // Note: confirmPassword is commented out as it is not used in the current implementation
+   const register = async (
+    name: string,
     email: string,
     password: string,
-    name: string,
-    // address: string ,
-    // phone: any
-  ): Promise<{ success: boolean; message: string }> => {
+    // confirmPassword: string,
+    phone: string,
+    address: string,
+    country: string,
+    user_type: string, 
+  ) => {
     try {
-      const response = await axios.post(`${baseURL}/auth/register`, 
-        { 
-          email, 
-          password, 
-          name 
-        }, 
-        {
-      headers: { "Content-Type": "application/json" },
-      withCredentials: true  
-       })
+      const res = await axios.post(`${baseURL}/auth/register`, {
+        name,
+        email,
+        password,
+        // confirmPassword,
+        phone,
+        address,
+        country,
+        user_type,
+      })
 
-       if (response.data.status === "success") {
-      return { success: true, message: response.data.message };
-    } else {
-      return { success: false, message: response.data.message || "Registration failed." };
-    }
-  } catch (error: any) {
-    return { success: false, message: error.response?.data?.message || "Registration error." };
-  }
-};
-  
-
-  // Logout the user
-  const logout = async () => {
-  try {
-    await axios.post(`${baseURL}/auth/logout`);
-  } catch (error) {
-    console.error("Logout failed", error);
-  } finally {
-    setUser(null);
-    localStorage.removeItem("fitpro_user");
-  }
-};
-
-
-
-
-  const isEnrolled = (courseId: number): boolean => {
-    return user?.enrolledCourses.includes(courseId) || false
-  }
-
-  const enrollInCourse = (courseId: number) => {
-    if (user && !user.enrolledCourses.includes(courseId)) {
-      const updatedUser = {
-        ...user,
-        enrolledCourses: [...user.enrolledCourses, courseId],
-        progress: { ...user.progress, [courseId]: 0 },
+      if (res.data.status === "success") {
+        // Optionally auto-login after registration
+        if (res.data.user) {
+          setUser(res.data.user)
+          // sessionStorage.setItem("user", JSON.stringify(res.data.user))
+          // sessionStorage.setItem("token", res.data.token)
+        }
+        return { success: true, message: res.data.message || "Registration successful!" }
       }
-      setUser(updatedUser)
-      localStorage.setItem("fitpro_user", JSON.stringify(updatedUser))
-    }
-  }
 
-  const getProgress = (courseId: number): number => {
-    return user?.progress[courseId] || 0
-  }
-
-  const completeLesson = (courseId: number, lessonId: number) => {
-    if (user) {
-      const courseCompletedLessons = user.completedLessons[courseId] || []
-      if (!courseCompletedLessons.includes(lessonId)) {
-        const updatedCompletedLessons = {
-          ...user.completedLessons,
-          [courseId]: [...courseCompletedLessons, lessonId],
-        }
-
-        // Calculate new progress (assuming 48 lessons per course for demo)
-        const totalLessons = 48
-        const completedCount = updatedCompletedLessons[courseId].length
-        const newProgress = Math.round((completedCount / totalLessons) * 100)
-
-        const updatedUser = {
-          ...user,
-          completedLessons: updatedCompletedLessons,
-          progress: { ...user.progress, [courseId]: newProgress },
-        }
-        setUser(updatedUser)
-        localStorage.setItem("fitpro_user", JSON.stringify(updatedUser))
+      return { success: false, message: res.data.message || "Registration failed" }
+    } catch (err: any) {
+      console.error("Registration error:", err)
+      return {
+        success: false,
+        message: err.response?.data?.message || "Registration failed. Please try again.",
       }
     }
   }
 
-  const isLessonCompleted = (courseId: number, lessonId: number): boolean => {
-    return user?.completedLessons[courseId]?.includes(lessonId) || false
-  }
-
-  const updateProfile = (updates: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...updates }
-      setUser(updatedUser)
-      localStorage.setItem("fitpro_user", JSON.stringify(updatedUser))
+  // ────────────────────────────────────────────────────────────────
+  // FORGET PASSWORD (send OTP)
+  // ────────────────────────────────────────────────────────────────
+  const forgetPassword = async (email: string) => {
+    try {
+      const res = await axios.post(
+        `${baseURL}/auth/forgetPassword`,
+        { email },
+        // { withCredentials: true }
+      )
+      return res.data.status === "success"
+        ? { success: true, message: res.data.message }
+        : { success: false, message: res.data.message }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.response?.data?.message || "Failed to send OTP.",
+      }
     }
   }
 
-  const value: AuthContextType = {
-    user,
-    login,//tmam
-    logout,
-    register,
-    isEnrolled,
-    enrollInCourse,
-    getProgress,
-    completeLesson,
-    isLessonCompleted,
-    updateProfile,
-    isInitialized,
-    isLoading 
+  // ────────────────────────────────────────────────────────────────
+  // VERIFY OTP & RESET PASSWORD
+  // ────────────────────────────────────────────────────────────────
+  const verifyOtp = async (email: string, otp: string, newPassword: string) => {
+    try {
+      const res = await axios.post(
+        `${baseURL}/auth/verifyOtpAndUpdatePassword`,
+        { email, otp, newPassword },
+        // { withCredentials: true }
+      )
+      return res.data.status === "success"
+        ? { success: true, message: res.data.message }
+        : { success: false, message: res.data.message }
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.response?.data?.message || "OTP verification failed.",
+      }
+    }
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  // ────────────────────────────────────────────────────────────────
+  // LOGOUT
+  // ────────────────────────────────────────────────────────────────
+   const logout = async () => {
+    setIsLoading(true)
+    try {
+      await axios.post("/auth/logout")
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setUser(null)
+      sessionStorage.removeItem("user")
+      sessionStorage.removeItem("token")
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{ user, isLoading, login, register, forgetPassword, verifyOtp, logout,isInitialized }}
+    >
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
-  }
-  return context
+// ────────────────────────────────────────────────────────────────
+// Custom hook to consume the AuthContext
+// ────────────────────────────────────────────────────────────────
+export  function useAuth(): AuthContextType {
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider")
+  return ctx
 }

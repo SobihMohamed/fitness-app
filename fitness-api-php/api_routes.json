@@ -12,7 +12,7 @@
   },
   "user": {
     "profile": { "method": "GET", "path": "/user/getProfileInfo" },
-    "updateProfile": { "method": "POST", "path": "/user/updateProfile" }
+    "updateProfile": { "method": "POST", "path": "/user/updateProfile" } 
   },
   "adminUsers": {
     "getAll": { "method": "GET", "path": "/ManageUsers/getAllUsers" },
