@@ -1,7 +1,7 @@
+
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,25 +10,36 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
-import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react"
-import axios from "axios"
+import { Eye, EyeOff, Mail, Lock, User, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 
-// LoginModal component
-// This component provides a modal for users to log in or register.
-// It includes form validation, API requests for login and registration,
-// and displays success or error messages based on the API response.
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+// ==========================
+// Component: LoginModal
+// ==========================
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
+  const { login, register, forgetPassword, verifyOtp } = useAuth()
   const [activeTab, setActiveTab] = useState("login")
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // Individual loading states for each operation
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [registerLoading, setRegisterLoading] = useState(false)
+  const [forgetPasswordLoading, setForgetPasswordLoading] = useState(false)
+  const [verifyOtpLoading, setVerifyOtpLoading] = useState(false)
+
+  // Password reset flow state
+  const [resetStep, setResetStep] = useState<"email" | "otp">("email")
+  const [resetEmail, setResetEmail] = useState("")
+  const [otp, setOtp] = useState("")
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmNewPassword, setConfirmNewPassword] = useState("")
+
   const initialRegisterData = {
     name: "",
     email: "",
@@ -37,201 +48,246 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     phone: "",
     address: "",
     country: "",
-    user_type: ""
-  };
+    user_type: "",
+  }
 
-
-  // Login form state
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
   })
 
-// use effect : check every time on the session that include user data or nor 
-// include : profile appear and picture 
-// not include 
+  const [registerData, setRegisterData] = useState(initialRegisterData)
+  console.log("Register Data before:", registerData);
 
-  // Register form state
-const [registerData, setRegisterData] = useState(initialRegisterData)
-
-
-  // Validate email format 
-  // This function checks if the email is in a valid format using a regular expression
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
-  // Validate password length
-  // This function checks if the password meets the minimum length requirement
   const validatePassword = (password: string) => {
     return password.length >= 6
   }
 
-  // Handle login
-  // This function handles the login process when the user submits the login form.
-  // It validates the input data, makes an API request to log in the user,
-  // and handles the response to display appropriate messages.
+  // ==========================
+  // Handler: Login
+  // ==========================
+  // This function handles user login with email and password
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setMessage(null)
 
-
-    // Validate login data
-    // This function checks if the email is in a valid format
     if (!validateEmail(loginData.email)) {
       setMessage({ type: "error", text: "Please enter a valid email address" })
-      setIsLoading(false)
       return
     }
-    // Validate password length
-    // This function checks if the password meets the minimum length requirement
+
     if (!validatePassword(loginData.password)) {
       setMessage({ type: "error", text: "Password must be at least 6 characters long" })
-      setIsLoading(false)
       return
     }
 
-    // Make API request to login
-    // Adjust the API endpoint and request body as per your backend implementation 
+    setLoginLoading(true)
     try {
-      const response = await axios.post(`${baseURL}/auth/login`,{
-        email:loginData.email,
-        password:loginData.password
-      },{
-        headers:{
-          "Content-Type": "application/json"
-        }
-      }
-    )
+      const result = await login(loginData.email, loginData.password)
 
-    // Handle response
-      // Assuming the API returns a status field in the response
-      // and a message field for success or error messages
-      // Adjust based on your actual API response structure\
-      if (response.data.status === "success") {
-        // session storage store user data 
-        setMessage({ type: "success", text: response.data.message })
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
         setTimeout(() => {
           onClose()
           setLoginData({ email: "", password: "" })
           setMessage(null)
         }, 1500)
       } else {
-        setMessage({ type: "error", text: response.data.message })
+        setMessage({ type: "error", text: result.message })
       }
     } catch (error: any) {
-      console.log("Register response:", error.response.data)
-
-      if (error.response && error.response.data) {
-        console.log("Register response:", error.response.data)
-        setMessage({ type: "error", text: error.response.data.message });
-      } else {
-        console.log("Register response:", error.response.data)
-        setMessage({ type: "error", text: "Unexpected error occurred" });
-      }
+      console.error("Login error:", error)
+      setMessage({ type: "error", text: "An unexpected error occurred" })
     } finally {
-      setIsLoading(false)
+      setLoginLoading(false)
     }
   }
-  // Handle registration
-  // This function handles the registration process when the user submits the registration form.
-  // It validates the input data, makes an API request to register the user,
-  // and handles the response to display appropriate messages.
+
+  // ==========================
+  // Handler: Register
+  // ==========================
+  // This function registers a new user with the provided data
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setMessage(null)
 
-    // Validate registration data
-
+    console.log("Register Data:", registerData);
+    
     if (!registerData.name.trim()) {
       setMessage({ type: "error", text: "Please enter your name" })
-      setIsLoading(false)
       return
     }
-    // Validate email format
+
     if (!validateEmail(registerData.email)) {
       setMessage({ type: "error", text: "Please enter a valid email address" })
-      setIsLoading(false)
       return
     }
-    // Validate password length
+
     if (!validatePassword(registerData.password)) {
       setMessage({ type: "error", text: "Password must be at least 6 characters long" })
-      setIsLoading(false)
       return
     }
-    // Check if passwords match
+
     if (registerData.password !== registerData.confirmPassword) {
       setMessage({ type: "error", text: "Passwords do not match" })
-      setIsLoading(false)
       return
     }
 
-    // Make API request to register
-    // Adjust the API endpoint and request body as per your backend implementation
-    
-    try {
-    const response = await axios.post(`${baseURL}/auth/register`, {
-      name: registerData.name,
-      email: registerData.email,
-      password: registerData.password,
-      phone: registerData.phone,
-      address: registerData.address,
-      country: registerData.country,
-      user_type: registerData.user_type
-    }, {
-      headers: {
-        "Content-Type": "application/json"
-      }
-    });
+    if (!registerData.user_type) {
+      setMessage({ type: "error", text: "Please select a user type" })
+      return
+    }
 
-      // Handle response
-      // Assuming the API returns a status field in the response
-      // and a message field for success or error messages
-      // Adjust based on your actual API response structure
-      if(response.data.status === "success"){
-        console.log(response.data)
-        setMessage({ type: "success", text: response.data.message })
+    setRegisterLoading(true)
+    try {
+      const response = await register(
+        registerData.name,
+        registerData.email,
+        registerData.password,
+        // registerData.confirmPassword,
+        registerData.phone,
+        registerData.address,
+        registerData.country,
+        registerData.user_type,
+      )
+      console.log("Register Response after :", response);
+
+      if (response.success) {
+        setMessage({ type: "success", text: response.message })
         setTimeout(() => {
           onClose()
           setRegisterData(initialRegisterData)
           setMessage(null)
         }, 1500)
+      } else {
+        setMessage({ type: "error", text: response.message })
       }
-
     } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "An unexpected error occurred.";
-      setMessage({ type: "error", text: errorMessage });
+      console.error("Registration error:", error)
+      setMessage({ type: "error", text: "An unexpected error occurred" })
+    } finally {
+      setRegisterLoading(false)
     }
 
-    finally {
-      setIsLoading(false)
-    }
-  } //---------------------------------------------------W
 
-  // Handle tab change
-  // Reset form data and message when switching tabs
-  // This ensures that when a user switches from login to register or vice versa, the form is reset
-  // and any previous messages are cleared
-  // This is important for a good user experience, preventing confusion from previous form states
-  // and messages persisting when they shouldn't.
-  // This function is called when the user clicks on a tab to switch between login and register forms
-  // It updates the active tab state and resets the form data and message state.
-  // This ensures that the form is always in a clean state when switching tabs.
-  // It also clears any previous messages to avoid confusion.
+  }
+
+  // ==========================
+  // Handler: Forget Password
+  // ==========================
+  // This function sends an OTP to the user's email for password reset
+
+  const handleForgetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage(null)
+
+    if (!validateEmail(resetEmail)) {
+      setMessage({ type: "error", text: "Please enter a valid email address" })
+      return
+    }
+
+    setForgetPasswordLoading(true)
+    try {
+      const result = await forgetPassword(resetEmail)
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
+        setResetStep("otp")
+      } else {
+        setMessage({ type: "error", text: result.message })
+      }
+    } catch (error: any) {
+      console.error("Forget password error:", error)
+      setMessage({ type: "error", text: "An unexpected error occurred" })
+    } finally {
+      setForgetPasswordLoading(false)
+    }
+  }
+
+  // ==========================
+  // Handler: Verify OTP
+  // ==========================
+  // This function verifies the OTP and resets the password
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage(null)
+
+    if (!otp.trim()) {
+      setMessage({ type: "error", text: "Please enter the OTP" })
+      return
+    }
+
+    if (!validatePassword(newPassword)) {
+      setMessage({ type: "error", text: "New password must be at least 6 characters long" })
+      return
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setMessage({ type: "error", text: "New passwords do not match" })
+      return
+    }
+
+    setVerifyOtpLoading(true)
+    try {
+      const result = await verifyOtp(resetEmail, otp, newPassword)
+      if (result.success) {
+        setMessage({ type: "success", text: result.message })
+        setTimeout(() => {
+          handleClose()
+          setActiveTab("login")
+        }, 1500)
+      } else {
+        setMessage({ type: "error", text: result.message })
+      }
+    } catch (error: any) {
+      console.error("OTP verification error:", error)
+      setMessage({ type: "error", text: "An unexpected error occurred" })
+    } finally {
+      setVerifyOtpLoading(false)
+    }
+  }
+
+  // ==========================
+  // Handler: Tab Change
+  // ==========================
+  // This function resets the form data and message when switching tabs
   const handleTabChange = (value: string) => {
     setActiveTab(value)
     setMessage(null)
     setLoginData({ email: "", password: "" })
     setRegisterData(initialRegisterData)
-
+    setResetStep("email")
+    setResetEmail("")
+    setOtp("")
+    setNewPassword("")
+    setConfirmNewPassword("")
   }
 
+    // ==========================
+  // Handler: Close Dialog
+  // ==========================
+  // This function resets all form data and message when closing the dialog
+  const handleClose = () => {
+    setMessage(null)
+    setLoginData({ email: "", password: "" })
+    setRegisterData(initialRegisterData)
+    setResetStep("email")
+    setResetEmail("")
+    setOtp("")
+    setNewPassword("")
+    setConfirmNewPassword("")
+    onClose()
+  }
+ 
+  // ==========================
+  //jsx section 
+  // ==========================
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="md:max-w-xl">
         <DialogHeader>
           <DialogTitle>Welcome to FitPro</DialogTitle>
@@ -239,11 +295,24 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="login">Sign In</TabsTrigger>
             <TabsTrigger value="register">Sign Up</TabsTrigger>
-             <TabsTrigger value="forgot-password">Reset Password</TabsTrigger>
+            <TabsTrigger value="forgot-password">Reset Password</TabsTrigger>
           </TabsList>
+
+          {message && (
+            <Alert className={message.type === "error" ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}>
+              {message.type === "error" ? (
+                <AlertCircle className="h-4 w-4 text-red-600" />
+              ) : (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              )}
+              <AlertDescription className={message.type === "error" ? "text-red-800" : "text-green-800"}>
+                {message.text}
+              </AlertDescription>
+            </Alert>
+          )}
 
           <TabsContent value="login" className="space-y-4">
             <form onSubmit={handleLogin} className="space-y-4">
@@ -290,20 +359,18 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                 </div>
               </div>
 
-              {message && (
-                <Alert
-                  className={message.type === "error" ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}
-                >
-                  <AlertDescription className={message.type === "error" ? "text-red-800" : "text-green-800"}>
-                    {message.text}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full" disabled={loginLoading}>
+                {loginLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
-               <Button
+
+              <Button
                 type="button"
                 variant="link"
                 className="w-full text-sm text-blue-600 hover:underline"
@@ -312,18 +379,10 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                 Forgot Password?
               </Button>
             </form>
-
-            <div className="text-sm text-gray-600 space-y-2">
-              {/* <p>
-                <strong>Demo Accounts:</strong>
-              </p>
-              <p>User: demo@fitpro.com / demo123</p>
-              <p>Admin: admin@fitpro.com / admin123</p> */}
-            </div>
           </TabsContent>
 
           <TabsContent value="register" className="space-y-4">
-            <form method="POST"  onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="register-name">Full Name</Label>
                 <div className="relative">
@@ -389,13 +448,24 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <Input
                     id="register-confirm-password"
-                    type={showPassword ? "text" : "password"}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={registerData.confirmPassword}
                     onChange={(e) => setRegisterData({ ...registerData, confirmPassword: e.target.value })}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
                 </div>
               </div>
 
@@ -448,26 +518,22 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                 </select>
               </div>
 
-              {message && (
-                <Alert
-                  className={message.type === "error" ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}
-                >
-                  <AlertDescription className={message.type === "error" ? "text-red-800" : "text-green-800"}>
-                    {message.text}
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating Account..." : "Create Account"}
+              <Button type="submit" className="w-full" disabled={registerLoading}>
+                {registerLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
           </TabsContent>
-            <TabsContent value="forgot-password">
-            {/* {resetStep === "email" && (
-            )
-              onSubmit={handleForgotPasswordRequest} */}
-              <form  className="space-y-4">
+
+          <TabsContent value="forgot-password">
+            {resetStep === "email" && (
+              <form onSubmit={handleForgetPassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="reset-email">Email</Label>
                   <div className="relative">
@@ -476,15 +542,15 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                       id="reset-email"
                       type="email"
                       placeholder="Enter your registered email"
-                      // value={resetEmail}
-                      // onChange={(e) => setResetEmail(e.target.value)}
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
                       className="pl-10"
                       required
-                      />
+                    />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
-                  {isLoading ? (
+                <Button type="submit" className="w-full" disabled={forgetPasswordLoading}>
+                  {forgetPasswordLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Sending OTP...
@@ -497,21 +563,15 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                   type="button"
                   variant="link"
                   className="w-full text-sm text-blue-600 hover:underline"
-                  onClick={() => {
-                    // setActiveTab("login")
-                    // setError("")
-                    // setSuccess("")
-                    // setResetEmail("")
-                  }}
+                  onClick={() => setActiveTab("login")}
                 >
                   Back to Sign In
                 </Button>
               </form>
-            
+            )}
 
-            {/* {resetStep === "otp" && (
-              onSubmit={handleVerifyOtp} */}
-              <form  className="space-y-4">
+            {resetStep === "otp" && (
+              <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="otp">OTP</Label>
                   <div className="relative">
@@ -520,42 +580,14 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                       id="otp"
                       type="text"
                       placeholder="Enter the OTP sent to your email"
-                      // value={otp}
-                      // onChange={(e) => setOtp(e.target.value)}
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
                       className="pl-10"
                       required
                     />
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verifying OTP...
-                    </>
-                  ) : (
-                    "Verify OTP"
-                  )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  className="w-full text-sm text-blue-600 hover:underline"
-                  onClick={() => {
-                    // setResetStep("email")
-                    // setError("")
-                    // setSuccess("")
-                    // setOtp("")
-                  }}
-                >
-                  Resend OTP / Change Email
-                </Button>
-              </form>
-            
 
-            {/* {resetStep === "new-password" && (
-              //onSubmit={handleResetPassword} */}
-              <form  className="space-y-4"> 
                 <div className="space-y-2">
                   <Label htmlFor="new-password">New Password</Label>
                   <div className="relative">
@@ -564,8 +596,8 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                       id="new-password"
                       type={showPassword ? "text" : "password"}
                       placeholder="Enter new password"
-                      // value={newPassword}
-                      // onChange={(e) => setNewPassword(e.target.value)}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
                       className="pl-10 pr-10"
                       required
                     />
@@ -589,29 +621,29 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="confirm-new-password"
-                      // type={showConfirmPassword ? "text" : "password"}
+                      type={showConfirmPassword ? "text" : "password"}
                       placeholder="Confirm new password"
-                      // value={confirmNewPassword}
-                      // onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
                       className="pl-10 pr-10"
                       required
                     />
                     <button
                       type="button"
-                     // onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2"
                     >
-                     {/* {showConfirmPassword ? (
+                      {showConfirmPassword ? (
                         <EyeOff className="h-4 w-4 text-gray-400" />
                       ) : (
                         <Eye className="h-4 w-4 text-gray-400" />
-                      )} */}
+                      )}
                     </button>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading} style={{ backgroundColor: "#007BFF" }}>
-                  {isLoading ? (
+                <Button type="submit" className="w-full" disabled={verifyOtpLoading}>
+                  {verifyOtpLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Resetting Password...
@@ -620,8 +652,17 @@ const [registerData, setRegisterData] = useState(initialRegisterData)
                     "Reset Password"
                   )}
                 </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm text-blue-600 hover:underline"
+                  onClick={() => setResetStep("email")}
+                >
+                  Change Email
+                </Button>
               </form>
-            
+            )}
           </TabsContent>
         </Tabs>
       </DialogContent>
