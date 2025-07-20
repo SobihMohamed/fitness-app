@@ -79,6 +79,7 @@ class Admin{
       return false;
     }
   }
+
   // ? check if exist ?
   public function isExist($email,$table){
     try{
@@ -90,6 +91,14 @@ class Admin{
     }catch(Exception $e){
       return $e->getMessage();
     }
+  }
+  public function isSuperAdmin($admin) {
+    $admin_to_check_id = $admin['id'];
+    $Admin = $this->getAdminById($admin_to_check_id);
+    if(empty($Admin)){
+      return false;
+    }
+    return true;
   }
 }
 ?>

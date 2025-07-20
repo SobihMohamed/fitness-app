@@ -2,7 +2,6 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\User;
-use App\Core\JWTHandler;
 
 class UserController extends AbstractController{
   protected $userModel;
@@ -12,11 +11,11 @@ class UserController extends AbstractController{
       $this->userModel = new User();
   }
 
-  public function getProfileInfo(){
-    $this->requireLogin();
+  public function getProfile(){
+    // $this->requireLogin();
 
     $decode = $this->getUserFromToken();
-    $id = $decode->user_id;
+    $id = $decode['id'];
     $user = $this->userModel
             ->getUserInfoById($id);
     if(!$user){
@@ -29,7 +28,7 @@ class UserController extends AbstractController{
     ]);
   }
   public function updateProfile(){
-    $this->requireLogin();
+    // $this->requireLogin();
 
     $data = json_decode(file_get_contents("php://input"),true);
     // $allowFields = ['name','phone','address','gender'];
@@ -37,7 +36,7 @@ class UserController extends AbstractController{
       return $this->sendError("Invalid data", 422);
     }
     $decoded = $this->getUserFromToken();
-    $email = $decoded->email;
+    $email = $decoded['email'];
     if (!$email) {
       return $this->sendError("Unauthorized", 401);
     }
@@ -45,12 +44,12 @@ class UserController extends AbstractController{
     $isUpdated = $this ->userModel
                         ->updateUserInfoByEmail($email,$data);
     if($isUpdated){
-      $newuser = $this->userModel->getUserInfoByEmail($email);
+      $newUser = $this->userModel->getUserInfoByEmail($email);
       unset($newUser['password']);
       return $this->json([
         "status" => "success",
         "message" => "updated Successfully",
-        "user" => $newuser
+        "user" => $newUser
       ]);
     }
     return $this->sendError("Error While Updating Data",400);
