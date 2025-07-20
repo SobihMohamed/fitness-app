@@ -2,6 +2,7 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\User;
+use App\Core\JWTHandler;
 
 class UserController extends AbstractController{
   protected $userModel;
@@ -10,16 +11,17 @@ class UserController extends AbstractController{
       parent::__construct();
       $this->userModel = new User();
   }
+
   public function getProfileInfo(){
     $this->requireLogin();
 
-    $email = $_SESSION['user']['email'];
+    $decode = $this->getUserFromToken();
+    $id = $decode->user_id;
     $user = $this->userModel
-            ->getUserInfoByEmail($email);
+            ->getUserInfoById($id);
     if(!$user){
       $this->sendError("User Not Found",404);
     }
-    
     unset($user['password']);
     $this->json([
         "status" => "success",
@@ -34,7 +36,8 @@ class UserController extends AbstractController{
     if (!$data || !is_array($data)) {
       return $this->sendError("Invalid data", 422);
     }
-    $email = $_SESSION['user']['email'];
+    $decoded = $this->getUserFromToken();
+    $email = $decoded->email;
     if (!$email) {
       return $this->sendError("Unauthorized", 401);
     }

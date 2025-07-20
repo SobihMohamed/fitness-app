@@ -1,5 +1,6 @@
 <?php
 namespace App\Core;
+use App\Core\JWTHandler;
 abstract class AbstractController{
   // ?دي قائمة بالـ headers اللي هتتبعت في كل request.
   protected array $headers = [
@@ -41,6 +42,26 @@ abstract class AbstractController{
   protected function isSuperAdmin() {
     $this->requireLogin();
     return isset($_SESSION['user']) && $_SESSION['user']['is_super_admin'];
+  }
+
+  protected function getUserFromToken(){
+    $headers = getallheaders();
+    $authHeader = $headers['Authorization'] ?? '';
+
+    if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $this->sendError("Unauthorized", 401);
+        exit;
+    }
+
+    $jwt = new JWTHandler();
+    $decoded = $jwt->verifyToken($matches[1]);
+
+    if (!$decoded) {
+        $this->sendError("Invalid token", 401);
+        exit;
+    }
+
+    return $decoded; // تقدر تاخد منها الـ id مثلاً
   }
 
 }

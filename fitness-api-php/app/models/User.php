@@ -29,6 +29,17 @@ class User {
                   ->select("*")
                   ->where("email","=",$email)
                   ->getRow();
+      return $userInfo;  
+    }catch(Exception $e){
+      return false;
+    }
+  }
+  public function getUserInfoById($id){
+    try{
+      $userInfo = $this->db
+                  ->select("*")
+                  ->where("user_id","=",$id)
+                  ->getRow();
       // print_r($userInfo);
       return $userInfo;  
     }catch(Exception $e){
@@ -67,29 +78,30 @@ class User {
         return false;
       }
       $_SESSION['user'] = $user;
+      file_put_contents('debug.txt', print_r($_SESSION, true));
       return $_SESSION['user'];
     }catch(Exception $e){
       return false;
     }
   }
-  public function logout(){
-    try {
-        if(isset($_SESSION['user'])){
-            unset($_SESSION['user']);
-        }
-        session_destroy();
-        return true;
-    } catch(Exception $e){
-      return false;
-    }
-  }
   public function saveOtp($email ,$otp){
-    $_SESSION['otp'][$email] = $otp;
+    $newDBResets = new DB("password_resets");
+    $newDBResets->insert([
+      'email'=>$email,
+      'otp'=>$otp,
+      'created_at' => date('Y-m-d H:i:s')
+    ])->excute();
     return true;
   }
-  public function verifyOtp($email,$otp){
-    return isset($_SESSION['otp'][$email]) && $_SESSION['otp'][$email] === $otp;
+  public function verifyOtp($email, $otp) {
+    $db = new DB('password_resets');
+    $result = $db->select()
+                ->where('email', '=', $email)
+                ->andWhere('otp', '=', $otp)
+                ->getRow(); 
+    return $result !== false;
   }
+
   public function updateUserInfoByEmail($email,$data){
     try{
       if(empty($data)){
