@@ -33,16 +33,7 @@ abstract class AbstractController{
       'message' => $message
     ],$code);
   }
-  protected function requireLogin() {
-    if(!isset($_SESSION['user'])){
-        $this->sendError("Unauthorized - Please Login", 401);
-        exit; 
-    }
-  }
-  protected function isSuperAdmin() {
-    $this->requireLogin();
-    return isset($_SESSION['user']) && $_SESSION['user']['is_super_admin'];
-  }
+
 
   protected function getUserFromToken(){
     $headers = getallheaders();
@@ -61,7 +52,7 @@ abstract class AbstractController{
         exit;
     }
 
-    return $decoded; // تقدر تاخد منها الـ id مثلاً
+    return (array) $decoded; // تقدر تاخد منها الـ id مثلاً
   }
 
 }

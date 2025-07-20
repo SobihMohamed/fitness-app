@@ -4,18 +4,22 @@ use App\Core\AbstractController;
 use App\models\Admin;
 
 class AdminController extends AbstractController{
-    protected $userModel;
+    protected $adminModel;
     public function __construct(){
-      $this->userModel = new Admin();
+      $this->adminModel = new Admin();
     }
-
-
     // Admins
-    public function getAllAdmins() {
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
+    private function requireSuperAdmin(){
+      $currentUser = $this->getUserFromToken();
+      if( !(isset($currentUser['is_super_admin']) && $currentUser['is_super_admin'] == 1)){
+        $this->sendError("Not Authorized");
+        exit;
       }
-      $admins = $this->userModel->getAllAdmins();
+    }
+    public function getAllAdmins() {
+      $this->requireSuperAdmin();
+
+      $admins = $this->adminModel->getAllAdmins();
       if ($admins) {
         return $this->json([
           "status" => "success",

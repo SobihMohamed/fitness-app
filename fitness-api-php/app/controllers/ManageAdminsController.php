@@ -1,22 +1,27 @@
 <?php
 namespace App\Controllers;
-use App\models\ManageAdmins;
+use App\models\Admin;
 use App\Core\AbstractController;
 
 class ManageAdminsController extends AbstractController{
   
   public $adminModel;
+  private $currentUser;
   public function __construct() {
-          parent::__construct();
-    $this->adminModel= new ManageAdmins();
+    parent::__construct();
+    $this->adminModel= new Admin();
   }
 
+    private function requireSuperAdmin(){
+      $currentUser = $this->getUserFromToken();
+      if( !(isset($currentUser['is_super_admin']) && $currentUser['is_super_admin'] == 1)){
+        $this->sendError("Not Authorized");
+        exit;
+      }
+    }
       //! Super Admin Services On Admins in dashboard
     public function getAllAdmins(){
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
-
+      $this->requireSuperAdmin();
       $admins = $this->adminModel
                     ->getAllAdmins();
       if($admins !== false){
@@ -28,9 +33,7 @@ class ManageAdminsController extends AbstractController{
       return $this->sendError("No Admins",400);
     }
     public function searchAdmin(){
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
+      $this->requireSuperAdmin();
       $data = json_decode(file_get_contents("php://input"),true);
       if(!isset($data["keyword"])){
         $this->sendError("keyword Require");
@@ -46,9 +49,7 @@ class ManageAdminsController extends AbstractController{
       ]);
     }
     public function getAdminById($id){
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
+    $this->requireSuperAdmin();
       $admin = $this->adminModel
               ->getAdminById($id);
       if($admin === false){
@@ -61,9 +62,7 @@ class ManageAdminsController extends AbstractController{
       ]);
     }
     public function deleteAdmin($id){
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
+      $this->requireSuperAdmin();
       $isDeleted = $this->adminModel
                         ->deleteAdmin($id);
       if(!$isDeleted) {
@@ -76,9 +75,7 @@ class ManageAdminsController extends AbstractController{
       ]);
     }
     public function updateAdmin($id){
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
+      $this->requireSuperAdmin();
       $data = json_decode(file_get_contents("php://input"),true);
       $updated = $this->adminModel
                       ->updateAdmin($id,$data);
@@ -92,9 +89,7 @@ class ManageAdminsController extends AbstractController{
       ]);
     }
     public function addAdmin() {
-      if (!$this->isSuperAdmin()) {
-        return $this->sendError("You are not authorized", 403);
-      }
+      $this->requireSuperAdmin();
       $data = json_decode(file_get_contents("php://input"), true);
       $added = $this->adminModel->addAdmin($data);
       if ($added) {

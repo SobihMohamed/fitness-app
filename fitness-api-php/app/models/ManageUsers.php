@@ -6,6 +6,7 @@ class ManageUsers {
   protected $db;
   protected $tableName = "users";
 
+
   public function __construct(){
     $this->db = new DB($this->tableName);
   }
@@ -107,5 +108,7 @@ class ManageUsers {
       return false;
     }
   }
+  
+
 }
 ?>
