@@ -49,9 +49,9 @@ export function ProtectedAction({ children, onAction, requireAuth = true }: Prot
 
 // Keep the original ProtectedRoute for pages that need full protection
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, isInitialized } = useAuth()
+  const { user, login } = useAuth()
 
-  if (!isInitialized) {
+  if (!login) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
