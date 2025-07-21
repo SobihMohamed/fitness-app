@@ -381,7 +381,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </form>
           </TabsContent>
 
-          <TabsContent value="register" className="space-y-4">
+          <TabsContent value="register" className="space-y-4 h-[500px] overflow-y-auto pr-2">
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="register-name">Full Name</Label>
