@@ -1,5 +1,6 @@
 <?php
 namespace App\Controllers;
+use App\models\Admin;
 use App\Core\AbstractController;
 use App\models\ManageUsers;
 
@@ -13,7 +14,10 @@ class ManageUsersController extends AbstractController{
 
     private function requireSuperAdmin(){
       $currentUser = $this->getUserFromToken();
-      if( !(isset($currentUser['is_super_admin']) && $currentUser['is_super_admin'] == 1)){
+      $adminModel = new Admin();
+      $admin = $adminModel->getAdminById($currentUser["id"]);
+      // var_dump($admin);
+      if( !(isset($admin['is_super_admin']) && $admin['is_super_admin'] == 1)){
         $this->sendError("Not Authorized");
         exit;
       }
@@ -36,11 +40,13 @@ class ManageUsersController extends AbstractController{
       $data = json_decode(file_get_contents("php://input"),true);
       if(!isset($data["keyword"])){
         $this->sendError("keyword Require");
+        return;
       }
       $result = $this->userModel
                 ->searchUser($data["keyword"]);
-      if($result === false){
-        $this->sendError("Error During Search");
+      if($result === false || empty($result)){
+        $this->sendError("Not Found Email");
+        return;
       }
       return $this->json([
         "status"=>"success",
@@ -91,6 +97,9 @@ class ManageUsersController extends AbstractController{
     public function addUser() {
       $this->requireSuperAdmin();
       $data = json_decode(file_get_contents("php://input"), true);
+      if(empty($data)){
+        $this->sendError("All Fields Are Required");
+      }
       $added = $this->userModel->addUser($data);
       if ($added) {
         return $this->json([
@@ -100,9 +109,13 @@ class ManageUsersController extends AbstractController{
       }
       return $this->sendError("User already exists or error occurred");
     }
-    public function getUsersByType($type) {
+    public function filterByType() {
       $this->requireSuperAdmin();
-      $users = $this->userModel->getUsersByType($type);
+      $data = json_decode(file_get_contents("php://input"), true);
+      if(empty($data)){
+        $this->sendError("All Fields Are Required");
+      }
+      $users = $this->userModel->getUsersByType($data['user_type']);
       if ($users) {
         return $this->json([
           "status" => "success",
