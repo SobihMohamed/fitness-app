@@ -31,7 +31,10 @@ export function Navigation() {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
+        <nav
+          className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8"
+          aria-label="Global"
+        >
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5">
               <span className="text-2xl font-bold text-blue-600">FitPro</span>
@@ -52,7 +55,9 @@ export function Navigation() {
               <SheetContent side="right" className="w-full sm:max-w-sm">
                 <div className="flex items-center justify-between">
                   <Link href="/" className="-m-1.5 p-1.5">
-                    <span className="text-2xl font-bold text-blue-600">FitPro</span>
+                    <span className="text-2xl font-bold text-blue-600">
+                      FitPro
+                    </span>
                   </Link>
                 </div>
                 <div className="mt-6 flow-root">
@@ -77,8 +82,8 @@ export function Navigation() {
                         ) : (
                           <Button
                             onClick={() => {
-                              setLoginOpen(true)
-                              setMobileMenuOpen(false)
+                              setLoginOpen(true);
+                              setMobileMenuOpen(false);
                             }}
                             size="sm"
                           >
@@ -105,6 +110,7 @@ export function Navigation() {
           </div>
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-4">
             <CartDrawer />
+
             {user ? (
               <UserMenu />
             ) : (
@@ -118,5 +124,5 @@ export function Navigation() {
 
       <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} />
     </>
-  )
+  );
 }

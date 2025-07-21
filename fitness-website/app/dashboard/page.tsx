@@ -140,7 +140,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
-    if (!user) {
+    if (user) {
       router.push("/")
     }
   }, [user, router])
