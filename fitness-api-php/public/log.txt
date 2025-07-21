@@ -1,1 +1,1 @@
-URL Detected: auth/login
+URL Detected: auth/verifyOtpAndUpdatePassword
