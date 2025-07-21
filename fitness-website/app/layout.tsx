@@ -97,10 +97,11 @@ export default function RootLayout({
           <CartProvider>
             <Navigation />
             <main>{children}</main>
+
             <Footer />
           </CartProvider>
         </AuthProvider>
       </body>
     </html>
-  )
+  );
 }
