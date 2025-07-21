@@ -64,11 +64,9 @@ class AuthController extends AbstractController{
       if (empty($data['email']) || empty($data['password'])) {
           return $this->sendError("All Fields are required", 422);
       }
-
-      $user = $this->userModel->getUserInfoByEmail($data['email']);
-
-      if (!$user) {
-          return $this->sendError("Email Not Exist", 422);
+      $user =$this->userModel->Verifylogin($data['email'],$data['password']) ;
+      if (empty($user) || !$user ) {
+          return $this->sendError("Wrong In Email or Password", 422);
       }
       // Create JWT token
       $jwt = new JWTHandler();
@@ -144,8 +142,8 @@ class AuthController extends AbstractController{
     }
     $isValid = $this->userModel
                     ->verifyOtp($data['email'],$data['otp']);
-    if(!$isValid){
-      return $this->sendError("Incorrect OTP", 422);
+    if(!$isValid || empty($isValid)){
+      return $this->sendError("Incorrect OTP Or Email", 422);
     }
     $isupdated = $this -> userModel
           ->updatePassword($data['email'],$data['newPassword']);

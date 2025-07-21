@@ -28,8 +28,5 @@ class AdminController extends AbstractController{
       }
       return $this->sendError("No admins found");
     }
-    
-
-    
 }
 ?>

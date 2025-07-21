@@ -71,15 +71,13 @@ class User {
     }
 
   }
-  public function login($email,$Password){
+  public function Verifylogin($email,$Password){
     try{
       $user = $this->getUserInfoByEmail($email);
       if(!$user || !password_verify($Password,$user['password'])){
         return false;
       }
-      $_SESSION['user'] = $user;
-      file_put_contents('debug.txt', print_r($_SESSION, true));
-      return $_SESSION['user'];
+      return $user;
     }catch(Exception $e){
       return false;
     }
@@ -94,12 +92,17 @@ class User {
     return true;
   }
   public function verifyOtp($email, $otp) {
-    $db = new DB('password_resets');
-    $result = $db->select()
-                ->where('email', '=', $email)
-                ->andWhere('otp', '=', $otp)
-                ->getRow(); 
-    return $result !== false;
+    try{
+
+      $db = new DB('password_resets');
+      $result = $db->select()
+      ->where('email', '=', $email)
+      ->andWhere('otp', '=', $otp)
+      ->getRow(); 
+      return $result;
+    }catch(Exception $e){
+      return false;
+    }
   }
 
   public function updateUserInfoByEmail($email,$data){
