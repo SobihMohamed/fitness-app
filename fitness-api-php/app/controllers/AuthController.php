@@ -137,7 +137,7 @@ class AuthController extends AbstractController{
     }
     // get all data 
     $data = json_decode(file_get_contents("php://input"),true);
-    if(empty($data['email'])||empty($data['otp']) || empty($data['newPassword'])){
+    if(empty($data['email']) || empty($data['otp']) || empty($data['newPassword'])){
       return $this->sendError("All field are required", 422);
     }
     $isValid = $this->userModel

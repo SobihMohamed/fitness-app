@@ -30,8 +30,7 @@ class ManageUsers {
             ->select()
             ->where("name","LIKE",$likeKeyword)
             ->orWhere("email","LIKE",$likeKeyword)
-            ->fetchAll()
-        ? : false;
+            ->fetchAll();
     }catch(Exception $e){
       return false;
     }

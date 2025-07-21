@@ -25,7 +25,10 @@ class Admin{
   public function addAdmin($data){
     try{
       if(!$this->isExist($data["email"],"admins")){
-        $this->db->insert($data);
+        // var_dump($data);
+        $this ->db
+              ->insert($data)
+              ->excute();
         return true;
       }else{
         return false;
@@ -62,7 +65,7 @@ class Admin{
     try{
       $this->db
               ->update($data)
-              ->where("user_id","=",$id)
+              ->where("admin_id","=",$id)
               ->excute();
       return true;
     }catch(Exception $e){

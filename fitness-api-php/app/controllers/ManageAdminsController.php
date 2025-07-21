@@ -6,7 +6,6 @@ use App\Core\AbstractController;
 class ManageAdminsController extends AbstractController{
   
   public $adminModel;
-  private $currentUser;
   public function __construct() {
     parent::__construct();
     $this->adminModel= new Admin();
@@ -14,8 +13,10 @@ class ManageAdminsController extends AbstractController{
 
     private function requireSuperAdmin(){
       $currentUser = $this->getUserFromToken();
-      if( !(isset($currentUser['is_super_admin']) && $currentUser['is_super_admin'] == 1)){
-        $this->sendError("Not Authorized");
+      $admin = $this->adminModel->getAdminById($currentUser["id"]);
+      // var_dump($admin);
+      if( !(isset($admin['is_super_admin']) && $admin['is_super_admin'] == 1)){
+        $this->sendError("Not Authorizeddddd");
         exit;
       }
     }
@@ -40,8 +41,9 @@ class ManageAdminsController extends AbstractController{
       }
       $result = $this->adminModel
                 ->searchAdmin($data["keyword"]);
-      if($result === false){
-        $this->sendError("Error During Search");
+      if($result === false || empty($result) ){
+        $this->sendError("No Admins Found",404);
+        return;
       }
       return $this->json([
         "status"=>"success",
@@ -52,8 +54,8 @@ class ManageAdminsController extends AbstractController{
     $this->requireSuperAdmin();
       $admin = $this->adminModel
               ->getAdminById($id);
-      if($admin === false){
-        $this->sendError("Error During Find User");
+      if($admin === false || empty($admin) ){
+        $this->sendError("No Admin Found",404);
         return;
       }
       return $this->json([

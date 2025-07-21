@@ -10,25 +10,6 @@ class AdminController extends AbstractController{
       $this->adminModel = new Admin();
     }
     // Admins
-    private function requireSuperAdmin(){
-      $currentUser = $this->getUserFromToken();
-      if( !(isset($currentUser['is_super_admin']) && $currentUser['is_super_admin'] == 1)){
-        $this->sendError("Not Authorized");
-        exit;
-      }
-    }
-    public function getAllAdmins() {
-      $this->requireSuperAdmin();
-
-      $admins = $this->adminModel->getAllAdmins();
-      if ($admins) {
-        return $this->json([
-          "status" => "success",
-          "admins" => $admins
-        ]);
-      }
-      return $this->sendError("No admins found");
-    }
     public function login(){
       $data = json_decode(file_get_contents("php://input"), true);
       // var_dump($data);
