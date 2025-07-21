@@ -42,7 +42,7 @@ class Admin{
                               ->where("name","LIKE",$likeKeyword)
                               ->orWhere("email","LIKE",$likeKeyword)
                               ->fetchAll();
-      return $adminsSearched ? : false;
+      return $adminsSearched;
     }catch(Exception $e){
       return false;
     }
@@ -73,7 +73,17 @@ class Admin{
     try{
       return $this->db
             ->select()
-            ->where("user_id","=",$id)
+            ->where("admin_id","=",$id)
+            ->getRow();
+    }catch(Exception $e){
+      return false;
+    }
+  }
+  public function getAdminByEmail($email){
+    try{
+      return $this->db
+            ->select()
+            ->where("email","=",$email)
             ->getRow();
     }catch(Exception $e){
       return false;
