@@ -1,55 +1,82 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Eye, EyeOff, Lock, User } from "lucide-react"
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, Lock, User } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const [credentials, setCredentials] = useState({ username: "", password: "" })
-  const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [credentials, setCredentials] = useState({
+    username: "",
+    password: "",
+  });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    // Simulate authentication
-    if (credentials.username === "admin" && credentials.password === "admin123") {
-      localStorage.setItem("adminAuth", "true")
-      router.push("/admin/dashboard")
-    } else {
-      setError("Invalid credentials. Use admin/admin123 for demo.")
+    try {
+      const response = await fetch("", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(credentials),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Login failed");
+      }
+
+      const data = await response.json();
+
+      sessionStorage.setItem("adminToken", data.token);
+
+      router.push("/admin/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Login error");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false)
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-6 text-foreground">Admin Login</h1>
-        <p className="text-center text-muted mb-8">Access the FitPro admin dashboard</p>
-        <form onSubmit={handleLogin} className="space-y-4">
+    <main className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-foreground">Admin Login</h1>
+          <p className="text-muted-foreground mt-1">
+            Welcome To FitPro Admin Dashboard
+          </p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Username</label>
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
+              Username
+            </label>
             <div className="relative">
-              <User
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4"
-                style={{ color: "#6C757D" }}
-              />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="username"
                 type="text"
                 value={credentials.username}
-                onChange={(e) => setCredentials({ ...credentials, username: e.target.value })}
-                className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) =>
+                  setCredentials({ ...credentials, username: e.target.value })
+                }
+                className="pl-10"
                 placeholder="Enter username"
                 required
               />
@@ -57,18 +84,22 @@ export default function AdminLoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Password</label>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
+              Password
+            </label>
             <div className="relative">
-              <Lock
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4"
-                style={{ color: "#6C757D" }}
-              />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={credentials.password}
-                onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
-                className="pl-10 pr-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(e) =>
+                  setCredentials({ ...credentials, password: e.target.value })
+                }
+                className="pl-10 pr-10"
                 placeholder="Enter password"
                 required
               />
@@ -76,10 +107,14 @@ export default function AdminLoginPage() {
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-0 top-0 h-full px-3"
+                className="absolute right-1 top-1/2 -translate-y-1/2"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </div>
           </div>
@@ -90,21 +125,11 @@ export default function AdminLoginPage() {
             </Alert>
           )}
 
-          <Button
-            type="submit"
-            className="w-full bg-primary text-primary-foreground py-2 px-4 rounded-md hover:bg-primary/90 transition-colors"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </form>
-
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm font-medium text-foreground mb-2">Demo Credentials:</p>
-          <p className="text-sm text-muted">Username: admin</p>
-          <p className="text-sm text-muted">Password: admin123</p>
-        </div>
       </div>
-    </div>
-  )
+    </main>
+  );
 }
