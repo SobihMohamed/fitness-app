@@ -21,7 +21,7 @@ class UserController extends AbstractController{
     if(!$user){
       $this->sendError("User Not Found",404);
     }
-    unset($user['password']);
+    // unset($user['password']);
     $this->json([
         "status" => "success",
         "user" => $user
