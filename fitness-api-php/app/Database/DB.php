@@ -107,6 +107,7 @@ class DB implements dbContract{
     if(!mysqli_query($this->conn,$this->sql)){
       die("Failed to excute the query" . mysqli_error($this->conn));
     };
+    return true;
   }
   public function getRow(){
     $query = mysqli_query($this->conn,$this->sql);
