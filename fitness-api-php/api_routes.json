@@ -1,35 +1,61 @@
 {
   "baseUrl": "http://localhost:8000",
-  "auth": {
-    "register": { "method": "POST", "path": "/auth/register" },
-    "login": { "method": "POST", "path": "/auth/login" },
-    "forgetPassword": { "method": "POST", "path": "/auth/forgetPassword" },
-    "verifyOtp": {
-      "method": "POST",
-      "path": "/auth/verifyOtpAndUpdatePassword"
+  "USER FUNCTIONS":{
+    "auth": {
+      "register": { "method": "POST", "path": "/auth/register" },
+      "login": { "method": "POST", "path": "/auth/login" },
+      "forgetPassword": { "method": "POST", "path": "/auth/forgetPassword" },
+      "verifyOtp": {
+        "method": "POST",
+        "path": "/auth/verifyOtpAndUpdatePassword"
+      }
+    },
+    "user": {
+      "profile": { "method": "GET", "path": "/user/getProfile" },
+      "updateProfile": { "method": "POST", "path": "/user/updateProfile" } 
+    },
+    "UserCategory":{
+    "getAllCategory" : {"method":"GET", "path":"/Category/getAll"},
+    "getproductsByCategoryId":{"method":"GET","path":"/Category/showProductsByCategory/{id}"}
+    },
+    "Product":{
+      "getAllProducts":{"method":"GET","path":"/Products/getAll"},
+      "getSingleProduct":{"method":"GET","path":"/Products/SingleProduct/{id}"},
+      "searchProductsBy Description or name": {"method":"POST","path":"/Products/searchProduct"}
     }
   },
-  "user": {
-    "profile": { "method": "GET", "path": "/user/getProfile" },
-    "updateProfile": { "method": "POST", "path": "/user/updateProfile" } 
-  },
-  "adminUsers": {
-    "getAll": { "method": "GET", "path": "/ManageUsers/getAllUsers" },
-    "getById": { "method": "GET", "path": "/ManageUsers/getUserById/{id}" },
-    "search": { "method": "POST", "path": "/ManageUsers/searchUser" },
-    "add": { "method": "POST", "path": "/ManageUsers/addUser" },
-    "FilterByType":{"method":"POST","path":"/ManageUsers/filterByType"},
-    "update": { "method": "PUT", "path": "/ManageUsers/updateUser/{id}" },
-    "delete": { "method": "DELETE", "path": "/ManageUsers/deleteUser/{id}" }
-  },
-  "superAdminControlleAdmins": {
-    "login": { "method": "POST", "path": "/admin/login" },
-    "getAll": { "method": "GET", "path": "/ManageAdmins/getAllAdmins" },
-    "getById": { "method": "GET", "path": "/admin/getAdminById/{id}" },
-    "search": { "method": "POST", "path": "/ManageAdmins/searchAdmin" },
-    "add": { "method": "POST", "path": "/admin/addAdmin" },
-    "update": { "method": "PUT", "path": "/admin/updateAdmin/{id}" },
-    "delete": { "method": "DELETE", "path": "/admin/deleteAdmin/{id}" }
+  "ADMIN FUNCTIONS":{
+    "adminUsers": {
+      "getAll": { "method": "GET", "path": "/ManageUsers/getAllUsers" },
+      "getById": { "method": "GET", "path": "/ManageUsers/getUserById/{id}" },
+      "search": { "method": "POST", "path": "/ManageUsers/searchUser" },
+      "add": { "method": "POST", "path": "/ManageUsers/addUser" },
+      "FilterByType":{"method":"POST","path":"/ManageUsers/filterByType"},
+      "update": { "method": "PUT", "path": "/ManageUsers/updateUser/{id}" },
+      "delete": { "method": "DELETE", "path": "/ManageUsers/deleteUser/{id}" }
+    },
+    "superAdminControlleAdmins": {
+      "login": { "method": "POST", "path": "/admin/login" },
+      "getAll": { "method": "GET", "path": "/ManageAdmins/getAllAdmins" },
+      "getById": { "method": "GET", "path": "/admin/getAdminById/{id}" },
+      "search": { "method": "POST", "path": "/ManageAdmins/searchAdmin" },
+      "add": { "method": "POST", "path": "/admin/addAdmin" },
+      "update": { "method": "PUT", "path": "/admin/updateAdmin/{id}" },
+      "delete": { "method": "DELETE", "path": "/admin/deleteAdmin/{id}" }
+    },    
+    "AdminCategory":{
+      "getAllCategory" : {"method":"GET", "path":"/AdminCategories/getAll"},
+      "add":{"method":"PUT","path":"/AdminCategories/addCategory"},
+      "update":{"method":"POST","path":"/AdminCategories/updateCategory"},
+      "delete":{"method":"DELETE","path":"/AdminCategories/deleteCategory"}
+    },
+    "AdminProduct":{
+      "getAllProducts" : {"method":"GET", "path":"/AdminProducts/getAll"},
+      "getSingleProduct" : {"method":"GET", "path":"/AdminProducts/getProductById/{id}"},
+      "add":{"method":"PUT","path":"/AdminProducts/addCategory"},
+      "update":{"method":"POST","path":"/AdminProducts/updateCategory"},
+      "delete":{"method":"DELETE","path":"/AdminProducts/deleteCategory"}
+    }
   }
 }
 

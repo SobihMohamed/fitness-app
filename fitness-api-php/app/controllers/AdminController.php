@@ -34,7 +34,6 @@ class AdminController extends AbstractController{
 
       $this->json([
           "message" => "Admin Login Successfully",
-          "user" => $admin,
           "token" => $token,
           "status" => "success"
       ]);
