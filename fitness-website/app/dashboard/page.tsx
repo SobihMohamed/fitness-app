@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useAuth } from "@/contexts/auth-context"
@@ -8,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { BookOpen, Clock, Trophy, Target, Play, Download, Star, CheckCircle, Lock } from "lucide-react"
+import { BookOpen, Clock, Trophy, Target, Play, Download, Star, CheckCircle, Lock } from 'lucide-react'
 
 // Mock data for dashboard
 const mockUserStats = {
@@ -135,30 +136,53 @@ const mockActivity = [
 ]
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
 
+  // 🔧 AUTHENTICATION CHECK - Fixed Logic
   useEffect(() => {
-    if (user) {
+    console.log("Dashboard - Auth check:", { user, isLoading }) // Debug log
+    
+    // If not loading and no user, redirect to home
+    if (!isLoading && !user) {
+      console.log("No user found, redirecting to home")
       router.push("/")
     }
-  }, [user, router])
+  }, [user, isLoading, router])
 
+  // 🔄 LOADING STATE
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // 🚫 NO USER STATE
   if (!user) {
     return null
   }
 
+  // 🎨 MAIN DASHBOARD RENDER
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+        {/* 📄 HEADER SECTION */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user.name}!</h1>
-          <p className="text-gray-600 mt-2">Continue your fitness journey and track your progress</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {user.name}!
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Continue your fitness journey and track your progress
+          </p>
         </div>
 
-        {/* Dashboard Tabs */}
+        {/* 📊 DASHBOARD TABS */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -167,7 +191,7 @@ export default function Dashboard() {
             <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
+          {/* 📈 OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -178,7 +202,9 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{mockUserStats.enrolledCourses}</div>
-                  <p className="text-xs text-muted-foreground">{mockUserStats.completedCourses} completed</p>
+                  <p className="text-xs text-muted-foreground">
+                    {mockUserStats.completedCourses} completed
+                  </p>
                 </CardContent>
               </Card>
 
@@ -216,7 +242,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Continue Learning */}
+            {/* Continue Learning Section */}
             <Card>
               <CardHeader>
                 <CardTitle>Continue Learning</CardTitle>
@@ -250,7 +276,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Learning Progress */}
+            {/* Learning Progress Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -303,7 +329,7 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
-          {/* My Courses Tab */}
+          {/* 📚 MY COURSES TAB */}
           <TabsContent value="courses" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {mockCourses.map((course) => (
@@ -347,7 +373,7 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
-          {/* Achievements Tab */}
+          {/* 🏆 ACHIEVEMENTS TAB */}
           <TabsContent value="achievements" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Earned Achievements */}
@@ -426,7 +452,7 @@ export default function Dashboard() {
             </div>
           </TabsContent>
 
-          {/* Activity Tab */}
+          {/* 📊 ACTIVITY TAB */}
           <TabsContent value="activity" className="space-y-6">
             <Card>
               <CardHeader>
