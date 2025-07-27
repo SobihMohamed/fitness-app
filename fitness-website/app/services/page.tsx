@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Check, Dumbbell, Users, Clock, Target, Heart, Zap, Calendar } from "lucide-react"
 import { ProtectedAction } from "@/components/auth/Protected-Route"
+import { ServiceBookingModal } from "@/app/modals/service-booking-modal"
+import { useState } from "react"
 
 const services = [
   {
@@ -62,9 +64,6 @@ const services = [
   },
 ]
 
-// Function to handle service booking
-// This is a placeholder function. In a real application, you would integrate this with your booking system.
-// It could redirect to a booking page or open a booking modal.
 const packages = [
   {
     name: "Starter",
@@ -124,17 +123,40 @@ const classSchedule = [
   { time: "7:00 PM", class: "Evening Yoga", instructor: "David W.", duration: "60 min" },
 ]
 
-const handlePackageSelection = (packageName: string) => {
-   // Here you would typically handle the package selection logic
-   alert(`Selecting ${packageName} package... (This would integrate with your payment system)`)
- }
+export default function ServicesPage() {
+  const [bookingModal, setBookingModal] = useState<{
+    isOpen: boolean
+    serviceName: string
+    servicePrice: string
+  }>({
+    isOpen: false,
+    serviceName: "",
+    servicePrice: "",
+  })
 
-const handleServiceBooking = (serviceName: string) => {
-    // Here you would typically handle the booking logic
-    alert(`Booking ${serviceName}... (This would integrate with your booking system)`)}
- 
- export default function ServicesPage() {
-   
+  const handleServiceBooking = (serviceName: string, servicePrice: string) => {
+    setBookingModal({
+      isOpen: true,
+      serviceName,
+      servicePrice,
+    })
+  }
+
+  const handlePackageSelection = (packageName: string, packagePrice: string) => {
+    setBookingModal({
+      isOpen: true,
+      serviceName: packageName,
+      servicePrice: packagePrice,
+    })
+  }
+
+  const closeBookingModal = () => {
+    setBookingModal({
+      isOpen: false,
+      serviceName: "",
+      servicePrice: "",
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -193,10 +215,9 @@ const handleServiceBooking = (serviceName: string) => {
                   </ul>
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-primary">{service.price}</span>
-                      <ProtectedAction onAction={() => handleServiceBooking(service.title)}>
+                    <ProtectedAction onAction={() => handleServiceBooking(service.title, service.price)}>
                       <Button className="bg-primary hover:bg-primary/90">Book Now</Button>
                     </ProtectedAction>
-                    {/* <Button className="bg-primary hover:bg-primary/90">Learn More</Button> */}
                   </div>
                 </CardContent>
               </Card>
@@ -285,18 +306,15 @@ const handleServiceBooking = (serviceName: string) => {
                     ))}
                   </ul>
 
-                     <ProtectedAction onAction={() => handlePackageSelection(`${pkg.name} Membership`)}>
+                  <ProtectedAction
+                    onAction={() => handlePackageSelection(`${pkg.name} Membership`, `${pkg.price}${pkg.period}`)}
+                  >
                     <Button
                       className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-secondary hover:bg-secondary/90"}`}
                     >
                       Choose Plan
                     </Button>
                   </ProtectedAction>
-                  {/* <Button
-                    className={`w-full ${pkg.popular ? "bg-primary hover:bg-primary/90" : "bg-secondary hover:bg-secondary/90"}`}
-                  >
-                    Choose Plan
-                  </Button> */}
                 </CardContent>
               </Card>
             ))}
@@ -325,6 +343,14 @@ const handleServiceBooking = (serviceName: string) => {
           </div>
         </div>
       </section>
+
+      {/* Service Booking Modal */}
+      <ServiceBookingModal
+        isOpen={bookingModal.isOpen}
+        onClose={closeBookingModal}
+        serviceName={bookingModal.serviceName}
+        servicePrice={bookingModal.servicePrice}
+      />
     </div>
   )
 }
