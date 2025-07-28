@@ -3,15 +3,13 @@ namespace App\models;
 use App\Database\DB;
 use Exception;
 
-class Product{
-  private $tableName = "products";
+class Courses{
+  private $tableName = "courses";
   private $db;
-
   public function __construct(){
-    $this->db = new DB($this->tableName); 
+    $this->db = new DB($this->tableName);
   }
-
-  public function getAllProducts(){
+  public function getAll(){
     try{
       return $this->db
                   ->select()
@@ -20,57 +18,55 @@ class Product{
       return false;
     }
   }
-  public function getProductById($prodId){  
+  public function getCourseById($id){
     try{
       return $this->db
                   ->select()
-                  ->where("product_id" , "=",$prodId)
+                  ->where("course_id" , "=",$id)
                   ->getRow();
     }catch(Exception $e){
       return false;
     }
   }
-  public function addProduct($data) {
-    // var_dump($data);
+  public function searchCourses($keyword){
+    try{
+      $likeKeyword = "%" . $keyword . "%";
+      return $this->db
+            ->select()
+            ->where("title","LIKE",$likeKeyword)
+            ->orWhere("description","LIKE",$likeKeyword)
+            ->fetchAll();
+    }catch(Exception $e){
+      return false;
+    }
+  }
+public function addCourse($data) {
     try {
       return $this->db
                 ->insert($data)
                 ->excute();
     } catch (Exception $e) {
-      // var_dump($e->getMessage());
       return false;
     }
   }
-  public function updateProduct($id, $data) {
+  public function updateCourse($id, $data) {
     try {
         $this->db
         ->update($data)
-        ->where('product_id', '=', $id)
+        ->where('course_id', '=', $id)
         ->excute();
         return true;
     } catch (Exception $e) {
       return false;
     }
   }
-  public function deleteProduct($id) {
+  public function deleteCourse($id) {
     try {
       return $this->db
         ->delete()
-        ->where('product_id', '=', $id)
+        ->where('course_id', '=', $id)
         ->excute();
     } catch (Exception $e) {
-      return false;
-    }
-  }
-  public function searchProduct($keyword){
-    try{
-      $likeKeyword = "%" . $keyword . "%";
-      return $this->db
-            ->select()
-            ->where("name","LIKE",$likeKeyword)
-            ->orWhere("description","LIKE",$likeKeyword)
-            ->fetchAll();
-    }catch(Exception $e){
       return false;
     }
   }
