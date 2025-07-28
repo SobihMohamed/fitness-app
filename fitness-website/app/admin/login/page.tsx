@@ -5,14 +5,10 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, Lock, User } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 
 export default function AdminLoginPage() {
-  const [credentials, setCredentials] = useState({
-    username: "",
-    password: "",
-  });
-
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,26 +20,23 @@ export default function AdminLoginPage() {
     setError("");
 
     try {
-      const response = await fetch("", {
+      const response = await fetch("http://localhost:8000/admin/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.message || "Login failed");
       }
 
-      const data = await response.json();
-
-      sessionStorage.setItem("adminToken", data.token);
-
+      localStorage.setItem("adminAuth", data.token);
       router.push("/admin/dashboard");
     } catch (err: any) {
-      setError(err.message || "Login error");
+      console.error("Login error:", err.message);
+      setError("Incorrect email or password");
     } finally {
       setIsLoading(false);
     }
@@ -60,33 +53,32 @@ export default function AdminLoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
+          {/* Email */}
           <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-foreground mb-1"
-            >
-              Username
+            <label htmlFor="email" className="block text-sm font-medium mb-1">
+              Email
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                id="username"
-                type="text"
-                value={credentials.username}
+                id="email"
+                type="email"
+                value={credentials.email}
                 onChange={(e) =>
-                  setCredentials({ ...credentials, username: e.target.value })
+                  setCredentials({ ...credentials, email: e.target.value })
                 }
                 className="pl-10"
-                placeholder="Enter username"
+                placeholder="Enter email"
                 required
               />
             </div>
           </div>
 
+          {/* Password */}
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-foreground mb-1"
+              className="block text-sm font-medium mb-1"
             >
               Password
             </label>
@@ -119,12 +111,14 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
+          {/* Error Message */}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
+          {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing in..." : "Sign In"}
           </Button>
