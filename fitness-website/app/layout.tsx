@@ -6,6 +6,7 @@ import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { CartProvider } from "@/contexts/cart-context"
 import { AuthProvider } from "@/contexts/auth-context"
+import { Toaster } from "react-hot-toast";
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -97,7 +98,6 @@ export default function RootLayout({
           <CartProvider>
             <Navigation />
             <main>{children}</main>
-
             <Footer />
           </CartProvider>
         </AuthProvider>

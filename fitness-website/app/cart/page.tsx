@@ -9,66 +9,74 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/contexts/cart-context"
 import { Plus, Minus, Trash2, ShoppingCart, ArrowLeft, Tag } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-// This is the main cart page component
 export default function CartPage() {
-  const { items, total, itemCount, updateQuantity, removeItem, clearCart } = useCart()
-  const [promoCode, setPromoCode] = useState("")
-  const [discount, setDiscount] = useState(0)
+  const { items, total, itemCount, updateQuantity, removeItem, clearCart } =
+    useCart();
+  const [promoCode, setPromoCode] = useState("");
+  const [discount, setDiscount] = useState(0);
+  const [invalidCode, setInvalidCode] = useState(false);
 
-  const shipping = total > 50 ? 0 : 9.99
-  const tax = total * 0.08
-  const finalTotal = total + shipping + tax - discount
+  const shipping = total > 50 ? 0 : 9.99;
+  const tax = total * 0.08;
+  const finalTotal = total + shipping + tax - discount;
 
-  // Function to handle promo code application
-  // This function checks the promo code and applies the discount if valid
-  // In a real application, you would likely validate this against a database or API
+  useEffect(() => {
+    const savedCode = localStorage.getItem("promoCode");
+    if (savedCode) setPromoCode(savedCode);
+  }, []);
+
   const handlePromoCode = () => {
-    if (promoCode.toLowerCase() === "fitpro10") {
-      setDiscount(total * 0.1)
-    } else if (promoCode.toLowerCase() === "welcome20") {
-      setDiscount(total * 0.2)
+    const code = promoCode.toLowerCase();
+    if (code === "fitpro10") {
+      setDiscount(total * 0.1);
+      setInvalidCode(false);
+      localStorage.setItem("promoCode", promoCode);
+    } else if (code === "welcome20") {
+      setDiscount(total * 0.2);
+      setInvalidCode(false);
+      localStorage.setItem("promoCode", promoCode);
     } else {
-      setDiscount(0)
+      setDiscount(0);
+      setInvalidCode(true);
+      localStorage.removeItem("promoCode");
     }
-  }
+  };
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center space-y-6">
-            <ShoppingCart className="h-24 w-24 mx-auto" style={{ color: "#6C757D" }} />
-            <h1 className="text-3xl font-bold" style={{ color: "#212529" }}>
-              Your cart is empty
-            </h1>
-            <p className="text-lg" style={{ color: "#6C757D" }}>
-              Looks like you haven't added any items to your cart yet.
-            </p>
-            <Button  size="lg" style={{ backgroundColor: "#007BFF" }}>
-              <Link href="/products">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Continue Shopping
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <Button  variant="ghost" className="mb-4">
+      <div className="min-h-screen bg-gray-100">
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center space-y-6">
+          <ShoppingCart className="h-24 w-24 mx-auto text-gray-500" />
+          <h1 className="text-3xl font-bold text-gray-800">
+            Your cart is empty
+          </h1>
+          <p className="text-lg text-gray-500">
+            Looks like you haven't added any items to your cart yet.
+          </p>
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
             <Link href="/products">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
             </Link>
           </Button>
-          <h1 className="text-3xl font-bold" style={{ color: "#212529" }}>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <Button variant="ghost" className="mb-4">
+            <Link href="/products">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Continue Shopping
+            </Link>
+          </Button>
+          <h1 className="text-3xl font-bold text-gray-800">
             Shopping Cart ({itemCount} items)
           </h1>
         </div>
@@ -76,10 +84,14 @@ export default function CartPage() {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
-            <Card className="bg-white border-0 shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle style={{ color: "#212529" }}>Cart Items</CardTitle>
-                <Button variant="ghost" onClick={clearCart} className="text-red-500 hover:text-red-700">
+            <Card className="bg-white shadow-lg">
+              <CardHeader className="flex items-center justify-between">
+                <CardTitle>Cart Items</CardTitle>
+                <Button
+                  variant="ghost"
+                  onClick={clearCart}
+                  className="text-red-500 hover:text-red-700"
+                >
                   Clear Cart
                 </Button>
               </CardHeader>
@@ -99,7 +111,7 @@ export default function CartPage() {
                       <div className="flex-1 space-y-2">
                         <div className="flex items-start justify-between">
                           <div>
-                            <h3 className="font-medium" style={{ color: "#212529" }}>
+                            <h3 className="font-medium text-gray-800">
                               {item.name}
                             </h3>
                             <Badge variant="outline" className="mt-1">
@@ -120,27 +132,31 @@ export default function CartPage() {
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-8 w-8 bg-transparent"
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity - 1)
+                              }
                               disabled={item.quantity <= 1}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
-                            <span className="w-12 text-center font-medium">{item.quantity}</span>
+                            <span className="w-12 text-center font-medium">
+                              {item.quantity}
+                            </span>
                             <Button
                               variant="outline"
                               size="icon"
-                              className="h-8 w-8 bg-transparent"
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity + 1)
+                              }
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold" style={{ color: "#007BFF" }}>
+                            <p className="font-bold text-blue-600">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
-                            <p className="text-sm" style={{ color: "#6C757D" }}>
+                            <p className="text-sm text-gray-500">
                               ${item.price.toFixed(2)} each
                             </p>
                           </div>
@@ -154,97 +170,104 @@ export default function CartPage() {
             </Card>
 
             {/* Promo Code */}
-            <Card className="bg-white border-0 shadow-lg">
-              <CardContent className="p-6">
+            <Card className="bg-white shadow-lg">
+              <CardContent className="p-6 space-y-4">
                 <div className="flex items-center space-x-4">
-                  <Tag className="h-5 w-5" style={{ color: "#32CD32" }} />
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Enter promo code"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={handlePromoCode} style={{ backgroundColor: "#32CD32" }}>
+                  <Tag className="h-5 w-5 text-green-500" />
+                  <Input
+                    placeholder="Enter promo code"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                  />
+                  <Button
+                    onClick={handlePromoCode}
+                    className="bg-green-500 hover:bg-green-600"
+                  >
                     Apply
                   </Button>
                 </div>
                 {discount > 0 && (
-                  <p className="text-sm mt-2" style={{ color: "#32CD32" }}>
+                  <p className="text-sm text-green-500">
                     Promo code applied! You saved ${discount.toFixed(2)}
                   </p>
                 )}
-                <div className="mt-4 text-sm" style={{ color: "#6C757D" }}>
-                  <p>Try these codes:</p>
-                  <p>• FITPRO10 - 10% off</p>
-                  <p>• WELCOME20 - 20% off</p>
-                </div>
+                {invalidCode && (
+                  <p className="text-sm text-red-500">
+                    Invalid code. Try FITPRO10 or WELCOME20.
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Order Summary */}
           <div className="space-y-6">
-            <Card className="bg-white border-0 shadow-lg">
+            <Card className="bg-white shadow-lg">
               <CardHeader>
-                <CardTitle style={{ color: "#212529" }}>Order Summary</CardTitle>
+                <CardTitle>Order Summary</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 text-gray-600">
                 <div className="flex justify-between">
-                  <span style={{ color: "#6C757D" }}>Subtotal ({itemCount} items)</span>
-                  <span style={{ color: "#212529" }}>${total.toFixed(2)}</span>
+                  <span>Subtotal ({itemCount})</span>
+                  <span>${total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: "#6C757D" }}>Shipping</span>
-                  <span style={{ color: "#212529" }}>{shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}</span>
+                  <span>Shipping</span>
+                  <span>
+                    {shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span style={{ color: "#6C757D" }}>Tax</span>
-                  <span style={{ color: "#212529" }}>${tax.toFixed(2)}</span>
+                  <span>Tax</span>
+                  <span>${tax.toFixed(2)}</span>
                 </div>
                 {discount > 0 && (
-                  <div className="flex justify-between">
-                    <span style={{ color: "#32CD32" }}>Discount</span>
-                    <span style={{ color: "#32CD32" }}>-${discount.toFixed(2)}</span>
+                  <div className="flex justify-between text-green-500">
+                    <span>Discount</span>
+                    <span>-${discount.toFixed(2)}</span>
                   </div>
                 )}
                 <Separator />
-                <div className="flex justify-between text-lg font-bold">
-                  <span style={{ color: "#212529" }}>Total</span>
-                  <span style={{ color: "#007BFF" }}>${finalTotal.toFixed(2)}</span>
+                <div className="flex justify-between font-bold text-gray-800 text-lg">
+                  <span>Total</span>
+                  <span>${finalTotal.toFixed(2)}</span>
                 </div>
                 {shipping > 0 && (
-                  <p className="text-sm" style={{ color: "#6C757D" }}>
+                  <p className="text-sm text-gray-500">
                     Add ${(50 - total).toFixed(2)} more for free shipping!
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            <Button  className="w-full" size="lg" style={{ backgroundColor: "#007BFF" }}>
+            <Button
+              className="w-full"
+              size="lg"
+              style={{ backgroundColor: "#007BFF" }}
+            >
               <Link href="/checkout">Proceed to Checkout</Link>
             </Button>
 
-            <Card className="bg-white border-0 shadow-lg">
+            <Card className="bg-white shadow-lg">
               <CardContent className="p-6">
-                <h3 className="font-medium mb-4" style={{ color: "#212529" }}>
+                <h3 className="font-medium mb-4 text-gray-800">
                   Why shop with us?
                 </h3>
-                <div className="space-y-3 text-sm" style={{ color: "#6C757D" }}>
+                <div className="space-y-3 text-sm text-gray-600">
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#32CD32" }} />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
                     <span>Free shipping on orders over $50</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#32CD32" }} />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
                     <span>30-day money-back guarantee</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#32CD32" }} />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
                     <span>Expert customer support</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "#32CD32" }} />
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
                     <span>Secure checkout process</span>
                   </div>
                 </div>
@@ -254,5 +277,6 @@ export default function CartPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
+

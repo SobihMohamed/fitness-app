@@ -1,1 +1,1 @@
-URL Detected: Products/searchProduct
+URL Detected: AdminProducts/getAll
