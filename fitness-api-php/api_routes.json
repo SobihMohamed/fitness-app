@@ -22,6 +22,11 @@
       "getAllProducts":{"method":"GET","path":"/Products/getAll"},
       "getSingleProduct":{"method":"GET","path":"/Products/SingleProduct/{id}"},
       "searchProductsBy Description or name": {"method":"POST","path":"/Products/searchProduct"}
+    },
+    "Courses":{
+      "getAll":{"method":"GET" , "path":"/Courses/getAll"},
+      "searchCourse":{"method":"POST" , "path":"/Courses/searchCourse"},
+      "View Single Course":{"method":"GET" , "path":"/Courses/singleCourse/{id}"}
     }
   },
   "ADMIN FUNCTIONS":{
@@ -52,9 +57,16 @@
     "AdminProduct":{
       "getAllProducts" : {"method":"GET", "path":"/AdminProducts/getAll"},
       "getSingleProduct" : {"method":"GET", "path":"/AdminProducts/getProductById/{id}"},
-      "add":{"method":"PUT","path":"/AdminProducts/addCategory"},
+      "add":{"method":"POST","path":"/AdminProducts/addCategory"},
       "update":{"method":"POST","path":"/AdminProducts/updateCategory"},
       "delete":{"method":"DELETE","path":"/AdminProducts/deleteCategory"}
+    },
+    "AdminCourse":{
+      "getAllCourses" : {"method":"GET", "path":"/AdminCourses/getAll"},
+      "getSingleCourse" : {"method":"GET", "path":"/AdminCourses/getCourseById/{id}"},
+      "add":{"method":"POST","path":"/AdminCourses/addCourse"},
+      "update":{"method":"POST","path":"/AdminCourses/updateCourse"},
+      "delete":{"method":"DELETE","path":"/AdminCourses/deleteCourse"}
     }
   }
 }
