@@ -7,6 +7,7 @@ use App\models\Admin;
 class AdminCoursesController extends AbstractController{
   private $courseModel;
   public function __construct() {
+      parent::__construct();
       $this->courseModel = new Courses();
     }
     private function requireSuperAdmin(){
