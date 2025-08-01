@@ -7,6 +7,7 @@ use App\Core\AbstractController;
 class AdminProductsController extends AbstractController{
     private $productModel;
     public function __construct() {
+      parent::__construct();
       $this->productModel = new Product();
     }
     private function requireSuperAdmin(){

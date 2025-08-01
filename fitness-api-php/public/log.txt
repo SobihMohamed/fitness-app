@@ -1,1 +1,2 @@
-URL Detected: Courses/searchCourse
+URL Detected: ManageAdmins/getAllAdmins
+
