@@ -7,6 +7,7 @@ use App\models\Admin;
 class AdminController extends AbstractController{
     protected $adminModel;
     public function __construct(){
+      parent::__construct();
       $this->adminModel = new Admin();
     }
     // Admins
