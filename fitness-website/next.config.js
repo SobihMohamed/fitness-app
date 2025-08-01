@@ -10,8 +10,8 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    domains: ["localhost", "127.0.0.1"], 
   },
-}
+};
 
 module.exports = nextConfig
