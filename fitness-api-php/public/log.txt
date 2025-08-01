@@ -1,1 +1,1 @@
-URL Detected: AdminProducts/getAll
+URL Detected: ManageAdmins/getAllAdmins
