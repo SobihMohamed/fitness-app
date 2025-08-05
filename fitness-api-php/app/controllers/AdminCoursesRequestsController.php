@@ -1,16 +1,16 @@
 <?php
 namespace App\Controllers;
 use App\Core\AbstractController;
-use App\models\TrainingRequest;
+use App\models\CoursesRequest;
 use App\models\Admin;
 use App\Helpers\NotifyHelper;
 
-class AdminTrainingRequestsController extends AbstractController{
+class AdminCoursesRequestsController extends AbstractController {
   protected $reqModel;
 
   public function __construct(){
     parent::__construct();
-    $this->reqModel = new TrainingRequest();
+    $this->reqModel = new CoursesRequest();
   }
   private function requireSuperAdmin(){
       $currentUser = $this->getUserFromToken();
@@ -22,7 +22,8 @@ class AdminTrainingRequestsController extends AbstractController{
         exit;
       }
     }
-  // GET All
+
+    // GET All
   public function getAll(){
     $this->requireSuperAdmin();
     $all = $this->reqModel->getAll();
@@ -34,6 +35,7 @@ class AdminTrainingRequestsController extends AbstractController{
   // Get Req Details by {id}
   public function showDetails($id){
     $this->requireSuperAdmin();
+    
     $reqDetails = $this->reqModel->showRequestDetails($id);
     if (!$reqDetails)
       return $this->sendError("Request not found",404);
@@ -43,33 +45,28 @@ class AdminTrainingRequestsController extends AbstractController{
   // PUT /approve/{id}
   public function approve($id){
     $this->requireSuperAdmin();
-    $request = $this->reqModel->getSpecificRequestById($id);
+    $request = $this->reqModel->showRequestDetails($id);
     if (!$request)
         return $this->sendError("Request not found", 404);
 
-    $ok = $this->reqModel->update($id, ["status"=>"approved"]);
+    $ok = $this->reqModel
+                ->update($id, ["status"=>"approved"]);
     if (!$ok) 
-        return $this->sendError("Cannot approve",500);
+      return $this->sendError("Cannot approve",500);
 
-    NotifyHelper::pushToSpecificUser(
-        $request['user_id'],
-        "تمت الموافقة على طلبك",
-        "تمت الموافقة على طلب التدريب الخاص بك من قبل الإدارة."
-    );
-// إشعار لكل الأدمنات (ماعدا اللي وافق نفسه)
-    $admin = $this->getUserFromToken();
-    NotifyHelper::pushToAllAdmins(
-        "طلب رقم {$id} تمت الموافقة عليه",
-        "الأدمن {$admin['email']} وافق على طلب تدريب للمستخدم ID: {$request['user_id']}",
-        $excludeAdminId = $admin['id']
-    );
+    // NotifyHelper::pushToSpecificUser(
+    //     $request['user_id'],
+    //     "طلب الاشتراك بالكورس {$request['title']} تم قبوله",
+    //     " تمت الموافقة على طلب الاشتؤاك الخاص بك نتمني لك التوفيق."
+    // );
     return $this->json(["status"=>"success","message"=>"Request approved"]);
   }
 
   // PUT reject/{id}
   public function canecl($id){
     $this->requireSuperAdmin();
-    $request = $this->reqModel->getSpecificRequestById($id);
+
+    $request = $this->reqModel->showRequestDetails($id);
     if (!$request)
         return $this->sendError("Request not found", 404);
 
@@ -78,20 +75,11 @@ class AdminTrainingRequestsController extends AbstractController{
     if (!$ok) 
       return $this->sendError("Cannot Cancelled",500);
 
-    // إشعار لليوزر
-    NotifyHelper::pushToSpecificUser(
-        $request['user_id'],
-        "تم رفض طلبك",
-        "تم رفض طلب التدريب الخاص بك من قبل الإدارة. لمزيد من التفاصيل تواصل معنا عبر البريد الإلكتروني."
-    );
-
-    // إشعار لكل الأدمنات
-    $admin = $this->getUserFromToken();
-    NotifyHelper::pushToAllAdmins(
-        "طلب رقم {$id} تم رفضه",
-        "الأدمن {$admin['email']} رفض طلب تدريب للمستخدم ID: {$request['user_id']}",
-        $excludeAdminId = $admin['id']
-    );
+    // NotifyHelper::pushToSpecificUser(
+    //     $request['user_id'],
+    //     "طلب الاشتراك بالكورس {$request['title']} تم رفض",
+    //     " تم رفض طلب الاشتراك الخاص بك للمزيد نرجوا التواصل عبر البريد الالكتروني ."
+    // );
     return $this->json(["status"=>"success","message"=>"Request Cancelled"]);
   }
   
@@ -102,18 +90,6 @@ class AdminTrainingRequestsController extends AbstractController{
     if (!$ok) 
       return $this->sendError("Cannot delete",500);
     return $this->json(["status"=>"success","message"=>"Request deleted"]);
-  }
-
-  //get expiration soon
-  public function getExpirationSoon(){
-    $this->requireSuperAdmin();
-    $this->reqModel->updateExpiredStatuses(); // تحديث الحالات المنتهيه
-    $soon = $this->reqModel->getExpiringSoon();
-    if(!$soon){
-      $this->sendError("Not Found",404);
-      return;
-    }
-    return $this->json(["status"=>"success", "data"=>$soon]);
   }
 }
 ?>

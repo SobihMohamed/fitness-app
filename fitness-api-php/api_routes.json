@@ -31,6 +31,15 @@
     "RequestForTraining":{
       "createRequestToAdmin" : {"method":"POST","path":"/TrainingRequests/create"},
       "getAllMyRequests" : {"method":"POST","path":"/TrainingRequests/getMyRequests"}
+    },
+    "RequestForCourses":{
+      "createRequestToAdmin" : {"method":"POST","path":"/CoursesRequests/create"},
+      "getAllMyRequests" : {"method":"POST","path":"/CoursesRequests/getMyRequests"}
+    },
+    "RequestOreders":{
+      "Create Order":{"method":"POST","path":"/orders/create"},
+      "show All User Orders":{"method":"GET","path":"/orders/myOrders"},
+      "show single order":{"method":"GET","path":"/orders/showMyOrder/{id}"}
     }
   },
   "ADMIN FUNCTIONS":{
@@ -48,9 +57,9 @@
       "getAll": { "method": "GET", "path": "/ManageAdmins/getAllAdmins" },
       "getById": { "method": "GET", "path": "/admin/getAdminById/{id}" },
       "search": { "method": "POST", "path": "/ManageAdmins/searchAdmin" },
-      "add": { "method": "POST", "path": "/admin/addAdmin" },
-      "update": { "method": "PUT", "path": "/admin/updateAdmin/{id}" },
-      "delete": { "method": "DELETE", "path": "/admin/deleteAdmin/{id}" }
+      "add": { "method": "POST", "path": "/ManageAdmins/addAdmin" },
+      "update": { "method": "PUT", "path": "/ManageAdmins/updateAdmin/{id}" },
+      "delete": { "method": "DELETE", "path": "/ManageAdmins/deleteAdmin/{id}" }
     },    
     "AdminCategory":{
       "getAllCategory" : {"method":"GET", "path":"/AdminCategories/getAll"},
@@ -72,13 +81,28 @@
       "update":{"method":"POST","path":"/AdminCourses/updateCourse"},
       "delete":{"method":"DELETE","path":"/AdminCourses/deleteCourse"}
     },
-    "AdminManageRequests":{
+    "AdminManageTrainingRequests":{
       "getAllRequests":{"method":"GET","path":"/AdminTrainingRequests/getAll"},
-      "showSpecificInformationAboutRequestAndUser":{"method":"GET","path":"AdminTrainingRequests/showDetails/{id}"},
-      "approveRequest":{"method":"PUT","path":"AdminTrainingRequests/approve/{id}"},
-      "cancelRequest":{"method":"PUT","path":"AdminTrainingRequests/cancel/{id}"},
-      "deleteRequest":{"method":"PUT","path":"AdminTrainingRequests/delete/{id}"},
-      "getTheTraniees Who's his training request end soon":{"method":"GET","path":"AdminTrainingRequests/getExpirationSoon"}
+      "showSpecificInformationAboutRequestAndUser":{"method":"GET","path":"/AdminTrainingRequests/showDetails/{id}"},
+      "approveRequest":{"method":"PUT","path":"/AdminTrainingRequests/approve/{id}"},
+      "cancelRequest":{"method":"PUT","path":"/AdminTrainingRequests/cancel/{id}"},
+      "deleteRequest":{"method":"PUT","path":"/AdminTrainingRequests/delete/{id}"},
+      "getTheTraniees Who's his training request end soon":{"method":"GET","path":"/AdminTrainingRequests/getExpirationSoon"}
+    },
+    "AdminManageCoursesRequests":{
+      "getAllRequests":{"method":"GET","path":"/AdminCoursesRequests/getAll"},
+      "showSpecificInformationAboutRequestAndUser":{"method":"GET","path":"/AdminCoursesRequests/showDetails/{id}"},
+      "approveRequest":{"method":"PUT","path":"/AdminCoursesRequests/approve/{id}"},
+      "cancelRequest":{"method":"PUT","path":"/AdminCoursesRequests/cancel/{id}"},
+      "deleteRequest":{"method":"PUT","path":"/AdminCoursesRequests/delete/{id}"}
+    },
+    "AdminManagesOrders":{
+      "get All Orders" : {"method":"GET","path":"/AdminOrders/getAll"},
+      "get Single Order" : {"method":"GET","path":"/AdminOrders/showOrder/{id}"},
+      "filter Orders by Status": {"method": "GET","path": "/AdminOrders/filterByStatus/{status}"},
+      "approve Order": {"method": "PUT","path": "/AdminOrders/approve/{id}"},
+      "cancel Order": {"method": "PUT","path": "/AdminOrders/canecl/{id}"},
+      "delete Order": {"method": "DELETE","path": "/AdminOrders/delete/{id}"}
     }
   }
 }

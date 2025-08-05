@@ -20,7 +20,6 @@ class AuthController extends AbstractController{
         }
     //? get all data in body of request
     $data = json_decode(file_get_contents("php://input"),true);
-    file_put_contents("debug.txt", json_encode($data)); // Debug
     // Check required fields
     $requiredFields = ['email', 'name', 'password', 'phone', 'user_type'];
     foreach ($requiredFields as $field) {

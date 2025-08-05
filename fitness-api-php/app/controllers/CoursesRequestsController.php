@@ -1,20 +1,19 @@
 <?php
 namespace App\Controllers;
 use App\Core\AbstractController;
-use App\models\TrainingRequest;
+use App\models\CoursesRequest;
 use App\Helpers\NotifyHelper;
-class TrainingRequestsController extends AbstractController {
+class CoursesRequestsController extends AbstractController {
   protected $reqModel;
 
   public function __construct(){
     parent::__construct();
-    $this->reqModel = new TrainingRequest();
+    $this->reqModel = new CoursesRequest();
   }
 
    // POST /user/requests  (submit new) required user_id in hidden and all data
   public function create(){
     $user = $this->getUserFromToken();
-    // var_dump($user);
     if ($_SERVER['REQUEST_METHOD']!=='POST')
       return $this->sendError("Invalid",405);
 
@@ -24,20 +23,12 @@ class TrainingRequestsController extends AbstractController {
     if (!$ok) 
       return $this->sendError("Cannot submit request",500);
 
-    NotifyHelper::pushToAllAdmins(
-            "طلب تدريب جديد",
-            "قام المستخدم {$user['email']} بتقديم طلب تدريب جديد."
-    );
-
-    NotifyHelper::pushToSpecificUser(
-        $data['user_id'],
-        "تم استلام طلبك",
-        "تم استلام طلب التدريب الخاص بك بنجاح، وسيتم مراجعته قريباً."
-    );
-
+    // NotifyHelper::pushToAllAdmins("طلب اشتراك في كورس جديد",
+    //                               "طلب اشتراك في كورس جديد من المستخدم {$user['email']}"
+    //                             );
+                                
     return $this->json(["status"=>"success","message"=>"Request submitted"]);
   }
-
   //get requests sent
   public function getMyRequests(){
     $user = $this->getUserFromToken();

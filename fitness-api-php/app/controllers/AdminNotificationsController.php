@@ -21,9 +21,10 @@ class AdminNotificationsController extends AbstractController {
         exit;
       }
     }   
-    public function getAllNotifications(){
+    public function getAdminNotifications(){
       $this->requireSuperAdmin();
-      $notifications = $this->notifModel->getAll();
+      $admin = $this->getUserFromToken();
+      $notifications = $this->notifModel->getAllForAdmin($admin['id']);
       if(empty($notifications) || $notifications === false){
         return $this->sendError("Not Found Notifications",404);
       }
@@ -33,6 +34,17 @@ class AdminNotificationsController extends AbstractController {
       ]);
     }
 
+    public function readNotification($notiId){
+      $admin = $this->getUserFromToken();
+      $ok = $this->notifModel->markAsRead($notiId,$admin['id']);
+      if (!$ok) {
+          return $this->sendError("Cannot mark as readed", 500);
+      }
+      return $this->json([
+          'status' => 'success',
+          'message' => 'Notification Marks As Readed'
+      ]);
+    }
     public function delete($id){
       $this->requireSuperAdmin();
       $ok = $this->notifModel->delete($id);

@@ -93,6 +93,7 @@ class ManageAdminsController extends AbstractController{
     public function addAdmin() {
       $this->requireSuperAdmin();
       $data = json_decode(file_get_contents("php://input"), true);
+      $data['password']= password_hash($data['password'],PASSWORD_BCRYPT);
       $added = $this->adminModel->addAdmin($data);
       if ($added) {
         return $this->json([
