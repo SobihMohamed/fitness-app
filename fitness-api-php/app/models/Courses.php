@@ -46,7 +46,11 @@ public function addCourse($data) {
                 ->insert($data)
                 ->excute();
     } catch (Exception $e) {
+<<<<<<< HEAD
       var_dump($e->getMessage());
+=======
+      var_dump($e->getMessage()); 
+>>>>>>> 59fa08d5c618e9ad5b46c4fceb1c01489532c528
       return false;
     }
   }
