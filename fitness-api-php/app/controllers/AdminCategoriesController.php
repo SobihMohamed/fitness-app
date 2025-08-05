@@ -8,6 +8,7 @@
   class AdminCategoriesController extends AbstractController{
     private $categoryModel;
     public function __construct(){
+      parent::__construct();
       $this->categoryModel = new Category();
     }
     private function requireSuperAdmin(){
