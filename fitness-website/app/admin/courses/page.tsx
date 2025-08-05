@@ -1,16 +1,14 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
+import { useLoading } from "@/hooks/use-loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useRouter } from "next/navigation";
+
 import {
   Table,
   TableBody,
@@ -40,25 +38,19 @@ import { toast } from "react-hot-toast";
 import {
   Plus,
   Search,
-  Filter,
   Edit3,
   Trash2,
   Save,
   X,
   BookOpen,
-  Video,
-  Upload,
-  Eye,
-  Calendar,
   DollarSign,
-  FileText,
-  Link,
   Loader2,
-  Image as ImageIcon,
+  ImageIcon,
   AlertCircle,
-  CheckCircle,
   ExternalLink,
+  TrendingUp,
 } from "lucide-react";
+import Loading from "@/app/loading";
 
 const API_BASE = "http://localhost:8000";
 
@@ -67,21 +59,33 @@ type Course = {
   title: string;
   price: string;
   image_url?: string;
-  content: string;
-  link?: string;
+  content_link?: string;
   description: string;
-  created_at: string;
-  admin_id: string;
 };
 
-export default function CoursesManagement() {
+export default function CoursesManagementWrapper() {
+  const [isChecking, setIsChecking] = useState(true);
+  const router = useRouter();
+  useEffect(() => {
+    const token = localStorage.getItem("adminAuth");
+    if (!token) {
+      router.push("/admin/login");
+    } else {
+      setIsChecking(false);
+    }
+  }, [router]);
+  if (isChecking) return <Loading variant="admin" size="lg" message="Loading users and administrators..." icon="users" className="h-[80vh]" />;
+  return <CoursesManagement />;
+}
+
+function CoursesManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { isAnyLoading, withLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [priceFilter, setPriceFilter] = useState("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -91,37 +95,57 @@ export default function CoursesManagement() {
   } | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
-
   const [formData, setFormData] = useState({
     title: "",
     price: "",
     image_url: "",
-    content: "",
-    link: "",
+    content_link: "",
     description: "",
   });
 
   // Toast helpers
   const showSuccessToast = (message: string) => {
     toast.success(message, {
-      duration: 4000,
-      position: "top-right",
+      duration: 3000,
+      style: {
+        background: "linear-gradient(135deg, #10b981, #059669)",
+        color: "#fff",
+        fontWeight: "600",
+        borderRadius: "12px",
+        padding: "16px 20px",
+        boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
+      },
+      iconTheme: {
+        primary: "#fff",
+        secondary: "#10b981",
+      },
     });
   };
 
   const showErrorToast = (message: string) => {
     toast.error(message, {
-      duration: 5000,
-      position: "top-right",
+      duration: 4000,
+      style: {
+        background: "linear-gradient(135deg, #ef4444, #dc2626)",
+        color: "#fff",
+        fontWeight: "600",
+        borderRadius: "12px",
+        padding: "16px 20px",
+        boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
+      },
+      iconTheme: {
+        primary: "#fff",
+        secondary: "#ef4444",
+      },
     });
   };
 
   // Auth headers
   const getAuthHeaders = () => {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("adminAuth");
     return {
       "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
+      Authorization: `Bearer ${token}`,
     };
   };
 
@@ -132,60 +156,29 @@ export default function CoursesManagement() {
       if (!text.trim()) return {};
       return JSON.parse(text);
     } catch (error) {
-      console.warn("Failed to parse response as JSON:", error);
       return {};
     }
   };
 
   // Fetch courses
   const fetchCourses = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`${API_BASE}/AdminCourses/getAll`, {
-        method: "GET",
-        headers: getAuthHeaders(),
-      });
-
-      console.log("Fetch Courses Response Status:", res.status);
-      const data = await parseResponse(res);
-      console.log("Fetch Courses Response Data:", data);
-
-      if (res.ok && data) {
-        const coursesArray = Array.isArray(data) ? data : data.courses || [];
-        setCourses(coursesArray);
-        console.log("Courses loaded:", coursesArray.length);
-      } else {
-        console.error("Failed to fetch courses:", data);
-        showErrorToast("Failed to load courses");
+    await withLoading("courses", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/AdminCourses/getAll`, {
+          method: "GET",
+          headers: getAuthHeaders(),
+        });
+        const data = await parseResponse(res);
+        if (res.ok && data) {
+          const coursesArray = Array.isArray(data) ? data : data.data || [];
+          setCourses(coursesArray);
+        } else {
+          showErrorToast("Failed to load courses");
+        }
+      } catch (error) {
+        showErrorToast("Network error while loading courses");
       }
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      showErrorToast("Network error while loading courses");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Upload image
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("folder", "Courses");
-
-    const response = await fetch(`${API_BASE}/upload`, {
-      method: "POST",
-      headers: {
-        Authorization: getAuthHeaders().Authorization,
-      },
-      body: formData,
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to upload image");
-    }
-
-    const data = await parseResponse(response);
-    return data.image_url || data.url || data.path || "";
   };
 
   // Handle image selection
@@ -196,7 +189,6 @@ export default function CoursesManagement() {
         showErrorToast("Image size should be less than 5MB");
         return;
       }
-
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -209,99 +201,76 @@ export default function CoursesManagement() {
   // Submit form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!formData.title.trim()) {
       showErrorToast("Course title is required");
       return;
     }
-
     if (!formData.price.trim()) {
       showErrorToast("Price is required");
       return;
     }
-
     if (!formData.description.trim()) {
       showErrorToast("Description is required");
       return;
     }
-
-    if (!formData.content.trim()) {
+    if (!formData.content_link.trim()) {
       showErrorToast("Content is required");
       return;
     }
 
     try {
       setIsSubmitting(true);
+      const requestFormData = new FormData();
+      requestFormData.append("title", formData.title.trim());
+      requestFormData.append("price", formData.price.trim());
+      requestFormData.append("image_url", formData.image_url.trim());
+      requestFormData.append("content_link", formData.content_link.trim());
+      requestFormData.append("description", formData.description.trim());
 
-      let imageUrl = formData.image_url;
-      
-      // Upload image if selected
       if (imageFile) {
-        try {
-          imageUrl = await uploadImage(imageFile);
-          console.log("Image uploaded:", imageUrl);
-        } catch (error) {
-          console.error("Image upload failed:", error);
-          showErrorToast("Failed to upload image");
-          return;
-        }
+        requestFormData.append("image_url", imageFile);
       }
 
-      const requestBody = {
-        title: formData.title.trim(),
-        price: formData.price.trim(),
-        image_url: imageUrl,
-        content: formData.content.trim(),
-        link: formData.link.trim(),
-        description: formData.description.trim(),
-      };
+      Array.from(requestFormData.entries()).forEach((pair) => {});
 
-      console.log("Course request body:", requestBody);
-
-      const endpoint = editingCourse
-        ? `AdminCourses/updateCourse`
-        : `AdminCourses/addCourse`;
-      
-      const method = editingCourse ? "POST" : "POST";
-
-      // Add course ID for update
+      let endpoint: string;
       if (editingCourse) {
-        requestBody.course_id = editingCourse.course_id;
+        endpoint = `AdminCourses/updateCourse/${editingCourse.course_id}`;
+      } else {
+        endpoint = `AdminCourses/addCourse`;
+      }
+
+      const token = localStorage.getItem("adminAuth");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const res = await fetch(`${API_BASE}/${endpoint}`, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(requestBody),
+        method: "POST",
+        headers,
+        body: requestFormData,
       });
-
-      console.log("API Response Status:", res.status, res.statusText);
       const data = await parseResponse(res);
-      console.log("Parsed Response Data:", data);
-
       if (res.ok || res.status === 200) {
         const successMessage = editingCourse
           ? "Course updated successfully!"
           : "Course added successfully!";
 
-        console.log("Showing success toast:", successMessage);
         setTimeout(() => showSuccessToast(successMessage), 100);
-
         await fetchCourses();
         setCurrentPage(1);
         setSearchTerm("");
-        setPriceFilter("all");
         resetForm();
       } else {
         const errorMessage =
           data?.message ||
           data?.error ||
           `Failed to save. Server returned ${res.status}`;
-        console.log("Showing error toast:", errorMessage);
+
         setTimeout(() => showErrorToast(errorMessage), 100);
       }
     } catch (err) {
-      console.error("Network error:", err);
       showErrorToast(
         `Network error while saving: ${
           err instanceof Error ? err.message : "Please check your connection."
@@ -319,8 +288,7 @@ export default function CoursesManagement() {
       title: course.title || "",
       price: course.price || "",
       image_url: course.image_url || "",
-      content: course.content || "",
-      link: course.link || "",
+      content_link: course.content_link || "",
       description: course.description || "",
     });
     setImagePreview(course.image_url || "");
@@ -340,25 +308,25 @@ export default function CoursesManagement() {
   // Handle delete
   const handleDelete = async () => {
     if (!deleteTarget) return;
-
     try {
       setIsSubmitting(true);
+      const token = localStorage.getItem("adminAuth");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const res = await fetch(
-        `${API_BASE}/AdminCourses/deleteCourse`,
+        `${API_BASE}/AdminCourses/deleteCourse/${deleteTarget.id}`,
         {
           method: "DELETE",
-          headers: getAuthHeaders(),
-          body: JSON.stringify({ course_id: deleteTarget.id }),
+          headers,
         }
       );
 
       const data = await parseResponse(res);
-      console.log("Delete Response Status:", res.status, res.statusText);
-      console.log("Delete Response Data:", data);
-
       if (res.ok || res.status === 200) {
         const successMessage = "Course deleted successfully!";
-        console.log("Showing delete success toast:", successMessage);
         setTimeout(() => showSuccessToast(successMessage), 100);
         await fetchCourses();
       } else {
@@ -366,7 +334,6 @@ export default function CoursesManagement() {
           data?.message ||
           data?.error ||
           `Failed to delete. Server returned ${res.status}`;
-        console.log("Showing delete error toast:", errorMessage);
         setTimeout(() => showErrorToast(errorMessage), 100);
       }
     } catch (err) {
@@ -384,8 +351,7 @@ export default function CoursesManagement() {
       title: "",
       price: "",
       image_url: "",
-      content: "",
-      link: "",
+      content_link: "",
       description: "",
     });
     setEditingCourse(null);
@@ -394,28 +360,14 @@ export default function CoursesManagement() {
     setImagePreview("");
   };
 
-  // Filter courses
+  // Filter courses (simplified - only search now)
   const filteredCourses = () => {
-    let filtered = courses.filter((course) => {
+    return courses.filter((course) => {
       const matchesSearch =
         course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         course.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-      let matchesPrice = true;
-      if (priceFilter === "free") {
-        matchesPrice = parseFloat(course.price) === 0;
-      } else if (priceFilter === "paid") {
-        matchesPrice = parseFloat(course.price) > 0;
-      } else if (priceFilter === "low") {
-        matchesPrice = parseFloat(course.price) <= 50;
-      } else if (priceFilter === "high") {
-        matchesPrice = parseFloat(course.price) > 50;
-      }
-
-      return matchesSearch && matchesPrice;
+      return matchesSearch;
     });
-
-    return filtered;
   };
 
   const totalPages = Math.ceil(filteredCourses().length / itemsPerPage);
@@ -424,175 +376,169 @@ export default function CoursesManagement() {
     currentPage * itemsPerPage
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   const formatPrice = (price: string) => {
-    const numPrice = parseFloat(price);
+    const numPrice = Number.parseFloat(price);
     return numPrice === 0 ? "Free" : `$${numPrice.toFixed(2)}`;
   };
 
   // Load courses on mount
   useEffect(() => {
-    fetchCourses();
+    const token = localStorage.getItem("adminAuth");
+    if (!token) {
+      showErrorToast("Please login as admin to access this page");
+      window.location.href = "/admin/login";
+      return;
+    }
+    const initializeData = async () => {
+      try {
+        await fetchCourses();
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    initializeData();
   }, []);
 
-  if (loading) {
+  if (isAnyLoading() || initialLoading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-[80vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-gray-600">Loading courses...</p>
-          </div>
-        </div>
+        <Loading
+          variant="admin"
+          size="lg"
+          message="Loading users and administrators..."
+          icon="users"
+          className="h-[80vh]"
+        />
       </AdminLayout>
     );
   }
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 p-6 bg-gradient-to-br from-slate-50 to-white min-h-screen">
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <BookOpen className="h-8 w-8 text-blue-600" />
+            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-xl">
+                <BookOpen className="h-8 w-8 text-indigo-600" />
+              </div>
               Courses Management
             </h1>
-            <p className="text-gray-600 mt-2">
-              Manage your fitness courses, pricing, and content
+            <p className="text-slate-600 mt-3 text-lg">
+              Manage your fitness courses, pricing, and content with ease
             </p>
           </div>
           <Button
             onClick={() => setIsAddDialogOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base"
           >
-            <Plus className="h-4 w-4" />
+            <Plus className="h-5 w-5" />
             Add New Course
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Courses</p>
-                  <p className="text-3xl font-bold text-gray-900">{courses.length}</p>
-                </div>
-                <BookOpen className="h-12 w-12 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Free Courses</p>
-                  <p className="text-3xl font-bold text-green-600">
-                    {courses.filter((c) => parseFloat(c.price) === 0).length}
+                  <p className="text-sm font-medium text-indigo-700 mb-1">
+                    Total Courses
+                  </p>
+                  <p className="text-3xl font-bold text-indigo-900">
+                    {courses.length}
                   </p>
                 </div>
-                <CheckCircle className="h-12 w-12 text-green-600" />
+                <div className="p-3 bg-indigo-200 rounded-full">
+                  <BookOpen className="h-8 w-8 text-indigo-700" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Paid Courses</p>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {courses.filter((c) => parseFloat(c.price) > 0).length}
+                  <p className="text-sm font-medium text-blue-700 mb-1">
+                    Premium Courses
+                  </p>
+                  <p className="text-3xl font-bold text-blue-900">
+                    {
+                      courses.filter((c) => Number.parseFloat(c.price) > 0)
+                        .length
+                    }
                   </p>
                 </div>
-                <DollarSign className="h-12 w-12 text-blue-600" />
+                <div className="p-3 bg-blue-200 rounded-full">
+                  <DollarSign className="h-8 w-8 text-blue-700" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Avg Price</p>
-                  <p className="text-3xl font-bold text-purple-600">
+                  <p className="text-sm font-medium text-purple-700 mb-1">
+                    Avg Price
+                  </p>
+                  <p className="text-3xl font-bold text-purple-900">
                     $
                     {courses.length > 0
                       ? (
-                          courses.reduce((sum, c) => sum + parseFloat(c.price), 0) /
-                          courses.length
+                          courses.reduce(
+                            (sum, c) => sum + Number.parseFloat(c.price),
+                            0
+                          ) / courses.length
                         ).toFixed(0)
                       : "0"}
                   </p>
                 </div>
-                <Video className="h-12 w-12 text-purple-600" />
+                <div className="p-3 bg-purple-200 rounded-full">
+                  <TrendingUp className="h-8 w-8 text-purple-700" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters and Search */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Search & Filter Courses
+        {/* Search */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-slate-800">
+              <Search className="h-5 w-5 text-indigo-600" />
+              Search Courses
             </CardTitle>
-            <CardDescription>
-              Find courses by title, description, or filter by price range
+            <CardDescription className="text-slate-600">
+              Find courses by title or description
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="Search courses by title or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <Select value={priceFilter} onValueChange={setPriceFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filter by price" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Courses</SelectItem>
-                  <SelectItem value="free">Free Courses</SelectItem>
-                  <SelectItem value="paid">Paid Courses</SelectItem>
-                  <SelectItem value="low">Under $50</SelectItem>
-                  <SelectItem value="high">Over $50</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+              <Input
+                placeholder="Search courses by title or description..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-12 h-12 text-base border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+              />
             </div>
-            {(searchTerm || priceFilter !== "all") && (
-              <div className="mt-4 flex items-center gap-2">
-                <span className="text-sm text-gray-600">
+            {searchTerm && (
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-sm text-slate-600">
                   Found {filteredCourses().length} courses
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setPriceFilter("all");
-                  }}
-                  className="h-6 px-2 text-xs"
+                  onClick={() => setSearchTerm("")}
+                  className="h-7 px-3 text-xs hover:bg-slate-50"
                 >
-                  Clear Filters
+                  Clear Search
                 </Button>
               </div>
             )}
@@ -600,83 +546,101 @@ export default function CoursesManagement() {
         </Card>
 
         {/* Courses Table */}
-        <Card>
+        <Card className="border-0 shadow-lg">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="w-16">#</TableHead>
-                    <TableHead className="w-20">Image</TableHead>
-                    <TableHead className="min-w-[200px]">Course Title</TableHead>
-                    <TableHead className="w-24">Price</TableHead>
-                    <TableHead className="min-w-[300px]">Description</TableHead>
-                    <TableHead className="w-20">Link</TableHead>
-                    <TableHead className="w-32">Created</TableHead>
-                    <TableHead className="w-32 text-center">Actions</TableHead>
+                  <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="w-16 font-semibold text-slate-700">
+                      #
+                    </TableHead>
+                    <TableHead className="w-20 font-semibold text-slate-700">
+                      Image
+                    </TableHead>
+                    <TableHead className="min-w-[200px] font-semibold text-slate-700">
+                      Course Title
+                    </TableHead>
+                    <TableHead className="w-24 font-semibold text-slate-700">
+                      Price
+                    </TableHead>
+                    <TableHead className="min-w-[300px] font-semibold text-slate-700">
+                      Description
+                    </TableHead>
+                    <TableHead className="w-20 font-semibold text-slate-700">
+                      Link
+                    </TableHead>
+                    <TableHead className="w-32 text-center font-semibold text-slate-700">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedCourses.map((course, index) => (
-                    <TableRow key={course.course_id} className="hover:bg-gray-50">
-                      <TableCell className="font-medium">
+                    <TableRow
+                      key={course.course_id}
+                      className="hover:bg-slate-50 transition-colors duration-150 border-b border-slate-100"
+                    >
+                      <TableCell className="font-medium text-slate-600">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </TableCell>
                       <TableCell>
                         {course.image_url ? (
                           <img
-                            src={course.image_url}
+                            src={`${API_BASE}${course.image_url}`}
                             alt={course.title}
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-14 h-14 object-cover rounded-lg shadow-sm"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                            <ImageIcon className="h-6 w-6 text-gray-400" />
+                          <div className="w-14 h-14 bg-slate-100 rounded-lg flex items-center justify-center">
+                            <ImageIcon className="h-6 w-6 text-slate-400" />
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium text-gray-900">{course.title}</p>
-                          <p className="text-sm text-gray-500">ID: {course.course_id}</p>
+                          <p className="font-semibold text-slate-900 mb-1">
+                            {course.title}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            ID: {course.course_id}
+                          </p>
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
-                          variant={parseFloat(course.price) === 0 ? "secondary" : "default"}
+                          variant={
+                            Number.parseFloat(course.price) === 0
+                              ? "secondary"
+                              : "default"
+                          }
                           className={
-                            parseFloat(course.price) === 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
+                            Number.parseFloat(course.price) === 0
+                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                              : "bg-indigo-100 text-indigo-800 hover:bg-indigo-200"
                           }
                         >
                           {formatPrice(course.price)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <p className="text-sm text-gray-600 max-w-xs truncate">
+                        <p className="text-sm text-slate-600 max-w-xs truncate">
                           {course.description}
                         </p>
                       </TableCell>
                       <TableCell>
-                        {course.link ? (
+                        {course.content_link ? (
                           <a
-                            href={course.link}
+                            href={course.content_link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-indigo-600 hover:text-indigo-800 transition-colors"
                           >
                             <ExternalLink className="h-4 w-4" />
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-slate-400">-</span>
                         )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(course.created_at)}
-                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -685,16 +649,16 @@ export default function CoursesManagement() {
                             size="sm"
                             onClick={() => handleEdit(course)}
                             disabled={isSubmitting}
-                            className="h-8 w-8 p-0 hover:bg-blue-50 hover:border-blue-200"
+                            className="h-9 w-9 p-0 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-150"
                           >
-                            <Edit3 className="h-4 w-4 text-blue-600" />
+                            <Edit3 className="h-4 w-4 text-indigo-600" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => confirmDelete(course)}
                             disabled={isSubmitting}
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200"
+                            className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-200 transition-all duration-150"
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
@@ -707,22 +671,22 @@ export default function CoursesManagement() {
 
               {/* No results */}
               {filteredCourses().length === 0 && (
-                <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    {searchTerm || priceFilter !== "all"
-                      ? "No courses found"
-                      : "No courses yet"}
+                <div className="text-center py-16">
+                  <div className="p-4 bg-slate-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                    <BookOpen className="h-10 w-10 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">
+                    {searchTerm ? "No courses found" : "No courses yet"}
                   </h3>
-                  <p className="text-gray-500 mb-4">
-                    {searchTerm || priceFilter !== "all"
-                      ? "Try adjusting your search or filter criteria"
-                      : "Get started by adding your first course"}
+                  <p className="text-slate-500 mb-6 max-w-md mx-auto">
+                    {searchTerm
+                      ? "Try adjusting your search criteria to find what you're looking for"
+                      : "Get started by adding your first course to the platform"}
                   </p>
-                  {!searchTerm && priceFilter === "all" && (
+                  {!searchTerm && (
                     <Button
                       onClick={() => setIsAddDialogOpen(true)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
                     >
                       <Plus className="h-4 w-4" />
                       Add Your First Course
@@ -733,14 +697,18 @@ export default function CoursesManagement() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center gap-2 p-4 border-t bg-gray-50">
+                <div className="flex justify-center gap-2 p-6 border-t bg-slate-50">
                   {Array.from({ length: totalPages }, (_, i) => (
                     <Button
                       key={i}
                       variant={currentPage === i + 1 ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(i + 1)}
-                      className="w-10 h-10"
+                      className={`w-10 h-10 ${
+                        currentPage === i + 1
+                          ? "bg-indigo-600 hover:bg-indigo-700"
+                          : "hover:bg-slate-100"
+                      }`}
                     >
                       {i + 1}
                     </Button>
@@ -755,22 +723,23 @@ export default function CoursesManagement() {
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <BookOpen className="h-5 w-5 text-indigo-600" />
+                </div>
                 {editingCourse ? "Edit Course" : "Add New Course"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-slate-600">
                 {editingCourse
                   ? "Update the course information below."
                   : "Fill in the details to add a new course to your platform."}
               </DialogDescription>
             </DialogHeader>
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Course Title */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Course Title *
                   </label>
                   <Input
@@ -781,12 +750,13 @@ export default function CoursesManagement() {
                     }
                     required
                     disabled={isSubmitting}
+                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* Price */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Price *
                   </label>
                   <Input
@@ -800,28 +770,31 @@ export default function CoursesManagement() {
                     }
                     required
                     disabled={isSubmitting}
+                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* Link */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
-                    Course Link (Optional)
+                  <label className="text-sm font-semibold text-slate-700">
+                    Course Link *
                   </label>
                   <Input
                     type="url"
                     placeholder="https://example.com/course"
-                    value={formData.link}
+                    value={formData.content_link}
                     onChange={(e) =>
-                      setFormData({ ...formData, link: e.target.value })
+                      setFormData({ ...formData, content_link: e.target.value })
                     }
+                    required
                     disabled={isSubmitting}
+                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* Image Upload */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Course Image
                   </label>
                   <div className="space-y-3">
@@ -830,19 +803,24 @@ export default function CoursesManagement() {
                       accept="image/*"
                       onChange={handleImageSelect}
                       disabled={isSubmitting}
+                      className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                     />
                     {imagePreview && (
                       <div className="relative w-32 h-32">
                         <img
-                          src={imagePreview}
+                          src={
+                            imagePreview.startsWith("/uploads")
+                              ? `${API_BASE}${imagePreview}`
+                              : imagePreview
+                          }
                           alt="Preview"
-                          className="w-full h-full object-cover rounded border"
+                          className="w-full h-full object-cover rounded-lg border shadow-sm"
                         />
                         <Button
                           type="button"
                           variant="outline"
                           size="sm"
-                          className="absolute -top-2 -right-2 h-6 w-6 p-0"
+                          className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-white shadow-md"
                           onClick={() => {
                             setImagePreview("");
                             setImageFile(null);
@@ -859,7 +837,7 @@ export default function CoursesManagement() {
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-semibold text-slate-700">
                   Course Description *
                 </label>
                 <Textarea
@@ -870,40 +848,25 @@ export default function CoursesManagement() {
                   }
                   required
                   disabled={isSubmitting}
-                  rows={3}
+                  rows={4}
+                  className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
 
-              {/* Content */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Course Content *
-                </label>
-                <Textarea
-                  placeholder="Enter the detailed course content"
-                  value={formData.content}
-                  onChange={(e) =>
-                    setFormData({ ...formData, content: e.target.value })
-                  }
-                  required
-                  disabled={isSubmitting}
-                  rows={6}
-                />
-              </div>
-
-              <DialogFooter className="flex gap-3">
+              <DialogFooter className="flex gap-3 pt-6">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={resetForm}
                   disabled={isSubmitting}
+                  className="px-6 bg-transparent"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-6"
                 >
                   {isSubmitting ? (
                     <>
@@ -931,8 +894,8 @@ export default function CoursesManagement() {
                 Confirm Deletion
               </DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete the course "{deleteTarget?.name}"?
-                This action cannot be undone.
+                Are you sure you want to delete the course "{deleteTarget?.name}
+                "? This action cannot be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="flex gap-3">
