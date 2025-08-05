@@ -27,6 +27,10 @@
       "getAll":{"method":"GET" , "path":"/Courses/getAll"},
       "searchCourse":{"method":"POST" , "path":"/Courses/searchCourse"},
       "View Single Course":{"method":"GET" , "path":"/Courses/singleCourse/{id}"}
+    },
+    "RequestForTraining":{
+      "createRequestToAdmin" : {"method":"POST","path":"/TrainingRequests/create"},
+      "getAllMyRequests" : {"method":"POST","path":"/TrainingRequests/getMyRequests"}
     }
   },
   "ADMIN FUNCTIONS":{
@@ -67,6 +71,14 @@
       "add":{"method":"POST","path":"/AdminCourses/addCourse"},
       "update":{"method":"POST","path":"/AdminCourses/updateCourse"},
       "delete":{"method":"DELETE","path":"/AdminCourses/deleteCourse"}
+    },
+    "AdminManageRequests":{
+      "getAllRequests":{"method":"GET","path":"/AdminTrainingRequests/getAll"},
+      "showSpecificInformationAboutRequestAndUser":{"method":"GET","path":"AdminTrainingRequests/showDetails/{id}"},
+      "approveRequest":{"method":"PUT","path":"AdminTrainingRequests/approve/{id}"},
+      "cancelRequest":{"method":"PUT","path":"AdminTrainingRequests/cancel/{id}"},
+      "deleteRequest":{"method":"PUT","path":"AdminTrainingRequests/delete/{id}"},
+      "getTheTraniees Who's his training request end soon":{"method":"GET","path":"AdminTrainingRequests/getExpirationSoon"}
     }
   }
 }
