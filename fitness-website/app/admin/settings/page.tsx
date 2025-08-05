@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -11,8 +11,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Save, Upload, Globe, Bell, Shield, Palette } from "lucide-react"
+import { useRouter } from "next/navigation";
 
-export default function AdminSettings() {
+
+export default function AdminSettingsWrapper() {
+  const [isChecking, setIsChecking] = useState(true);
+  const router = useRouter();
+  useEffect(() => {
+    const token = localStorage.getItem("adminAuth");
+    if (!token) {
+      router.push("/admin/login");
+    } else {
+      setIsChecking(false);
+    }
+  }, [router]);
+  if (isChecking) return <div>Loading...</div>;
+  return <AdminSettings />;
+}
+
+function AdminSettings() {
   const [settings, setSettings] = useState({
     siteName: "FitPro",
     siteDescription: "Transform Your Body, Mind & Life",

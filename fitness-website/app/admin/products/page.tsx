@@ -1,10 +1,14 @@
 "use client";
 
+import type React from "react";
+
 import { useEffect, useState } from "react";
+import { useLoading } from "@/hooks/use-loading";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -41,7 +45,6 @@ import { toast } from "react-hot-toast";
 import {
   Plus,
   Search,
-  Filter,
   Edit3,
   Trash2,
   Save,
@@ -52,8 +55,8 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  AlertTriangle,
 } from "lucide-react";
+import Loading from "@/app/loading";
 
 const API_BASE = "http://localhost:8000";
 
@@ -72,7 +75,6 @@ type Product = {
   category_id: string;
 };
 
-// Predefined category suggestions for generation
 const CATEGORY_SUGGESTIONS = [
   "Protein Supplements",
   "Pre-Workout",
@@ -92,11 +94,43 @@ const CATEGORY_SUGGESTIONS = [
   "Joint Support",
 ];
 
+
+
 export default function ProductsManagement() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { isAnyLoading, withLoading } = useLoading();
   const [searchTerm, setSearchTerm] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
   const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        await Promise.all([
+          (async () => {
+            try {
+              const res = await fetch(`${API_BASE}/AdminCategories/getAll`, {
+                headers: getAuthHeaders(),
+              });
+              const data = await res.json();
+              if (res.ok) {
+                setCategories(data.data || []);
+              } else {
+                showErrorToast("Failed to load product categories");
+              }
+            } catch (err) {
+              showErrorToast("Network error while loading product categories");
+            }
+          })(),
+          fetchProducts(),
+        ]);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    initializeData();
+  }, []);
+
   const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -110,16 +144,12 @@ export default function ProductsManagement() {
     image_url: "",
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-
-  // Category editing states
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
     null
   );
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCategoryGenerator, setShowCategoryGenerator] = useState(false);
-
-  // Confirmation dialog states
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{
     type: "category" | "product";
@@ -127,8 +157,10 @@ export default function ProductsManagement() {
     name: string;
   } | null>(null);
 
-  const itemsPerPage = 8;
+  const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
+  const categoriesPerPage = 4;
+  const [currentCategoryPage, setCurrentCategoryPage] = useState(1);
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("adminAuth");
@@ -138,7 +170,7 @@ export default function ProductsManagement() {
     };
   };
 
-  // Enhanced toast functions with better styling
+  // Toast helpers
   const showSuccessToast = (message: string) => {
     toast.success(message, {
       duration: 3000,
@@ -191,44 +223,41 @@ export default function ProductsManagement() {
   };
 
   // Fetch categories from the backend API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/AdminCategories/getAll`, {
-          headers: getAuthHeaders(),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setCategories(data.data || []);
-        } else {
-          showErrorToast("Failed to load categories");
-        }
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        showErrorToast("Network error while loading categories");
-      }
-    };
+  // useEffect(() => {
+  //   const fetchCategories = async () => {
+  //     try {
+  //       const res = await fetch(`${API_BASE}/AdminCategories/getAll`, {
+  //         headers: getAuthHeaders(),
+  //       });
+  //       const data = await res.json();
+  //       if (res.ok) {
+  //         setCategories(data.data || []);
+  //       } else {
+  //         showErrorToast("Failed to load product categories");
+  //       }
+  //     } catch (err) {
+  //       showErrorToast("Network error while loading product categories");
+  //     }
+  //   };
+  //   fetchCategories();
+  // }, []);
 
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // useEffect(() => {
+  //   fetchProducts();
+  // }, []);
 
   const addCategory = async () => {
     if (!newCategoryName.trim()) {
-      showErrorToast("Category name is required");
+      showErrorToast("Product category name is required");
       return;
     }
 
-    // Check for duplicate category names
     const existingCategory = categories.find(
       (cat) =>
         cat.name.toLowerCase().trim() === newCategoryName.toLowerCase().trim()
     );
     if (existingCategory) {
-      showErrorToast("A category with this name already exists");
+      showErrorToast("A product category with this name already exists");
       return;
     }
 
@@ -239,12 +268,10 @@ export default function ProductsManagement() {
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: newCategoryName }),
       });
-
       const data = await res.json();
       if (res.ok) {
         showSuccessToast(`Category "${newCategoryName}" added successfully!`);
         setNewCategoryName("");
-        // Refresh categories
         const refreshRes = await fetch(`${API_BASE}/AdminCategories/getAll`, {
           headers: getAuthHeaders(),
         });
@@ -253,11 +280,10 @@ export default function ProductsManagement() {
           setCategories(refreshData.data || []);
         }
       } else {
-        showErrorToast(data.message || "Failed to add category");
+        showErrorToast(data.message || "Failed to add product category");
       }
     } catch (err) {
-      console.error("Error adding category:", err);
-      showErrorToast("Network error while adding category");
+      showErrorToast("Network error while adding product category");
     } finally {
       setIsSubmitting(false);
     }
@@ -265,11 +291,10 @@ export default function ProductsManagement() {
 
   const updateCategory = async () => {
     if (!editingCategoryName.trim()) {
-      showErrorToast("Category name is required");
+      showErrorToast("Product category name is required");
       return;
     }
 
-    // Check if the name actually changed
     const currentCategory = categories.find(
       (cat) => cat.category_id === editingCategoryId
     );
@@ -282,7 +307,6 @@ export default function ProductsManagement() {
       return;
     }
 
-    // Check for duplicate category names (excluding current category)
     const existingCategory = categories.find(
       (cat) =>
         cat.category_id !== editingCategoryId &&
@@ -290,7 +314,7 @@ export default function ProductsManagement() {
           editingCategoryName.toLowerCase().trim()
     );
     if (existingCategory) {
-      showErrorToast("A category with this name already exists");
+      showErrorToast("A product category with this name already exists");
       return;
     }
 
@@ -306,13 +330,11 @@ export default function ProductsManagement() {
           }),
         }
       );
-
       const data = await res.json();
       if (res.ok) {
-        showSuccessToast(`Category updated successfully!`);
+        showSuccessToast(`Product category updated successfully!`);
         setEditingCategoryId(null);
         setEditingCategoryName("");
-        // Refresh categories
         const refreshRes = await fetch(`${API_BASE}/AdminCategories/getAll`, {
           headers: getAuthHeaders(),
         });
@@ -321,12 +343,10 @@ export default function ProductsManagement() {
           setCategories(refreshData.data || []);
         }
       } else {
-        console.error("Update category error:", data);
-        showErrorToast(data.message || `Failed to update category`);
+        showErrorToast(data.message || `Failed to update product category`);
       }
     } catch (err) {
-      console.error("Error updating category:", err);
-      showErrorToast("Network error while updating category");
+      showErrorToast("Network error while updating product category");
     } finally {
       setIsSubmitting(false);
     }
@@ -335,8 +355,6 @@ export default function ProductsManagement() {
   const confirmDeleteCategory = (id: string) => {
     const categoryName =
       categories.find((cat) => cat.category_id === id)?.name || "this category";
-
-    // Check if category has products
     const productsInCategory = products.filter((p) => p.category_id === id);
     if (productsInCategory.length > 0) {
       showErrorToast(
@@ -344,14 +362,12 @@ export default function ProductsManagement() {
       );
       return;
     }
-
     setDeleteTarget({ type: "category", id, name: categoryName });
     setShowDeleteConfirm(true);
   };
 
   const deleteCategory = async () => {
     if (!deleteTarget || deleteTarget.type !== "category") return;
-
     try {
       setIsSubmitting(true);
       const res = await fetch(
@@ -361,7 +377,6 @@ export default function ProductsManagement() {
           headers: getAuthHeaders(),
         }
       );
-
       const data = await res.json();
       if (res.ok) {
         showSuccessToast(
@@ -371,11 +386,9 @@ export default function ProductsManagement() {
           categories.filter((cat) => cat.category_id !== deleteTarget.id)
         );
       } else {
-        console.error("Delete category error:", data);
         showErrorToast(data.message || `Failed to delete category`);
       }
     } catch (err) {
-      console.error("Error deleting category:", err);
       showErrorToast("Network error while deleting category");
     } finally {
       setIsSubmitting(false);
@@ -407,11 +420,9 @@ export default function ProductsManagement() {
         headers: getAuthHeaders(),
         body: JSON.stringify({ name: categoryName }),
       });
-
       const data = await res.json();
       if (res.ok) {
         showSuccessToast(`Category "${categoryName}" added successfully!`);
-        // Refresh categories
         const refreshRes = await fetch(`${API_BASE}/AdminCategories/getAll`, {
           headers: getAuthHeaders(),
         });
@@ -420,55 +431,42 @@ export default function ProductsManagement() {
           setCategories(refreshData.data || []);
         }
       } else {
-        showErrorToast(data.message || "Failed to add category");
+        showErrorToast(data.message || "Failed to add product category");
       }
     } catch (err) {
-      console.error("Error adding category:", err);
-      showErrorToast("Network error while adding category");
+      showErrorToast("Network error while adding product category");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-const fetchProducts = async () => {
-  try {
-    setLoading(true);
-    const res = await fetch(`${API_BASE}/AdminProducts/getAll`, {
-      headers: getAuthHeaders(),
+  const fetchProducts = async () => {
+    await withLoading("products", async () => {
+      try {
+        const res = await fetch(`${API_BASE}/AdminProducts/getAll`, {
+          headers: getAuthHeaders(),
+        });
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to fetch products");
+        }
+        const result = await res.json();
+        const data = result.data || result.products || result || [];
+        const formattedData = data.map((product: any) => ({
+          product_id: product.product_id,
+          name: product.name,
+          image_url: product.image_url || null,
+          price: product.price,
+          description: product.description,
+          is_in_stock: product.is_in_stock || "0",
+          category_id: product.category_id,
+        }));
+        setProducts(formattedData);
+      } catch (err: any) {
+        showErrorToast(err.message || "Network error while loading products");
+      }
     });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message("Failed to fetch products"));
-    }
-
-    const result = await res.json();
-    const data = result.data ||  result.products  || result || [];
-
-    const formattedData = data.map((product: any) => ({
-      product_id: product.product_id,
-      name: product.name,
-      image_url: product.image_url || null,
-      price: product.price,
-      description: product.description,
-      is_in_stock: product.is_in_stock || "0",
-      category_id: product.category_id,
-    }));
-
-    setProducts(formattedData);
-    console.log(products);
-    
-    
-    console.log(API_BASE, formattedData.image_url);
-    
-  } catch (err: any) {
-    console.error("Fetch error:", err);
-    showErrorToast(err.message || "Error loading products");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const parseResponse = async (response: Response) => {
     const responseText = await response.text();
@@ -503,9 +501,8 @@ const fetchProducts = async () => {
       showErrorToast("Product name and price are required");
       return;
     }
-
     if (!formData.category_id) {
-      showErrorToast("Please select a category for the product");
+      showErrorToast("Please select a product category");
       return;
     }
 
@@ -515,6 +512,7 @@ const fetchProducts = async () => {
     formDataToSend.append("description", formData.description);
     formDataToSend.append("category_id", formData.category_id);
     formDataToSend.append("is_in_stock", formData.is_in_stock);
+
     if (selectedImage) {
       formDataToSend.append("image_url", selectedImage);
     }
@@ -553,10 +551,7 @@ const fetchProducts = async () => {
       setEditingProduct(null);
       setIsAddDialogOpen(false);
     } catch (err: any) {
-      console.error("Error saving product", err);
-      showErrorToast(
-        err.message || "Something went wrong while saving the product"
-      );
+      showErrorToast(err.message || "Network error while saving product");
     } finally {
       setIsSubmitting(false);
     }
@@ -579,14 +574,12 @@ const fetchProducts = async () => {
   const confirmDeleteProduct = (id: string) => {
     const product = products.find((p) => p.product_id === id);
     const productName = product?.name || "this product";
-
     setDeleteTarget({ type: "product", id, name: productName });
     setShowDeleteConfirm(true);
   };
 
   const deleteProduct = async () => {
     if (!deleteTarget || deleteTarget.type !== "product") return;
-
     try {
       setIsSubmitting(true);
       const res = await fetch(
@@ -598,12 +591,10 @@ const fetchProducts = async () => {
       );
       const result = await parseResponse(res);
       if (!res.ok) throw new Error(result.message || "Delete failed");
-
       showSuccessToast(`Product deleted successfully!`);
       await fetchProducts();
     } catch (err: any) {
-      console.error("Delete error", err);
-      showErrorToast(err.message || "Failed to delete product");
+      showErrorToast(err.message || "Network error while deleting product");
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -611,21 +602,17 @@ const fetchProducts = async () => {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => { 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         showErrorToast("Image file size must be less than 5MB");
         return;
       }
-
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         showErrorToast("Please select a valid image file");
         return;
       }
-
       setSelectedImage(file);
     }
   };
@@ -633,15 +620,13 @@ const fetchProducts = async () => {
   const startEditCategory = (category: Category) => {
     setEditingCategoryId(category.category_id);
     setEditingCategoryName(category.name);
-
-    // Auto-focus the input field after a short delay to ensure it's rendered
     setTimeout(() => {
       const inputElement = document.querySelector(
         `[data-category-input="${category.category_id}"]`
       ) as HTMLInputElement;
       if (inputElement) {
         inputElement.focus();
-        inputElement.select(); // Select all text for easy editing
+        inputElement.select();
       }
     }, 100);
   };
@@ -664,62 +649,129 @@ const fetchProducts = async () => {
     setDeleteTarget(null);
   };
 
-  if (loading) {
+  if (isAnyLoading() || initialLoading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-[80vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <div className="text-lg text-gray-600">Loading products...</div>
-          </div>
-        </div>
-      </AdminLayout>
+           <AdminLayout>
+             <Loading
+               variant="admin"
+               size="lg"
+               message="Loading users and administrators..."
+               icon="users"
+               className="h-[80vh]"
+             />
+           </AdminLayout>
     );
   }
 
+  const totalCategoryPages = Math.ceil(categories.length / categoriesPerPage);
+  const paginatedCategories = categories.slice(
+    (currentCategoryPage - 1) * categoriesPerPage,
+    currentCategoryPage * categoriesPerPage
+  );
+
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8 p-6 bg-gradient-to-br from-slate-50 to-white min-h-screen">
+        {/* Header */}
+        <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Package className="h-8 w-8 text-blue-600" />
+            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-3">
+              <div className="p-2 bg-indigo-100 rounded-xl">
+                <Package className="h-8 w-8 text-indigo-600" />
+              </div>
               Product Management
             </h1>
-            <p className="text-gray-600 mt-2">
-              Manage your product catalog and categories
+            <p className="text-slate-600 mt-3 text-lg">
+              Manage your product catalog and categories with ease
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-sm">
-              {products.length} Products
-            </Badge>
-            <Badge variant="outline" className="text-sm">
-              {categories.length} Categories
-            </Badge>
-          </div>
+          <Button
+            onClick={() => setIsAddDialogOpen(true)}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base"
+          >
+            <Plus className="h-5 w-5" />
+            Add New Product
+          </Button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-indigo-700 mb-1">
+                    Total Products
+                  </p>
+                  <p className="text-3xl font-bold text-indigo-900">
+                    {products.length}
+                  </p>
+                </div>
+                <div className="p-3 bg-indigo-200 rounded-full">
+                  <Package className="h-8 w-8 text-indigo-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100 hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-emerald-700 mb-1">
+                    In Stock
+                  </p>
+                  <p className="text-3xl font-bold text-emerald-900">
+                    {products.filter((p) => p.is_in_stock === "1").length}
+                  </p>
+                </div>
+                <div className="p-3 bg-emerald-200 rounded-full">
+                  <CheckCircle className="h-8 w-8 text-emerald-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700 mb-1">
+                    Categories
+                  </p>
+                  <p className="text-3xl font-bold text-purple-900">
+                    {categories.length}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-200 rounded-full">
+                  <Tag className="h-8 w-8 text-purple-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Category Management Section */}
-        <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50">
+        <Card className="border-0 shadow-lg">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Tag className="h-6 w-6 text-blue-600" />
-                <CardTitle className="text-xl">Category Management</CardTitle>
+                <Tag className="h-6 w-6 text-indigo-600" />
+                <CardTitle className="text-xl text-slate-800">
+                  Category Management
+                </CardTitle>
               </div>
               <Button
                 onClick={generateCategories}
                 variant="outline"
                 size="sm"
-                className="flex items-center gap-2 hover:bg-blue-100"
+                className="flex items-center gap-2 hover:bg-indigo-50 border-indigo-200 bg-transparent"
               >
                 <Sparkles className="h-4 w-4" />
                 Generate Categories
               </Button>
             </div>
-            <CardDescription>
+            <CardDescription className="text-slate-600">
               Create and manage product categories for better organization
             </CardDescription>
           </CardHeader>
@@ -732,12 +784,12 @@ const fetchProducts = async () => {
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && addCategory()}
                 disabled={isSubmitting}
-                className="flex-1"
+                className="flex-1 h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
               />
               <Button
                 onClick={addCategory}
                 disabled={isSubmitting || !newCategoryName.trim()}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
               >
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -750,9 +802,9 @@ const fetchProducts = async () => {
 
             {/* Category Generator Dialog */}
             {showCategoryGenerator && (
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <div className="bg-white rounded-lg p-4 border border-indigo-200">
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-semibold text-gray-900">
+                  <h4 className="font-semibold text-slate-900">
                     Suggested Categories
                   </h4>
                   <Button
@@ -779,7 +831,7 @@ const fetchProducts = async () => {
                         size="sm"
                         onClick={() => addGeneratedCategory(suggestion)}
                         disabled={isSubmitting}
-                        className="justify-start text-left h-auto py-2 px-3"
+                        className="justify-start text-left h-auto py-2 px-3 hover:bg-indigo-50"
                       >
                         {suggestion}
                       </Button>
@@ -790,13 +842,13 @@ const fetchProducts = async () => {
 
             {/* Categories Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {categories.map((cat) => (
+              {paginatedCategories.map((cat) => (
                 <div
                   key={cat.category_id}
                   className={`group relative bg-white rounded-lg p-3 border-2 transition-all duration-200 hover:shadow-md ${
                     editingCategoryId === cat.category_id
-                      ? "border-blue-300 shadow-lg"
-                      : "border-gray-200 hover:border-blue-200"
+                      ? "border-indigo-300 shadow-lg"
+                      : "border-slate-200 hover:border-indigo-200"
                   }`}
                 >
                   {editingCategoryId === cat.category_id ? (
@@ -811,7 +863,7 @@ const fetchProducts = async () => {
                           e.key === "Escape" && cancelEditCategory()
                         }
                         disabled={isSubmitting}
-                        className="border-blue-300 focus:border-blue-500 focus:ring-blue-500"
+                        className="border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500"
                         data-category-input={cat.category_id}
                         autoFocus
                         placeholder="Type category name..."
@@ -843,7 +895,7 @@ const fetchProducts = async () => {
                   ) : (
                     <>
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-gray-900 truncate">
+                        <span className="font-medium text-slate-900 truncate">
                           {cat.name}
                         </span>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -852,9 +904,9 @@ const fetchProducts = async () => {
                             size="sm"
                             onClick={() => startEditCategory(cat)}
                             disabled={isSubmitting}
-                            className="h-8 w-8 p-0 hover:bg-blue-50"
+                            className="h-8 w-8 p-0 hover:bg-indigo-50"
                           >
-                            <Edit3 className="h-4 w-4 text-blue-600" />
+                            <Edit3 className="h-4 w-4 text-indigo-600" />
                           </Button>
                           <Button
                             variant="ghost"
@@ -874,38 +926,61 @@ const fetchProducts = async () => {
                 </div>
               ))}
             </div>
+
+            {/* Category Pagination */}
+            {totalCategoryPages > 1 && (
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: totalCategoryPages }, (_, i) => (
+                  <Button
+                    key={i}
+                    variant={
+                      currentCategoryPage === i + 1 ? "default" : "outline"
+                    }
+                    size="sm"
+                    onClick={() => setCurrentCategoryPage(i + 1)}
+                    className={`w-10 h-10 ${
+                      currentCategoryPage === i + 1
+                        ? "bg-indigo-600 hover:bg-indigo-700"
+                        : "hover:bg-slate-100"
+                    }`}
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Product Management Section */}
+        {/* Search and Filter */}
         <Card className="border-0 shadow-lg">
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <Package className="h-6 w-6 text-green-600" />
-              <CardTitle className="text-xl">Product Management</CardTitle>
-            </div>
-            <CardDescription>
-              Manage your product inventory and details
+            <CardTitle className="flex items-center gap-2 text-slate-800">
+              <Search className="h-5 w-5 text-indigo-600" />
+              Search & Filter Products
+            </CardTitle>
+            <CardDescription className="text-slate-600">
+              Find products by name or filter by category
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Search and Filter Bar */}
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
+                  <Input
+                    placeholder="Search products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-12 h-12 text-base border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
               </div>
               <Select
                 value={selectedCategory}
                 onValueChange={(val) => setSelectedCategory(val)}
               >
-                <SelectTrigger className="w-48">
-                  <Filter className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-full md:w-48 h-12 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -917,54 +992,82 @@ const fetchProducts = async () => {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                onClick={() => setIsAddDialogOpen(true)}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-              >
-                <Plus className="h-4 w-4" />
-                Add Product
-              </Button>
             </div>
+            {(searchTerm || selectedCategory !== "all") && (
+              <div className="mt-4 flex items-center gap-3">
+                <span className="text-sm text-slate-600">
+                  Found {filteredProducts.length} products
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedCategory("all");
+                  }}
+                  className="h-7 px-3 text-xs hover:bg-slate-50"
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-            {/* Products Table */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        {/* Products Table */}
+        <Card className="border-0 shadow-lg">
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-gray-50">
-                  <TableRow>
-                    <TableHead className="w-16">Image</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
-                    <TableHead className="w-32">Actions</TableHead>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="w-16 font-semibold text-slate-700">
+                      Image
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Name
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Category
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Price
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Stock
+                    </TableHead>
+                    <TableHead className="w-32 text-center font-semibold text-slate-700">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedProducts.map((product: Product) => (
                     <TableRow
                       key={product.product_id}
-                      className="hover:bg-gray-50"
+                      className="hover:bg-slate-50 transition-colors duration-150 border-b border-slate-100"
                     >
                       <TableCell>
-                        <div className="w-12 h-12 relative rounded-lg overflow-hidden border">
-                              <Image
-                        src={
-                               product.image_url
-                                    ?`${API_BASE}${product.image_url}`: "/placeholder.svg"}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
+                        <div className="w-14 h-14 relative rounded-lg overflow-hidden border shadow-sm">
+                          <Image
+                            src={
+                              product.image_url
+                                ? `${API_BASE}${product.image_url}`
+                                : "/placeholder.svg"
+                            }
+                            alt={product.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-semibold text-slate-900 mb-1">
                             {product.name}
                           </div>
                           {product.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
+                            <div className="text-sm text-slate-500 truncate max-w-xs">
                               {product.description}
                             </div>
                           )}
@@ -977,7 +1080,7 @@ const fetchProducts = async () => {
                           )?.name || product.category_id}
                         </Badge>
                       </TableCell>
-                      <TableCell className="font-semibold text-green-600">
+                      <TableCell className="font-semibold text-indigo-600">
                         ${product.price}
                       </TableCell>
                       <TableCell>
@@ -989,7 +1092,7 @@ const fetchProducts = async () => {
                           }
                           className={`text-xs ${
                             product.is_in_stock === "1"
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
                               : "bg-red-100 text-red-800 hover:bg-red-200"
                           }`}
                         >
@@ -1004,15 +1107,15 @@ const fetchProducts = async () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleEdit(product)}
                             disabled={isSubmitting}
-                            className="h-8 w-8 p-0"
+                            className="h-9 w-9 p-0 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-150"
                           >
-                            <Edit3 className="h-4 w-4" />
+                            <Edit3 className="h-4 w-4 text-indigo-600" />
                           </Button>
                           <Button
                             variant="outline"
@@ -1021,7 +1124,7 @@ const fetchProducts = async () => {
                               confirmDeleteProduct(product.product_id)
                             }
                             disabled={isSubmitting}
-                            className="h-8 w-8 p-0 hover:bg-red-50 hover:border-red-200"
+                            className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-200 transition-all duration-150"
                           >
                             <Trash2 className="h-4 w-4 text-red-600" />
                           </Button>
@@ -1034,22 +1137,24 @@ const fetchProducts = async () => {
 
               {/* No results */}
               {filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <div className="text-center py-16">
+                  <div className="p-4 bg-slate-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+                    <Package className="h-10 w-10 text-slate-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-slate-900 mb-2">
                     {searchTerm || selectedCategory !== "all"
                       ? "No products found"
                       : "No products yet"}
                   </h3>
-                  <p className="text-gray-500 mb-4">
+                  <p className="text-slate-500 mb-6 max-w-md mx-auto">
                     {searchTerm || selectedCategory !== "all"
-                      ? "Try adjusting your search or filter criteria"
-                      : "Get started by adding your first product"}
+                      ? "Try adjusting your search or filter criteria to find what you're looking for"
+                      : "Get started by adding your first product to the catalog"}
                   </p>
                   {!searchTerm && selectedCategory === "all" && (
                     <Button
                       onClick={() => setIsAddDialogOpen(true)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
                     >
                       <Plus className="h-4 w-4" />
                       Add Your First Product
@@ -1058,16 +1163,20 @@ const fetchProducts = async () => {
                 </div>
               )}
 
-              {/* Pagination Controls */}
+              {/* Pagination */}
               {totalPages > 1 && (
-                <div className="flex justify-center gap-2 p-4 border-t bg-gray-50">
+                <div className="flex justify-center gap-2 p-6 border-t bg-slate-50">
                   {Array.from({ length: totalPages }, (_, i) => (
                     <Button
                       key={i}
                       variant={currentPage === i + 1 ? "default" : "outline"}
                       size="sm"
                       onClick={() => setCurrentPage(i + 1)}
-                      className="w-10 h-10"
+                      className={`w-10 h-10 ${
+                        currentPage === i + 1
+                          ? "bg-indigo-600 hover:bg-indigo-700"
+                          : "hover:bg-slate-100"
+                      }`}
                     >
                       {i + 1}
                     </Button>
@@ -1078,26 +1187,27 @@ const fetchProducts = async () => {
           </CardContent>
         </Card>
 
-        {/* Dialog for Add/Edit Product */}
+        {/* Add/Edit Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <Package className="h-5 w-5 text-indigo-600" />
+                </div>
                 {editingProduct ? "Edit Product" : "Add New Product"}
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-slate-600">
                 {editingProduct
                   ? "Update the product information below."
                   : "Fill in the details to add a new product to your catalog."}
               </DialogDescription>
             </DialogHeader>
-
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Product Name */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Product Name *
                   </label>
                   <Input
@@ -1108,12 +1218,13 @@ const fetchProducts = async () => {
                     }
                     required
                     disabled={isSubmitting}
+                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Category *
                   </label>
                   <Select
@@ -1123,7 +1234,7 @@ const fetchProducts = async () => {
                     }
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1141,7 +1252,7 @@ const fetchProducts = async () => {
 
                 {/* Price */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Price *
                   </label>
                   <Input
@@ -1154,12 +1265,13 @@ const fetchProducts = async () => {
                     }
                     required
                     disabled={isSubmitting}
+                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* Stock Status */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">
+                  <label className="text-sm font-semibold text-slate-700">
                     Stock Status
                   </label>
                   <Select
@@ -1169,7 +1281,7 @@ const fetchProducts = async () => {
                     }
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
                       <SelectValue placeholder="Select stock status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1182,26 +1294,24 @@ const fetchProducts = async () => {
 
               {/* Description */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-semibold text-slate-700">
                   Description
                 </label>
                 <Textarea
-                  rows={3}
+                  rows={4}
                   placeholder="Enter product description..."
                   value={formData.description}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      description: e.target.value,
-                    })
+                    setFormData({ ...formData, description: e.target.value })
                   }
                   disabled={isSubmitting}
+                  className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
 
               {/* Image Upload */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-semibold text-slate-700">
                   Product Image
                 </label>
                 <Input
@@ -1209,64 +1319,64 @@ const fetchProducts = async () => {
                   accept="image/*"
                   onChange={handleImageChange}
                   disabled={isSubmitting}
+                  className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
                 {selectedImage && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  <div className="flex items-center gap-2 text-sm text-slate-600">
+                    <CheckCircle className="h-4 w-4 text-emerald-600" />
                     Selected: {selectedImage.name}
                   </div>
                 )}
               </div>
 
-              {/* Form Actions */}
-              <div className="flex gap-3 pt-4">
-                <Button
-                  type="submit"
-                  className="flex-1"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Save className="h-4 w-4 mr-2" />
-                  )}
-                  {isSubmitting
-                    ? editingProduct
-                      ? "Saving..."
-                      : "Adding..."
-                    : editingProduct
-                    ? "Save Changes"
-                    : "Add Product"}
-                </Button>
+              <DialogFooter className="flex gap-3 pt-6">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsAddDialogOpen(false)}
                   disabled={isSubmitting}
+                  className="px-6 bg-transparent"
                 >
                   Cancel
                 </Button>
-              </div>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-6"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {editingProduct ? "Saving..." : "Adding..."}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      {editingProduct ? "Save Changes" : "Add Product"}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <DialogContent className="max-w-md">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-red-600">
-                <AlertTriangle className="h-5 w-5" />
+                <AlertCircle className="h-5 w-5" />
                 Confirm Deletion
               </DialogTitle>
-              <DialogDescription className="text-gray-600">
+              <DialogDescription>
                 Are you sure you want to delete "{deleteTarget?.name}"? This
                 action cannot be undone.
                 {deleteTarget?.type === "product" &&
                   " The associated image will also be removed."}
               </DialogDescription>
             </DialogHeader>
-            <DialogFooter className="flex gap-2">
+            <DialogFooter className="flex gap-3">
               <Button
                 variant="outline"
                 onClick={handleCancelDelete}
@@ -1281,11 +1391,16 @@ const fetchProducts = async () => {
                 className="flex items-center gap-2"
               >
                 {isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
                 ) : (
-                  <Trash2 className="h-4 w-4" />
+                  <>
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </>
                 )}
-                Delete
               </Button>
             </DialogFooter>
           </DialogContent>
