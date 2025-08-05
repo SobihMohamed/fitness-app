@@ -22,21 +22,31 @@ class DB implements dbContract{
     $this->table=$table;
     $this->conn = Connection::getInstance();
   }
-  public function insert($data){
-    $columns="";
-    $values="";
+  public function insert($data) {
+    $columns = "";
+    $values = "";
+    
     foreach ($data as $key => $value) {
-      $columns.="`$key`,";
-      $values.="'$value',";
+        $columns .= "`$key`,";
+        
+        if (is_null($value)) {
+            $values .= "NULL,";
+        } elseif (is_bool($value)) {
+            $values .= $value ? "1," : "0,";
+        } else {
+            $escapedValue = addslashes($value); // للتأكد من سلامة القيم النصية
+            $values .= "'$escapedValue',";
+        }
     }
-    // ? remove the last , exist
-    $columns = rtrim($columns,",");
-    $values = rtrim($values,",");
-    $this->sql="INSERT INTO `$this->table` ($columns) VALUES ($values)";
-    // ? return this to make the excution
-    // echo "<pre>$this->sql</pre>";
+
+    $columns = rtrim($columns, ",");
+    $values = rtrim($values, ",");
+
+    $this->sql = "INSERT INTO `$this->table` ($columns) VALUES ($values)";
+    
     return $this;
-  }
+}
+
   public function select($columns="*"){
     $this->sql = "SELECT $columns FROM $this->table ";
     // ? return this to make the excution
@@ -121,6 +131,12 @@ class DB implements dbContract{
   public function getSql()
   {
       return $this->sql;
+  }
+
+  public function getLastInsertedId() {
+      $result = mysqli_query($this->conn, "SELECT LAST_INSERT_ID() as id");
+      $row = mysqli_fetch_assoc($result);
+      return $row['id'] ?? null;
   }
 
 }

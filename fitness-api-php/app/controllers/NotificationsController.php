@@ -11,23 +11,32 @@ class NotificationsController extends AbstractController {
         parent::__construct();
         $this->notifModel = new Notifications();
     }
+
     // GET /user/notifications
     public function getNotificationForUser() {
         $user = $this->getUserFromToken();
-        $notifications = $this->notifModel->getByUserId($user['id']);
+        $notifications = $this->notifModel->getAllForUser($user['id']);
         return $this->json([
             'status' => 'success',
-            'data'   => $notifications
+            'data'=>    $notifications
         ]);
     }
+
+    // put mark as read notification
+    public function readNotification($notiId){
+      $user = $this->getUserFromToken();
+      $ok = $this->notifModel->markAsRead($notiId,$user['id']);
+      if (!$ok) {
+          return $this->sendError("Cannot mark as readed", 500);
+      }
+      return $this->json([
+          'status' => 'success',
+          'message' => 'Notification Marks As Readed'
+      ]);
+    }
+
     // DELETE notifications/{id}
     public function delete($id) {
-        $user = $this->getUserFromToken();
-        // تأكد إن الإشعار يخص اليوزر ده
-        $notif = $this->notifModel->getById($id);
-        if (!$notif || $notif['user_id'] != $user['id']) {
-            return $this->sendError("Not found or forbidden", 404);
-        }
         $ok = $this->notifModel->delete($id);
         if (!$ok) {
             return $this->sendError("Cannot delete", 500);
