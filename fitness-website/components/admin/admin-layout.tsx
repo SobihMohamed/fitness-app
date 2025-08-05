@@ -12,17 +12,13 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Package, label: "Products", href: "/admin/products" },
-  { icon: FileText, label: "Content", href: "/admin/content" },
+  { icon: FileText, label: "Courses", href: "/admin/courses" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
@@ -125,21 +121,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <h1 className="text-xl font-semibold text-gray-900">
                 Admin Dashboard
               </h1>
-              <div className="relative hidden md:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search..."
-                  className="pl-10 w-64 bg-gray-50 border-gray-200"
-                />
-              </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs bg-green-500">
-                  3
-                </Badge>
-              </Button>
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <span className="text-white text-sm font-medium">A</span>
