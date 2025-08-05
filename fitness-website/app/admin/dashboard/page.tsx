@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Loading from "@/app/loading";
 import {
   Card,
   CardContent,
@@ -16,6 +19,37 @@ import {
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
+
+export default function AdminDashboardWrapper() {
+  const [isChecking, setIsChecking] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+  const token = localStorage.getItem("adminAuth");
+  if (!token) {
+    router.push("/admin/login");
+  } else {
+      setIsChecking(false);
+  }
+}, [router]);
+
+  return (
+    <AdminLayout>
+    
+      {isChecking ? (
+        <Loading
+          variant="admin"
+          size="lg"
+          message="Loading users and administrators..."
+          icon="users"
+          className="h-[80vh]"
+        />
+      ) : (
+        <AdminDashboard />
+      )}
+    </AdminLayout>
+  );
+}
 
 const stats = [
   {
@@ -93,17 +127,17 @@ const topProducts = [
   { name: "Pre-Workout Energy", sales: 43, revenue: "$1,505" },
 ];
 
-export default function AdminDashboard() {
+export function AdminDashboard() {
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500">
-            Welcome back! Here's what's happening with your fitness platform.
-          </p>
-        </div>
+    <div className="space-y-6">
+
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-500">
+          Welcome back! Here's what's happening with your fitness platform.
+        </p>
+      </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -236,6 +270,5 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </AdminLayout>
   );
 }

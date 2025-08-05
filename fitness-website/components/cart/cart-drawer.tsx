@@ -34,8 +34,14 @@ export function CartDrawer() {
             <ShoppingCart className="h-16 w-16 text-muted" />
             <p className="text-lg font-medium text-foreground">Your cart is empty</p>
             <p className="text-sm text-center text-muted">Add some products to get started</p>
-            <Button  onClick={closeCart} className="bg-primary">
-              <Link href="/products">Shop Now</Link>
+            <Button onClick={() => {
+              closeCart();
+              if (typeof window !== 'undefined') {
+                const event = new CustomEvent('open-login-modal');
+                window.dispatchEvent(event);
+              }
+            }} className="bg-primary">
+              Shop Now
             </Button>
           </div>
         ) : (
