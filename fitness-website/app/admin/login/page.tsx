@@ -33,9 +33,9 @@ export default function AdminLoginPage() {
       }
 
       localStorage.setItem("adminAuth", data.token);
+      window.dispatchEvent(new Event("admin-logged-in"));
       router.push("/admin/dashboard");
     } catch (err: any) {
-      console.error("Login error:", err.message);
       setError("Incorrect email or password");
     } finally {
       setIsLoading(false);

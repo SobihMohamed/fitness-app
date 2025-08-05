@@ -26,36 +26,49 @@ export function Navigation() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
+
+  // Listen for 'open-login-modal' event from anywhere (e.g., CartDrawer)
+  useEffect(() => {
+    const handler = () => setLoginOpen(true);
+    window.addEventListener('open-login-modal', handler);
+    return () => window.removeEventListener('open-login-modal', handler);
+  }, []);
   const [showNavbar, setShowNavbar] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       const adminToken = localStorage.getItem("adminAuth");
-      const userToken = localStorage.getItem("userAuth");
-
+      // If admin token exists, hide the navbar
       if (adminToken) {
-        setShowNavbar(false); // إخفاء للـ Admin
+        setShowNavbar(false); 
       } else {
-        setShowNavbar(true); // إظهار للـ User أو اللي مش مسجل
+        setShowNavbar(true); 
       }
+      // Listen for admin-logged-in event to immediately hide navbar
+      const handler = () => setShowNavbar(false);
+      window.addEventListener('admin-logged-in', handler);
+      return () => window.removeEventListener('admin-logged-in', handler);
     }
   }, []);
 
   const isLoggedIn = !!user && user.role !== "admin";
 
-  if (!showNavbar) return null;
+  // Hide navbar on admin login page
+  if (!showNavbar || pathname === "/admin/login") return null;
 
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8">
-          {/* Logo يظهر دائمًا */}
-          <div className="flex lg:flex-1">
-            <Link href="/" className="-m-1.5 p-1.5">
-              <span className="text-2xl font-bold text-blue-600">FitPro</span>
-            </Link>
-          </div>
+          {/* Logo بيظهر بس في صفحة الهوم */}
+          {pathname === "/" && (
+            <div className="flex lg:flex-1">
+              <Link href="/" className="-m-1.5 p-1.5">
+                <span className="text-2xl font-bold text-blue-600">FitPro</span>
+              </Link>
+            </div>
+          )}
 
           {/* Menu Button للموبايل */}
           <div className="flex lg:hidden">
@@ -103,8 +116,8 @@ export function Navigation() {
                   </div>
                 )}
 
-                {/* زر الدخول لو المستخدم غير مسجل */}
-                {!user && (
+                {/* زر الدخول لو المستخدم غير مسجل ويظهر فقط في الصفحة الرئيسية */}
+                {!user && pathname === "/" && (
                   <div className="mt-6 flex justify-center">
                     <Button
                       onClick={() => {
@@ -120,7 +133,6 @@ export function Navigation() {
             </Sheet>
           </div>
 
-          {/* روابط التنقل على ديسكتوب */}
           <div className="hidden lg:flex lg:gap-x-12">
             {isLoggedIn &&
               navigation.map((item) => (
@@ -138,15 +150,16 @@ export function Navigation() {
               ))}
           </div>
 
-          {/* UserMenu أو زر الدخول */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-4">
             <CartDrawer />
             {user ? (
               <UserMenu />
             ) : (
-              <Button onClick={() => setLoginOpen(true)} size="sm">
-                Sign In
-              </Button>
+              pathname === "/" && (
+                <Button onClick={() => setLoginOpen(true)} size="sm">
+                  Sign In
+                </Button>
+              )
             )}
           </div>
         </nav>
