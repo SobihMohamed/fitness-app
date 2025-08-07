@@ -3,14 +3,17 @@ namespace App\Controllers;
 
 use App\Core\AbstractController;
 use App\models\Orders;
+use App\models\Product;
+
 use App\Helpers\NotifyHelper;
 
 class OrdersController extends AbstractController {
   private $orderModel;
-
+  private $productModel;
   public function __construct() {
     parent::__construct();
     $this->orderModel = new Orders();
+    $this->productModel = new Product();
   }
 
   // إنشاء طلب جديد
@@ -24,10 +27,18 @@ class OrdersController extends AbstractController {
     $ok = $this->orderModel->create($data);
 
     if (!$ok) return $this->sendError("Order creation failed", 500);
-
-      // NotifyHelper::pushToAllAdmins("طلب أوردر جديد",
-      //                               "طلب أوردر جديد من المستخدم {$user['email']}"
-      //                             );
+    
+    $product = $this->productModel->getProductById($data['product_id']);
+    NotifyHelper::pushToAllAdmins(
+        "طلب أوردر جديد",
+        "قام المستخدم {$user['email']} بطلب المنتج: {$product['name']} (ID: {$data['product_id']})"
+    );
+  // إشعار للمستخدم
+    NotifyHelper::pushToSpecificUser(
+        $data['user_id'],
+        "تم استلام طلبك",
+        "تم استلام طلب الأوردر الخاص بك بنجاح، وسيتم مراجعته قريبًا."
+    );
     return $this->json(["status" => "success", "message" => "Order created"]);
   }
 
