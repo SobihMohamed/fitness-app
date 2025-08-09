@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ProtectedAction } from "@/components/auth/Protected-Route";
-import { toast } from "react-hot-toast";
+import { toast } from "sonner";
+import { API_CONFIG } from "@/config/api";
 
 interface Product {
   product_id: number;
@@ -49,12 +50,27 @@ export default function ProductsPage() {
   const [sortBy, setSortBy] = useState("name");
   const [loading, setLoading] = useState(true);
 
+  const { BASE_URL: API_BASE, TARGET_URL: API_TARGET } = API_CONFIG;
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("http://localhost:8000/Products/getAll");
+        const res = await fetch(`${API_BASE}/Products/getAll`);
         const result = await res.json();
-        const data = result.data || result.products || result || [];
+        const rawData = result.data || result.products || result || [];
+        // Transform the data to match the expected interface
+        const data = rawData.map((item: any) => ({
+          product_id: parseInt(item.product_id, 10),
+          name: item.name,
+          category_id: parseInt(item.category_id, 10),
+          price: parseFloat(item.price),
+          description: item.description,
+          image_url: item.image_url,
+          stock_quantity: parseInt(item.is_in_stock, 10),
+          is_active: true, // Assuming products are active by default
+          created_at: "", // Not provided in API response
+          updated_at: ""  // Not provided in API response
+        }));
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -66,9 +82,14 @@ export default function ProductsPage() {
 
     const fetchCategories = async () => {
       try {
-        const res = await fetch("http://localhost:8000/Category/getAll");
+        const res = await fetch(`${API_BASE}/Category/getAll`);
         const result = await res.json();
-        const data = result.data || result.categories || result || [];
+        const rawData = result.data || result.categories || result || [];
+        // Transform the data to match the expected interface
+        const data = rawData.map((item: any) => ({
+          category_id: parseInt(item.category_id, 10),
+          name: item.name
+        }));
         setCategories(data);
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -83,16 +104,26 @@ export default function ProductsPage() {
     if (!searchTerm.trim()) return;
     const searchProducts = async () => {
       try {
-        const res = await fetch(
-          "http://localhost:8000/Products/searchProduct",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: searchTerm }),
-          }
-        );
+        const res = await fetch(`${API_BASE}/Products/searchProduct`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: searchTerm }),
+        });
         const result = await res.json();
-        const data = result.data || result.products || [];
+        const rawData = result.data || result.products || [];
+        // Transform the data to match the expected interface
+        const data = rawData.map((item: any) => ({
+          product_id: parseInt(item.product_id, 10),
+          name: item.name,
+          category_id: parseInt(item.category_id, 10),
+          price: parseFloat(item.price),
+          description: item.description,
+          image_url: item.image_url,
+          stock_quantity: parseInt(item.is_in_stock, 10),
+          is_active: true, // Assuming products are active by default
+          created_at: "", // Not provided in API response
+          updated_at: ""  // Not provided in API response
+        }));
         setProducts(data);
       } catch (error) {
         console.error("Error searching products:", error);
@@ -109,7 +140,7 @@ export default function ProductsPage() {
       name: product.name,
       price: product.price,
       image: product.image_url
-        ? `http://localhost:8000/uploads/${product.image_url}`
+        ? `${API_TARGET}/uploads/${product.image_url}`
         : "/placeholder.svg",
       category:
         categories.find((cat) => cat.category_id === product.category_id)
@@ -228,7 +259,7 @@ export default function ProductsPage() {
                   <Image
                     src={
                       product.image_url
-                        ? `http://localhost:8000/uploads/${product.image_url}`
+                        ? `${API_TARGET}/uploads/${product.image_url}`
                         : "/placeholder.svg"
                     }
                     alt={product.name}

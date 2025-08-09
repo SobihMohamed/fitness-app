@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -8,49 +8,77 @@ import {
   Package,
   FileText,
   Users,
-  Settings,
+  ClipboardList,
   LogOut,
   Menu,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+// Memoized sidebar items for better performance
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Package, label: "Products", href: "/admin/products" },
   { icon: FileText, label: "Courses", href: "/admin/courses" },
   { icon: Users, label: "Users", href: "/admin/users" },
-  { icon: Settings, label: "Settings", href: "/admin/settings" },
+  { icon: ClipboardList, label: "Requests", href: "/admin/request" },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    const token = localStorage.getItem("adminAuth"); 
+  // Optimized authentication check with useCallback
+  const checkAuth = useCallback(() => {
+    if (typeof window === "undefined") return true;
+    const token = localStorage.getItem("adminAuth");
     if (!token) {
       router.push("/admin/login");
-    } else {
-      setIsAuthenticated(true);
+      return false;
     }
+    return true;
   }, [router]);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    const ok = checkAuth();
+    setAuthChecked(true);
+    if (!ok) return;
+  }, [checkAuth]);
+
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("adminAuth");
     router.push("/admin/login");
-  };
+  }, [router]);
 
-  if (!isAuthenticated) return null;
+  // Optimized sidebar toggle with useCallback
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen(prev => !prev);
+  }, []);
+
+  const closeSidebar = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const openSidebar = useCallback(() => {
+    setSidebarOpen(true);
+  }, []);
+
+  // During SSR or before auth check completes, render a minimal shell
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-50" />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Backdrop for mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          onClick={closeSidebar}
         />
       )}
 
@@ -65,7 +93,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setSidebarOpen(false)}
+            onClick={closeSidebar}
+            aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -82,7 +111,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                       ? "bg-blue-600 text-white"
                       : "text-gray-600 hover:bg-gray-100"
                   }`}
-                  onClick={() => setSidebarOpen(false)}
+                  onClick={closeSidebar}
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
@@ -114,7 +143,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setSidebarOpen(true)}
+                onClick={openSidebar}
+                aria-label="Open sidebar"
               >
                 <Menu className="h-5 w-5" />
               </Button>

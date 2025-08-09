@@ -61,7 +61,7 @@ class AdminOrdersController extends AbstractController{
   }
 
   // PUT reject/{id}
-  public function canecl($id){
+  public function cancel($id){
     $this->requireSuperAdmin();
     $ok = $this ->orderModel
                 ->update($id, ["status"=>"cancelled"]);
