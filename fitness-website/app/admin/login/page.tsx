@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Loader2 } from "lucide-react";
+import { API_CONFIG } from "@/config/api";
+
+const { BASE_URL: API_BASE } = API_CONFIG;
 
 export default function AdminLoginPage() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -14,13 +17,52 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  // Validate email format
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
+  // Validate form inputs
+  const validateForm = useCallback(() => {
+    if (!credentials.email.trim()) {
+      setError("Email is required");
+      return false;
+    }
+    
+    if (!isValidEmail(credentials.email)) {
+      setError("Please enter a valid email address");
+      return false;
+    }
+    
+    if (!credentials.password.trim()) {
+      setError("Password is required");
+      return false;
+    }
+    
+    if (credentials.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return false;
+    }
+    
+    return true;
+  }, [credentials]);
+
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Reset previous errors
+    setError("");
+    
+    // Validate form before submitting
+    if (!validateForm()) {
+      return;
+    }
+    
+    setIsLoading(true);
+    
     try {
-      const response = await fetch("http://localhost:8000/admin/login", {
+      const response = await fetch(`${API_BASE}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -32,15 +74,23 @@ export default function AdminLoginPage() {
         throw new Error(data.message || "Login failed");
       }
 
-      localStorage.setItem("adminAuth", data.token);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("adminAuth", data.token);
+      }
       window.dispatchEvent(new Event("admin-logged-in"));
       router.push("/admin/dashboard");
     } catch (err: any) {
-      setError("Incorrect email or password");
+      setError(err.message || "Incorrect email or password");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [credentials, router, validateForm]);
+
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setCredentials(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (error) setError("");
+  }, [error]);
 
   return (
     <main className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
@@ -64,12 +114,11 @@ export default function AdminLoginPage() {
                 id="email"
                 type="email"
                 value={credentials.email}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, email: e.target.value })
-                }
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 className="pl-10"
                 placeholder="Enter email"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -88,12 +137,11 @@ export default function AdminLoginPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 value={credentials.password}
-                onChange={(e) =>
-                  setCredentials({ ...credentials, password: e.target.value })
-                }
+                onChange={(e) => handleInputChange("password", e.target.value)}
                 className="pl-10 pr-10"
                 placeholder="Enter password"
                 required
+                disabled={isLoading}
               />
               <Button
                 type="button"
@@ -101,6 +149,7 @@ export default function AdminLoginPage() {
                 size="icon"
                 className="absolute right-1 top-1/2 -translate-y-1/2"
                 onClick={() => setShowPassword(!showPassword)}
+                disabled={isLoading}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -120,7 +169,14 @@ export default function AdminLoginPage() {
 
           {/* Submit Button */}
           <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing in...
+              </>
+            ) : (
+              "Sign In"
+            )}
           </Button>
         </form>
       </div>
