@@ -57,7 +57,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   })
 
   const [registerData, setRegisterData] = useState(initialRegisterData)
-  console.log("Register Data before:", registerData);
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -115,7 +114,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     e.preventDefault()
     setMessage(null)
 
-    console.log("Register Data:", registerData);
     
     if (!registerData.name.trim()) {
       setMessage({ type: "error", text: "Please enter your name" })
@@ -154,7 +152,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         registerData.country,
         registerData.user_type,
       )
-      console.log("Register Response after :", response);
+      
 
       if (response.success) {
         setMessage({ type: "success", text: response.message })

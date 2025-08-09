@@ -142,11 +142,7 @@ export default function Dashboard() {
 
   // 🔧 AUTHENTICATION CHECK - Fixed Logic
   useEffect(() => {
-    console.log("Dashboard - Auth check:", { user, isLoading }) // Debug log
-    
-    // If not loading and no user, redirect to home
     if (!isLoading && !user) {
-      console.log("No user found, redirecting to home")
       router.push("/")
     }
   }, [user, isLoading, router])

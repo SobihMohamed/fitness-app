@@ -320,7 +320,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     try {
-      console.log(`Logging in with email: ${email} and password: ${password}`)
+      
       const res = await axios.post(
         `${baseURL}/auth/login`,
         { email, password },
@@ -330,18 +330,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       )
 
-      console.log(res)
+      
       if (res.data.status === "success") {
         setUser(res.data.user) // Set user in context
         sessionStorage.setItem("user", JSON.stringify(res.data.user))
         sessionStorage.setItem("token", res.data.token) // Store token if needed
-        console.log("Login successful:", res.data.message)
+        
         return { success: true, message: res.data.message }
       }
-      console.log("Login failed:", res.data.message)
+      
       return { success: false, message: res.data.message }
     } catch (err: any) {
-      console.error("Login error:", err)
+      
       return { success: false, message: err.response?.data?.message || "Login failed." }
     }
   }
@@ -361,16 +361,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user_type: string,
   ) => {
     try {
-      console.log("Making registration request to:", `${baseURL}/auth/register`)
-      console.log("Registration data being sent:", {
-        name,
-        email,
-        phone,
-        address,
-        country,
-        user_type,
-        password: "***",
-      })
+      
 
       const res = await axios.post(`${baseURL}/auth/register`, {
         name,
@@ -383,7 +374,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_type,
       })
 
-      console.log("Registration response:", res.data)
+      
 
       if (res.data.status === "success") {
         // Optionally auto-login after registration
@@ -396,7 +387,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return { success: false, message: res.data.message || "Registration failed" }
     } catch (err: any) {
-      console.error("Registration error:", err)
+      
       return {
         success: false,
         message: err.response?.data?.message || "Registration failed. Please try again.",
@@ -409,8 +400,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ────────────────────────────────────────────────────────────────
   const forgetPassword = async (email: string) => {
     try {
-      console.log("Making forget password request to:", `${baseURL}/auth/forgetPassword`)
-      console.log("Forget password data being sent:", { email })
+      
 
       const res = await axios.post(
         `${baseURL}/auth/forgetPassword`,
@@ -418,13 +408,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // { withCredentials: true }
       )
 
-      console.log("Forget password response:", res.data)
+      
 
       return res.data.status === "success"
         ? { success: true, message: res.data.message }
         : { success: false, message: res.data.message }
     } catch (err: any) {
-      console.error("Forget password error:", err)
+      
       return {
         success: false,
         message: err.response?.data?.message || "Failed to send OTP.",
@@ -437,8 +427,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ────────────────────────────────────────────────────────────────
   const verifyOtp = async (email: string, otp: string, newPassword: string) => {
     try {
-      console.log("Making verify OTP request to:", `${baseURL}/auth/verifyOtpAndUpdatePassword`)
-      console.log("Verify OTP data being sent:", { email, otp, newPassword: "***" })
+      
 
       const res = await axios.post(
         `${baseURL}/auth/verifyOtpAndUpdatePassword`,
@@ -446,13 +435,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // { withCredentials: true }
       )
 
-      console.log("Verify OTP response:", res.data)
+      
 
       return res.data.status === "success"
         ? { success: true, message: res.data.message }
         : { success: false, message: res.data.message }
     } catch (err: any) {
-      console.error("Verify OTP error:", err)
+      
       return {
         success: false,
         message: err.response?.data?.message || "OTP verification failed.",
@@ -477,7 +466,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         )
       }
     } catch (error) {
-      console.error("Logout error:", error)
+      
     } finally {
       setUser(null)
       sessionStorage.removeItem("user")

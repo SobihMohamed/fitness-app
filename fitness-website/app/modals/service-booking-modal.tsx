@@ -62,7 +62,7 @@ export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice
         ...formData,
       }
 
-      console.log("Submitting service booking:", bookingData)
+      
 
       const response = await axios.post(`${baseURL}/services/book`, bookingData, {
         headers: {
@@ -71,7 +71,7 @@ export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice
         },
       })
 
-      console.log("Booking response:", response.data)
+      
 
       if (response.data.status === "success") {
         setSubmitStatus("success")
@@ -84,7 +84,7 @@ export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice
         setErrorMessage(response.data.message || "Booking failed")
       }
     } catch (error: any) {
-      console.error("Booking error:", error)
+      
       setSubmitStatus("error")
       setErrorMessage(error.response?.data?.message || "Failed to submit booking. Please try again.")
     } finally {

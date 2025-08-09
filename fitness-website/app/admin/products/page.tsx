@@ -3,12 +3,12 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
+ 
 import { useLoading } from "@/hooks/use-loading";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { toast } from "react-hot-toast";
+import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import {
   Plus,
   Search,
@@ -58,7 +58,11 @@ import {
 } from "lucide-react";
 import Loading from "@/app/loading";
 
-const API_BASE = "http://localhost:8000";
+
+import { API_CONFIG } from "@/config/api";
+
+const { BASE_URL: API_BASE } = API_CONFIG;
+
 
 type Category = {
   category_id: string;
@@ -97,6 +101,7 @@ const CATEGORY_SUGGESTIONS = [
 
 
 export default function ProductsManagement() {
+  
   const [products, setProducts] = useState<Product[]>([]);
   const { isAnyLoading, withLoading } = useLoading();
   const [searchTerm, setSearchTerm] = useState("");
@@ -133,6 +138,8 @@ export default function ProductsManagement() {
 
   const [newCategoryName, setNewCategoryName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  
+  // Auth is enforced in AdminLayout; no extra client redirect needed here
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState({
@@ -162,50 +169,9 @@ export default function ProductsManagement() {
   const categoriesPerPage = 4;
   const [currentCategoryPage, setCurrentCategoryPage] = useState(1);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("adminAuth");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  };
+  const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
 
-  // Toast helpers
-  const showSuccessToast = (message: string) => {
-    toast.success(message, {
-      duration: 3000,
-      style: {
-        background: "linear-gradient(135deg, #10b981, #059669)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#10b981",
-      },
-    });
-  };
-
-  const showErrorToast = (message: string) => {
-    toast.error(message, {
-      duration: 4000,
-      style: {
-        background: "linear-gradient(135deg, #ef4444, #dc2626)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#ef4444",
-      },
-    });
-  };
+  
 
   const showInfoToast = (message: string) => {
     toast(message, {
@@ -468,19 +434,7 @@ export default function ProductsManagement() {
     });
   };
 
-  const parseResponse = async (response: Response) => {
-    const responseText = await response.text();
-    try {
-      return JSON.parse(responseText);
-    } catch (e) {
-      return {
-        status: response.ok ? "success" : "error",
-        message:
-          responseText ||
-          (response.ok ? "Operation completed" : "Operation failed"),
-      };
-    }
-  };
+  
 
   const filteredProducts = products.filter(
     (p: Product) =>

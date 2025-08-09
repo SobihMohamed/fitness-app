@@ -1,10 +1,8 @@
 "use client";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
 
 import {
   Select,
@@ -38,7 +36,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { toast } from "react-hot-toast";
+import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import {
   Plus,
   Search,
@@ -58,8 +56,9 @@ import {
 } from "lucide-react";
 import Loading from "@/app/loading";
 import { useLoading } from "@/hooks/use-loading";
+import { API_CONFIG } from "@/config/api";
 
-const API_BASE = "http://localhost:8000";
+const { BASE_URL: API_BASE } = API_CONFIG;
 
 type UserType = {
   user_id: string;
@@ -83,22 +82,7 @@ type AdminType = {
   is_active?: string;
 };
 
-export default function UsersManagementWrapper() {
-  const [isChecking, setIsChecking] = useState(true);
-  const router = useRouter();
-  useEffect(() => {
-    const token = localStorage.getItem("adminAuth");
-    if (!token) {
-      router.push("/admin/login");
-    } else {
-      setIsChecking(false);
-    }
-  }, [router]);
-  if (isChecking) return <Loading variant="admin" size="lg" message="Loading users and administrators..." icon="users" className="h-[80vh]" />;
-  return <UsersManagement />;
-}
-
-function UsersManagement() {
+export default function UsersManagement() {
   const [users, setUsers] = useState<UserType[]>([]);
   const [admins, setAdmins] = useState<AdminType[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,76 +112,14 @@ function UsersManagement() {
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Enhanced loading states
+  // Loading states
   const { setLoading, isLoading, isAnyLoading, withLoading } = useLoading();
+  const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
 
   // Add initial loading state
   const [initialLoading, setInitialLoading] = useState(true);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("adminAuth");
-    return {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
-  };
-
-  // Enhanced toast helpers
-  const showSuccessToast = (message: string) => {
-    toast.success(message, {
-      duration: 3000,
-      style: {
-        background: "linear-gradient(135deg, #10b981, #059669)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#10b981",
-      },
-    });
-  };
-
-  const showErrorToast = (message: string) => {
-    toast.error(message, {
-      duration: 4000,
-      style: {
-        background: "linear-gradient(135deg, #ef4444, #dc2626)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#ef4444",
-      },
-    });
-  };
-
-  const parseResponse = async (response: Response) => {
-    const text = await response.text();
-    if (!text || text.trim() === "") {
-      return {
-        status: response.ok ? "success" : "error",
-        message: response.ok
-          ? "Operation completed successfully"
-          : "Operation failed",
-      };
-    }
-    try {
-      return JSON.parse(text);
-    } catch {
-      return {
-        status: response.ok ? "success" : "error",
-        message: text.trim() || (response.ok ? "Success" : "An error occurred"),
-      };
-    }
-  };
+  
 
   const checkEmailExists = (email: string, excludeId?: string): boolean => {
     const allEmails = [
@@ -269,27 +191,43 @@ function UsersManagement() {
     });
   };
 
-  const filteredData = () => {
+  // Memoized filtered data calculation for better performance
+  const { filteredDataMemo, totalPages, paginatedData } = React.useMemo(() => {
+    // Combine users and admins with type information
     const allData = [
       ...users.map((u) => ({ ...u, type: "user" as const })),
       ...admins.map((a) => ({ ...a, type: "admin" as const })),
     ];
-    return allData.filter((item) => {
-      const matchesSearch =
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesType =
+    
+    // Filter data based on search term and selected type
+    const filtered = allData.filter((item) => {
+      // Search filter - check name and email
+      const matchesSearch = searchTerm
+        ? item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.email.toLowerCase().includes(searchTerm.toLowerCase())
+        : true;
+      
+      // Type filter - show users, admins, or both
+      const matchesType = selectedType === "all" ||
         (selectedType === "users" && item.type === "user") ||
         (selectedType === "admins" && item.type === "admin");
+      
       return matchesSearch && matchesType;
     });
-  };
-
-  const totalPages = Math.ceil(filteredData().length / itemsPerPage);
-  const paginatedData = filteredData().slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+    
+    // Calculate pagination
+    const total = Math.ceil(filtered.length / itemsPerPage);
+    const paginated = filtered.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+    
+    return {
+      filteredDataMemo: filtered,
+      totalPages: total,
+      paginatedData: paginated
+    };
+  }, [users, admins, searchTerm, selectedType, currentPage, itemsPerPage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -641,7 +579,7 @@ function UsersManagement() {
             {(searchTerm || selectedType !== "admins") && (
               <div className="mt-4 flex items-center gap-3">
                 <span className="text-sm text-slate-600">
-                  Found {filteredData().length} accounts
+                  Found {filteredDataMemo.length} accounts
                 </span>
                 <Button
                   variant="outline"
@@ -796,7 +734,7 @@ function UsersManagement() {
                 </Table>
 
                 {/* No results */}
-                {filteredData().length === 0 && (
+                {filteredDataMemo.length === 0 && (
                   <div className="text-center py-16">
                     <div className="p-4 bg-slate-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                       <Users className="h-10 w-10 text-slate-400" />
