@@ -19,13 +19,32 @@ class CoursesRequestsController extends AbstractController {
 
     $data = json_decode(file_get_contents("php://input"), true);
     $data['user_id'] = $user['id'];
+
+// تأكد أن course_id مرسل
+    if (empty($data['course_id']))
+        return $this->sendError("Course ID is required", 400);
+
+    // احضر اسم الكورس
+    $course = $this->reqModel->getSpecificRequestById($data['course_id']);
+    if (!$course)
+        return $this->sendError("Course not found", 404);
+
     $ok = $this->reqModel->create($data);
     if (!$ok) 
       return $this->sendError("Cannot submit request",500);
 
-    // NotifyHelper::pushToAllAdmins("طلب اشتراك في كورس جديد",
-    //                               "طلب اشتراك في كورس جديد من المستخدم {$user['email']}"
-    //                             );
+    // إشعار لكل الأدمنات
+    NotifyHelper::pushToAllAdmins(
+        "طلب اشتراك في كورس جديد",
+        "قام المستخدم {$user['email']} بطلب الاشتراك في الكورس: {$course['name']} (ID: {$data['course_id']})"
+    );
+
+    // إشعار للمستخدم
+    NotifyHelper::pushToSpecificUser(
+        $data['user_id'],
+        "تم استلام طلبك",
+        "تم استلام طلب الاشتراك في الكورس بنجاح، وسيتم مراجعته قريبًا."
+    );
                                 
     return $this->json(["status"=>"success","message"=>"Request submitted"]);
   }
