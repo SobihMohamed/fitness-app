@@ -42,46 +42,67 @@ class AdminCoursesRequestsController extends AbstractController {
     return $this->json(["status"=>"success","data"=>$reqDetails]);
   }
 
-  // PUT /approve/{id}
+    // PUT /approve/{id}
   public function approve($id){
-    $this->requireSuperAdmin();
-    $request = $this->reqModel->showRequestDetails($id);
-    if (!$request)
-        return $this->sendError("Request not found", 404);
+      $this->requireSuperAdmin();
 
-    $ok = $this->reqModel
-                ->update($id, ["status"=>"approved"]);
-    if (!$ok) 
-      return $this->sendError("Cannot approve",500);
+      $request = $this->reqModel->showRequestDetails($id);
+      if (!$request)
+          return $this->sendError("Request not found", 404);
 
-    // NotifyHelper::pushToSpecificUser(
-    //     $request['user_id'],
-    //     "طلب الاشتراك بالكورس {$request['title']} تم قبوله",
-    //     " تمت الموافقة على طلب الاشتؤاك الخاص بك نتمني لك التوفيق."
-    // );
-    return $this->json(["status"=>"success","message"=>"Request approved"]);
+      $ok = $this->reqModel->update($id, ["status" => "approved"]);
+      if (!$ok) 
+          return $this->sendError("Cannot approve", 500);
+
+      // إشعار لليوزر
+      NotifyHelper::pushToSpecificUser(
+          $request['user_id'],
+          "طلب الاشتراك بالكورس {$request['title']} تم قبوله",
+          "تمت الموافقة على طلب الاشتراك الخاص بك. نتمنى لك التوفيق!"
+      );
+
+      // إشعار لكل الأدمنات (مع استثناء الأدمن الحالي)
+      $admin = $this->getUserFromToken();
+      NotifyHelper::pushToAllAdmins(
+          "تمت الموافقة على طلب كورس رقم {$id}",
+          "الأدمن {$admin['email']} وافق على طلب كورس للمستخدم ID: {$request['user_id']}",
+          $excludeAdminId = $admin['id']
+      );
+
+      return $this->json(["status" => "success", "message" => "Request approved"]);
   }
 
-  // PUT reject/{id}
+
+    // PUT reject/{id}
   public function canecl($id){
-    $this->requireSuperAdmin();
+      $this->requireSuperAdmin();
 
-    $request = $this->reqModel->showRequestDetails($id);
-    if (!$request)
-        return $this->sendError("Request not found", 404);
+      $request = $this->reqModel->showRequestDetails($id);
+      if (!$request)
+          return $this->sendError("Request not found", 404);
 
-    $ok = $this->reqModel
-                ->update($id, ["status"=>"cancelled"]);
-    if (!$ok) 
-      return $this->sendError("Cannot Cancelled",500);
+      $ok = $this->reqModel->update($id, ["status" => "cancelled"]);
+      if (!$ok) 
+          return $this->sendError("Cannot Cancelled", 500);
 
-    // NotifyHelper::pushToSpecificUser(
-    //     $request['user_id'],
-    //     "طلب الاشتراك بالكورس {$request['title']} تم رفض",
-    //     " تم رفض طلب الاشتراك الخاص بك للمزيد نرجوا التواصل عبر البريد الالكتروني ."
-    // );
-    return $this->json(["status"=>"success","message"=>"Request Cancelled"]);
+      // إشعار لليوزر
+      NotifyHelper::pushToSpecificUser(
+          $request['user_id'],
+          "طلب الاشتراك بالكورس {$request['title']} تم رفضه",
+          "تم رفض طلب الاشتراك الخاص بك. للمزيد من التفاصيل تواصل معنا عبر البريد الإلكتروني."
+      );
+
+      // إشعار لكل الأدمنات (مع استثناء الأدمن الحالي)
+      $admin = $this->getUserFromToken();
+      NotifyHelper::pushToAllAdmins(
+          "تم رفض طلب كورس رقم {$id}",
+          "الأدمن {$admin['email']} رفض طلب كورس للمستخدم ID: {$request['user_id']}",
+          $excludeAdminId = $admin['id']
+      );
+
+      return $this->json(["status" => "success", "message" => "Request Cancelled"]);
   }
+
   
   // DELETE delete/{id}
   public function delete($id){
