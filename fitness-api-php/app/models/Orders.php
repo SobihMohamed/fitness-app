@@ -16,7 +16,6 @@ class Orders {
       $data['purchase_date'] = date('Y-m-d');
       return $this->db->insert($data)->excute();
     } catch (Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -25,7 +24,6 @@ class Orders {
     try {
       return $this->db->select()->where('user_id', '=', $user_id)->fetchAll();
     } catch (Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -39,7 +37,6 @@ class Orders {
       ->where('order_Id', '=', $orderId)
       ->getRow();
     } catch (Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -48,7 +45,6 @@ class Orders {
     try {
       return $this->db->select()->fetchAll();
     } catch (Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -57,7 +53,6 @@ class Orders {
     try {
       return $this->db->select()->where('status', '=', $status)->fetchAll();
     } catch (Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -69,7 +64,6 @@ class Orders {
                   ->where("order_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -82,10 +76,8 @@ class Orders {
                   ->where("order_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
 }
-
 ?>

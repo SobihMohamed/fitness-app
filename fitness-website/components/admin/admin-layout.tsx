@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  Badge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -23,18 +24,70 @@ const sidebarItems = [
   { icon: Settings, label: "Settings", href: "/admin/settings" },
 ];
 
+interface NotificationData {
+  trainingRequests: number;
+  courseRequests: number;
+  orders: number;
+  expiringRequests: number;
+}
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationData>({
+    trainingRequests: 0,
+    courseRequests: 0,
+    orders: 0,
+    expiringRequests: 0,
+  });
+  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("adminAuth");
+    return {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    };
+  };
+
+  // Fetch notification counts
+  const fetchNotificationCounts = async () => {
+    try {
+      const [trainingRes, courseRes, ordersRes, expiringRes] = await Promise.all([
+        fetch("http://localhost:8000/AdminTrainingRequests/getAll", { headers: getAuthHeaders() }),
+        fetch("http://localhost:8000/AdminCoursesRequests/getAll", { headers: getAuthHeaders() }),
+        fetch("http://localhost:8000/AdminOrders/getAll", { headers: getAuthHeaders() }),
+        fetch("http://localhost:8000/AdminTrainingRequests/getExpirationSoon", { headers: getAuthHeaders() })
+      ]);
+
+      const [trainingData, courseData, ordersData, expiringData] = await Promise.all([
+        trainingRes.json(),
+        courseRes.json(),
+        ordersRes.json(),
+        expiringRes.json()
+      ]);
+
+      setNotifications({
+        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending").length || 0,
+        courseRequests: courseData.data?.filter((req: any) => req.status === "pending").length || 0,
+        orders: ordersData.data?.filter((order: any) => order.status === "pending").length || 0,
+        expiringRequests: expiringData.data?.length || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching notification counts:", error);
+    }
+  };
   useEffect(() => {
     const token = localStorage.getItem("adminAuth"); 
     if (!token) {
       router.push("/admin/login");
     } else {
       setIsAuthenticated(true);
+      fetchNotificationCounts();
+      // Set up periodic refresh for notifications
+      const interval = setInterval(fetchNotificationCounts, 30000); // Every 30 seconds
+      return () => clearInterval(interval);
     }
   }, [router]);
 
@@ -43,6 +96,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     router.push("/admin/login");
   };
 
+  const totalNotifications = notifications.trainingRequests + notifications.courseRequests + notifications.orders + notifications.expiringRequests;
   if (!isAuthenticated) return null;
 
   return (
@@ -86,6 +140,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 >
                   <item.icon className="h-5 w-5" />
                   <span>{item.label}</span>
+                  {item.href === "/admin/settings" && totalNotifications > 0 && (
+                    <Badge className="bg-red-500 text-white ml-auto">
+                      {totalNotifications}
+                    </Badge>
+                  )}
                 </Link>
               </li>
             ))}

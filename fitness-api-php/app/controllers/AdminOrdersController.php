@@ -70,7 +70,11 @@ class AdminOrdersController extends AbstractController{
   }
 
   // PUT reject/{id}
+<<<<<<< HEAD
+  public function cancel($id){
+=======
 public function cancel($id) {
+>>>>>>> upstream/main
     $this->requireSuperAdmin();
 
     $order = $this->orderModel->getByOrderId($id);

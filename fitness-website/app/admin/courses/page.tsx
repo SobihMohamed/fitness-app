@@ -7,8 +7,6 @@ import { useLoading } from "@/hooks/use-loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useRouter } from "next/navigation";
-
 import {
   Table,
   TableBody,
@@ -34,7 +32,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { toast } from "react-hot-toast";
+import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import {
   Plus,
   Search,
@@ -50,9 +48,10 @@ import {
   ExternalLink,
   TrendingUp,
 } from "lucide-react";
-import Loading from "@/app/loading";
 
-const API_BASE = "http://localhost:8000";
+import { API_CONFIG } from "@/config/api";
+
+const { BASE_URL: API_BASE } = API_CONFIG;
 
 type Course = {
   course_id: string;
@@ -63,26 +62,10 @@ type Course = {
   description: string;
 };
 
-export default function CoursesManagementWrapper() {
-  const [isChecking, setIsChecking] = useState(true);
-  const router = useRouter();
-  useEffect(() => {
-    const token = localStorage.getItem("adminAuth");
-    if (!token) {
-      router.push("/admin/login");
-    } else {
-      setIsChecking(false);
-    }
-  }, [router]);
-  if (isChecking) return <Loading variant="admin" size="lg" message="Loading users and administrators..." icon="users" className="h-[80vh]" />;
-  return <CoursesManagement />;
-}
-
-function CoursesManagement() {
+export default function CoursesManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
   const { isAnyLoading, withLoading } = useLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -103,62 +86,9 @@ function CoursesManagement() {
     description: "",
   });
 
-  // Toast helpers
-  const showSuccessToast = (message: string) => {
-    toast.success(message, {
-      duration: 3000,
-      style: {
-        background: "linear-gradient(135deg, #10b981, #059669)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(16, 185, 129, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#10b981",
-      },
-    });
-  };
+  const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
 
-  const showErrorToast = (message: string) => {
-    toast.error(message, {
-      duration: 4000,
-      style: {
-        background: "linear-gradient(135deg, #ef4444, #dc2626)",
-        color: "#fff",
-        fontWeight: "600",
-        borderRadius: "12px",
-        padding: "16px 20px",
-        boxShadow: "0 10px 25px rgba(239, 68, 68, 0.3)",
-      },
-      iconTheme: {
-        primary: "#fff",
-        secondary: "#ef4444",
-      },
-    });
-  };
-
-  // Auth headers
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem("adminAuth");
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-  };
-
-  // Parse API response
-  const parseResponse = async (res: Response) => {
-    try {
-      const text = await res.text();
-      if (!text.trim()) return {};
-      return JSON.parse(text);
-    } catch (error) {
-      return {};
-    }
-  };
+ 
 
   // Fetch courses
   const fetchCourses = async () => {
@@ -389,26 +319,18 @@ function CoursesManagement() {
       window.location.href = "/admin/login";
       return;
     }
-    const initializeData = async () => {
-      try {
-        await fetchCourses();
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-    initializeData();
+    fetchCourses();
   }, []);
 
-  if (isAnyLoading() || initialLoading) {
+  if (isAnyLoading()) {
     return (
       <AdminLayout>
-        <Loading
-          variant="admin"
-          size="lg"
-          message="Loading users and administrators..."
-          icon="users"
-          className="h-[80vh]"
-        />
+        <div className="flex items-center justify-center h-[80vh]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            <p className="text-slate-600">Loading courses...</p>
+          </div>
+        </div>
       </AdminLayout>
     );
   }
