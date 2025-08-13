@@ -79,7 +79,7 @@ class ManageUsers {
         return false;
       }
     }catch(Exception $e){
-      return $e;
+      return false;
     }
   }
   public function isExist($email){

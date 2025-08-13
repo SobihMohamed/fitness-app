@@ -130,13 +130,13 @@ export function useDashboardData(): UseDashboardDataReturn {
         }
 
         const [usersResponse, ordersResponse, productsResponse, coursesResponse, adminsResponse, trainingResponse, courseRequestsResponse] = await Promise.all([
-          fetch(API_CONFIG.USERS_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ORDERS_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.PRODUCTS_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.COURSES_ADMIN_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMINS_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.TRAINING_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.COURSES_API.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.adminUsers.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getAllProducts, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminCourse.getAllCourses, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.superAdminControlleAdmins.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
         ]);
 
         const users = usersResponse.users || usersResponse.data || [];
@@ -144,7 +144,7 @@ export function useDashboardData(): UseDashboardDataReturn {
         const products = productsResponse.products || productsResponse.data || [];
         const courses = coursesResponse.courses || coursesResponse.data || [];
         console.log('ADMINS API RESPONSE:', adminsResponse);
-        const admins = adminsResponse.users || adminsResponse.admins || adminsResponse.data || [];
+        const admins = adminsResponse.admins || adminsResponse.users || adminsResponse.data || [];
         const trainingRequests = trainingResponse.data || trainingResponse.requests || [];
         const courseRequests = courseRequestsResponse.data || courseRequestsResponse.requests || [];
 

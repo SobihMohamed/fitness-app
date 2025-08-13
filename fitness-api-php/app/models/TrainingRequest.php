@@ -29,7 +29,6 @@ class TrainingRequest{
     try {
       return $this->db->select()->fetchAll();
     } catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -41,7 +40,6 @@ class TrainingRequest{
                   ->where("request_id" , "=",$req_id)
                   ->getRow();
     }catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -55,7 +53,6 @@ class TrainingRequest{
                   ->where("request_id" , "=",$id)
                   ->getRow();
     }catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -67,7 +64,6 @@ class TrainingRequest{
                   ->where("user_id","=",$userId)
                   ->fetchAll();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -80,7 +76,6 @@ class TrainingRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -94,13 +89,12 @@ class TrainingRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
 
   //get expifing before 2 days
-public function getExpiringSoon() {
+  public function getExpiringSoon() {
     $today = date('Y-m-d');
     $afterTwoDays = date('Y-m-d', strtotime('+2 days'));
     try {
@@ -111,10 +105,9 @@ public function getExpiringSoon() {
             ->andWhere("isExpired", "=", "0")
             ->fetchAll();
     } catch (Exception $e) {
-        var_dump($e->getMessage());
         return false;
     }
-}
+  }
 
 
   // update set isExpired to 1
@@ -127,9 +120,8 @@ public function getExpiringSoon() {
       ->andWhere("isExpired","=","0")
       ->excute();
     }catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
-}
+  }
 }
 ?>

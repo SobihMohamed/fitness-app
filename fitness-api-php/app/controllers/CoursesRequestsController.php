@@ -21,13 +21,14 @@ class CoursesRequestsController extends AbstractController {
     $data['user_id'] = $user['id'];
 
 // تأكد أن course_id مرسل
-    if (empty($data['course_id']))
-        return $this->sendError("Course ID is required", 400);
+if (empty($data['course_id']))
+    return $this->sendError("Course ID is required", 400);
 
-    // احضر اسم الكورس
-    $course = $this->reqModel->getSpecificRequestById($data['course_id']);
-    if (!$course)
-        return $this->sendError("Course not found", 404);
+// احضر اسم الكورس
+$courseModel = new \App\models\Courses();
+$course = $courseModel->getCourseById($data['course_id']);
+if (!$course)
+    return $this->sendError("Course not found", 404);
 
     $ok = $this->reqModel->create($data);
     if (!$ok) 
@@ -36,7 +37,7 @@ class CoursesRequestsController extends AbstractController {
     // إشعار لكل الأدمنات
     NotifyHelper::pushToAllAdmins(
         "طلب اشتراك في كورس جديد",
-        "قام المستخدم {$user['email']} بطلب الاشتراك في الكورس: {$course['name']} (ID: {$data['course_id']})"
+        "قام المستخدم {$user['name']} بطلب الاشتراك في الكورس: {$course['name']} (ID: {$data['course_id']}) بسعر {$course['price']}"
     );
 
     // إشعار للمستخدم

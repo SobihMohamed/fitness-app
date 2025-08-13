@@ -7,12 +7,15 @@ import { useCart } from "@/contexts/cart-context"
 import { ShoppingCart, Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
 
 export function CartDrawer() {
-  const { items, total, itemCount, isOpen, toggleCart, closeCart, updateQuantity, removeItem } = useCart()
+  const cartContext = useCart();
+  const { items, total, isOpen } = cartContext.state;
+  const { toggleCart, closeCart, updateQuantity, removeItem, getCartCount } = cartContext;
+  const itemCount = getCartCount();
 
   return (
     <Sheet open={isOpen} onOpenChange={toggleCart}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
           <ShoppingCart className="h-5 w-5" />
           {itemCount > 0 && (
             <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
@@ -29,7 +32,7 @@ export function CartDrawer() {
           </SheetTitle>
         </SheetHeader>
 
-        {items.length === 0 ? (
+{(!items || items.length === 0) ? (
           <div className="flex flex-col items-center justify-center h-full space-y-4">
             <ShoppingCart className="h-16 w-16 text-muted" />
             <p className="text-lg font-medium text-foreground">Your cart is empty</p>

@@ -57,7 +57,6 @@ class Notifications {
             return true;
 
         } catch (Exception $e) {
-            var_dump($e->getMessage());
             return false;
         }
     }
@@ -66,7 +65,6 @@ class Notifications {
         try {
             return $this->db->select()->fetchAll();
         } catch (Exception $e) {
-            var_dump($e->getMessage());
             return false;
         }
     }
@@ -84,7 +82,6 @@ class Notifications {
             ->where("user_id", "=", $userId) // العمود في alias بتاع جدول recipient
             ->fetchAll();
     } catch (Exception $e) {
-        var_dump($e->getMessage());
         return false;
     }
 }
@@ -98,7 +95,6 @@ class Notifications {
             ->where(coulmn: "admin_id", operator: "=", value: $adminId)
             ->fetchAll();
     } catch (Exception $e) {
-        var_dump($e->getMessage());
         return false;
     }
 }
@@ -125,7 +121,6 @@ class Notifications {
 
           return true;
       } catch (Exception $e) {
-          var_dump($e->getMessage());
           return false;
       }
   }
@@ -142,7 +137,6 @@ class Notifications {
           ->where('notification_id', '=', $id)
           ->excute();
         } catch (Exception $e) {
-            var_dump($e->getMessage());
             return false;
         }
     }

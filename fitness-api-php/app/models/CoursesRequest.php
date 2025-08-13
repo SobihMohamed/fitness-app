@@ -19,7 +19,6 @@ class CoursesRequest{
       $this->db->insert($data)->excute();
       return true;
     }catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -29,7 +28,6 @@ class CoursesRequest{
     try {
       return $this->db->select()->fetchAll();
     } catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -44,7 +42,6 @@ class CoursesRequest{
                   ->where("request_id" , "=",$id)
                   ->getRow();
     }catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -57,7 +54,6 @@ class CoursesRequest{
                   ->where("user_id","=",$userId)
                   ->fetchAll();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -68,10 +64,10 @@ class CoursesRequest{
                     ->where("request_id" , "=",$req_id)
                     ->getRow();
       }catch(Exception $e) {
-        var_dump($e->getMessage());
         return false;
       }
     }
+    
   // update status or fields
   public function update($id,$data){
     try {
@@ -80,7 +76,6 @@ class CoursesRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -93,9 +88,8 @@ class CoursesRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
-}  
+}
 ?>

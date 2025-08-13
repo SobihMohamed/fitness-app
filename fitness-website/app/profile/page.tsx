@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
 import { User, Mail, Phone, MapPin, Globe, UserCheck, Loader2, CheckCircle, AlertCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { API_CONFIG } from "@/config/api"
 
 // ────────────────────────────────────────────────────────────────
 // 📋 TYPE DEFINITIONS
@@ -34,11 +35,12 @@ export default function ProfilePage() {
   const { user, isLoading, isInitialized } = useAuth()
   const router = useRouter()
   const [profile, setProfile] = useState<ProfileData | null>(null)
+  const [formData, setFormData] = useState<ProfileData | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
+  const baseURL = API_CONFIG.BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
 
   // ────────────────────────────────────────────────────────────────
   // 📡 DATA FETCHING LOGIC
@@ -62,7 +64,7 @@ export default function ProfilePage() {
           throw new Error("No authentication token found")
         }
 
-        const response = await axios.get(`${baseURL}/user/getProfile`, {
+        const response = await axios.get(API_CONFIG.USER_FUNCTIONS.user.profile || `${baseURL}/user/getProfile`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -89,6 +91,7 @@ export default function ProfilePage() {
         }
 
         setProfile(newProfile)
+        setFormData(newProfile)
       } catch (error: any) {
         console.error("Failed to load profile from API:", error)
 
@@ -104,6 +107,7 @@ export default function ProfilePage() {
           }
 
           setProfile(fallbackProfile)
+          setFormData(fallbackProfile)
           setMessage({
             type: "error",
             text: "Failed to load profile from server, showing cached data",
@@ -126,10 +130,10 @@ export default function ProfilePage() {
   // 🎯 EVENT HANDLERS
   // ────────────────────────────────────────────────────────────────
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    if (!profile) return
+    if (!formData) return
 
-    const updatedProfile = { ...profile, [e.target.name]: e.target.value }
-    setProfile(updatedProfile)
+    const updatedFormData = { ...formData, [e.target.name]: e.target.value }
+    setFormData(updatedFormData)
 
     // Clear any existing messages when user starts editing
     if (message) setMessage(null)
@@ -137,7 +141,7 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!profile) return
+    if (!formData) return
 
     setUpdating(true)
     setMessage(null)
@@ -151,18 +155,21 @@ export default function ProfilePage() {
 
       // Prepare data for update (exclude email and user_type as they're read-only)
       const updateData = {
-        name: profile.name,
-        phone: profile.phone,
-        address: profile.address,
-        country: profile.country,
+        name: formData?.name || "",
+        phone: formData?.phone || "",
+        address: formData?.address || "",
+        country: formData?.country || "",
       }
 
-      await axios.post(`${baseURL}/user/updateProfile`, updateData, {
+      await axios.post(API_CONFIG.USER_FUNCTIONS.user.updateProfile || `${baseURL}/user/updateProfile`, updateData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       })
+
+      // Update the profile state with the new data
+      setProfile(formData)
 
       setMessage({ type: "success", text: "Profile updated successfully!" })
     } catch (error: any) {
@@ -269,7 +276,7 @@ export default function ProfilePage() {
                       id="name"
                       name="name"
                       type="text"
-                      value={profile.name}
+                      value={formData?.name || ""}
                       onChange={handleChange}
                       className="pl-10"
                       required
@@ -289,7 +296,7 @@ export default function ProfilePage() {
                       id="email"
                       name="email"
                       type="email"
-                      value={profile.email}
+                      value={formData?.email || ""}
                       className="pl-10 bg-gray-50"
                       readOnly
                       disabled
@@ -309,7 +316,7 @@ export default function ProfilePage() {
                       id="phone"
                       name="phone"
                       type="tel"
-                      value={profile.phone}
+                      value={formData?.phone || ""}
                       onChange={handleChange}
                       className="pl-10"
                       placeholder="Enter your phone number"
@@ -328,7 +335,7 @@ export default function ProfilePage() {
                       id="user_type"
                       name="user_type"
                       type="text"
-                      value={profile.user_type}
+                      value={formData?.user_type || ""}
                       className="pl-10 bg-gray-50 capitalize"
                       readOnly
                       disabled
@@ -348,7 +355,7 @@ export default function ProfilePage() {
                       id="address"
                       name="address"
                       type="text"
-                      value={profile.address}
+                      value={formData?.address || ""}
                       onChange={handleChange}
                       className="pl-10"
                       placeholder="Enter your address"
@@ -367,7 +374,7 @@ export default function ProfilePage() {
                       id="country"
                       name="country"
                       type="text"
-                      value={profile.country}
+                      value={formData?.country || ""}
                       onChange={handleChange}
                       className="pl-10"
                       placeholder="Enter your country"

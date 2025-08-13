@@ -25,7 +25,7 @@ class Admin{
   public function addAdmin($data){
     try{
       if(!$this->isExist($data["email"],"admins")){
-        // var_dump($data);
+        // Removed var_dump($data);
         $this ->db
               ->insert($data)
               ->excute();
@@ -34,7 +34,7 @@ class Admin{
         return false;
       }
     }catch(Exception $e){
-      return $e;
+      return false;
     }
   }
   public function searchAdmin($keyword){
@@ -102,7 +102,7 @@ class Admin{
                   ->fetchAll();
       return $isReturn ? : false;
     }catch(Exception $e){
-      return $e->getMessage();
+      return false;
     }
   }
   public function isSuperAdmin($admin) {
