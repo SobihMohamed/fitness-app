@@ -145,7 +145,7 @@ export const API_CONFIG = {
       approveRequest: (id: string) =>
         `http://localhost:8000/AdminCoursesRequests/approve/${id}`,
       cancelRequest: (id: string) =>
-        `http://localhost:8000/AdminCoursesRequests/cancel/${id}`,
+        `http://localhost:8000/AdminCoursesRequests/canecl/${id}`,
       deleteRequest: (id: string) =>
         `http://localhost:8000/AdminCoursesRequests/delete/${id}`,
     },

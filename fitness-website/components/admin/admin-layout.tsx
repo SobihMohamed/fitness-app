@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/admin/shared/notification-dropdown";
+import { API_CONFIG } from "@/config/api";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
@@ -55,10 +56,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const fetchNotificationCounts = async () => {
     try {
       const [trainingRes, courseRes, ordersRes, expiringRes] = await Promise.all([
-        fetch("http://localhost:8000/AdminTrainingRequests/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminCoursesRequests/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminOrders/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminTrainingRequests/getExpirationSoon", { headers: getAuthHeaders() })
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getTheTranieesWhoseTrainingRequestEndSoon, { headers: getAuthHeaders() })
       ]);
 
       // Handle responses, including 404 for expiring requests
@@ -66,16 +67,16 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       const courseData = await courseRes.json();
       const ordersData = await ordersRes.json();
       
-      // Handle expiring requests response which returns 404 when no expiring requests exist
-      let expiringData = { data: [] };
+      // Handle expiring requests response which may return 404 when none exist
+      let expiringData = { data: [] as any[] };
       if (expiringRes.ok) {
         expiringData = await expiringRes.json();
       } else if (expiringRes.status === 404) {
-        // 404 is expected when no expiring requests exist
+        // Silently treat as zero expiring requests
         expiringData = { data: [] };
       } else {
-        // Handle other errors
-        throw new Error(`HTTP error! status: ${expiringRes.status}`);
+        // Non-404 errors only: log and continue
+        console.warn("Expiring requests endpoint error:", expiringRes.status);
       }
 
       setNotifications({

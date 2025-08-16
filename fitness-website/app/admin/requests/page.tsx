@@ -9,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -18,12 +17,10 @@ import {
   CheckCircle,
   XCircle,
   Trash2,
-  Filter,
   X,
   AlertCircle,
   BookOpen,
   DollarSign,
-  Search,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
@@ -353,8 +350,25 @@ function RequestsTable({
 
       if (!res.ok) throw new Error("Failed to fetch details");
 
-      const data = await res.json();
-      setDetailsData(data.data || data);
+      const raw = await res.json();
+      const d = raw?.data ?? raw;
+      let normalized: any = d;
+      if (section === "courses") {
+        if (d?.request && d?.course) {
+          // Merge request and course so course fields are available at top-level
+          normalized = { ...d.course, ...d.request, course: d.course };
+        } else {
+          normalized = d?.request ?? d?.course ?? d;
+        }
+      } else if (section === "training") {
+        normalized = d?.request ?? d;
+      } else if (section === "orders") {
+        normalized = d?.order ? { ...d.order, ...d, order: d.order } : d;
+      }
+      if (d?.user && !normalized?.user) {
+        normalized = { ...normalized, user: d.user };
+      }
+      setDetailsData(normalized);
     } catch (e) {
       console.error(e);
       toast({
@@ -407,18 +421,73 @@ function RequestsTable({
       const method = section === "orders" && type === "delete" ? "DELETE" : "PUT";
       const token = typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
       if (!token) throw new Error("Missing adminAuth token. Please log in as admin.");
-      
-      const res = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-      });
-      
-      if (!res.ok) {
-        const errorBody = await res.text();
-        console.error("API Error Response:", errorBody);
-        throw new Error(
-          `Failed to ${type}. Status: ${res.status}. Body: ${errorBody}`
-        );
+
+      // Robust cancel for Courses: try URL and method fallbacks on 404/405
+      if (type === "cancel" && section === "courses") {
+        const base = (API_CONFIG?.TARGET_URL || API_CONFIG?.BASE_URL || "").replace(/\/$/, "");
+        const idEnc = encodeURIComponent(id);
+        const candidates = [
+          url,
+          `${base}/AdminCoursesRequests/cancelRequest/${idEnc}`,
+          `${base}/AdminCoursesRequests/canecl/${idEnc}`,
+          `${base}/AdminCoursesRequests/cancel/${idEnc}`,
+        ].filter(Boolean) as string[];
+
+        let success: Response | null = null;
+        let lastStatus = 0;
+        let lastBody = "";
+
+        for (const candidate of candidates) {
+          // Attempt 1: PUT
+          let attempt = await fetch(candidate, {
+            method: "PUT",
+            headers: getAuthHeaders(),
+          });
+          if (attempt.ok) {
+            success = attempt;
+            break;
+          }
+          lastStatus = attempt.status;
+          try { lastBody = await attempt.text(); } catch {}
+
+          // Attempt 2: If method not allowed, try POST
+          if (attempt.status === 405) {
+            attempt = await fetch(candidate, {
+              method: "POST",
+              headers: getAuthHeaders(),
+              body: JSON.stringify({}),
+            });
+            if (attempt.ok) {
+              success = attempt;
+              break;
+            }
+            lastStatus = attempt.status;
+            try { lastBody = await attempt.text(); } catch {}
+          }
+
+          // On 404, try next candidate URL
+          if (attempt.status === 404) {
+            console.warn("Courses cancel 404 at:", candidate, "— trying next fallback");
+            continue;
+          }
+        }
+
+        if (!success) {
+          throw new Error(`Failed to cancel course request. Tried ${candidates.length} endpoints. Last status: ${lastStatus}. Body: ${lastBody}`);
+        }
+      } else {
+        const res = await fetch(url, {
+          method,
+          headers: getAuthHeaders(),
+        });
+        
+        if (!res.ok) {
+          const errorBody = await res.text();
+          console.error("API Error Response:", errorBody);
+          throw new Error(
+            `Failed to ${type}. Status: ${res.status}. Body: ${errorBody}`
+          );
+        }
       }
 
       // Corrected logic for updating state
@@ -582,9 +651,29 @@ function RequestsTable({
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
-                      {item.created_at
-                        ? new Date(item.created_at).toLocaleDateString()
-                        : "-"}
+                      {(() => {
+                        const dt =
+                          item.created_at ||
+                          item.createdAt ||
+                          item.purchase_date ||
+                          item.order_date ||
+                          item.request_date ||
+                          item.date ||
+                          item.created ||
+                          item.created_on ||
+                          item.createdOn ||
+                          item.orderDate ||
+                          item.placed_at ||
+                          item.placedAt ||
+                          item.order?.created_at ||
+                          item.order?.createdAt ||
+                          item.order?.purchase_date ||
+                          item.order?.order_date ||
+                          item.order?.date;
+                        if (!dt) return "-";
+                        const d = new Date(dt as any);
+                        return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                      })()}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
@@ -932,20 +1021,87 @@ function RequestsTable({
                       <div className="p-1.5 bg-indigo-100 rounded-lg">
                         <BookOpen className="h-4 w-4 text-indigo-600" />
                       </div>
+                      <span className="text-lg">Visitor Information</span>
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                      <DetailItem
+                        label="Name"
+                        value={
+                          detailsData.user?.name ||
+                          detailsData.user_name ||
+                          detailsData.student_name ||
+                          detailsData.name
+                        }
+                      />
+                      <DetailItem
+                        label="Email"
+                        value={
+                          detailsData.user?.email ||
+                          detailsData.user_email ||
+                          detailsData.email
+                        }
+                      />
+                    </div>
+                    <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2 pb-2 border-b border-slate-200">
+                      <div className="p-1.5 bg-indigo-100 rounded-lg">
+                        <BookOpen className="h-4 w-4 text-indigo-600" />
+                      </div>
                       <span className="text-lg">Course Details</span>
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <DetailItem
                         label="Course Name"
-                        value={detailsData.course_name}
+                        value={
+                          detailsData.course_title ||
+                          detailsData.course_name ||
+                          detailsData.title ||
+                          detailsData.title_en ||
+                          detailsData.courseTitle ||
+                          detailsData.course_name_en ||
+                          detailsData.courseName ||
+                          detailsData.course?.course_title ||
+                          detailsData.course?.title ||
+                          detailsData.course?.title_en ||
+                          detailsData.course?.name ||
+                          detailsData.course?.name_en ||
+                          detailsData.request?.course_title ||
+                          detailsData.request?.course_name ||
+                          detailsData.request?.title ||
+                          detailsData.request?.courseTitle
+                        }
                       />
                       <DetailItem
                         label="Course Price"
-                        value={`$${detailsData.course_price}`}
+                        value={(() => {
+                          const price =
+                            detailsData.course_price ??
+                            detailsData.course?.price ??
+                            detailsData.price ??
+                            detailsData.request?.course_price;
+                          return price != null && price !== '' ? `$${price}` : '-';
+                        })()}
+                      />
+                      <DetailItem
+                        label="Created At"
+                        value={(() => {
+                          const dt =
+                            detailsData.created_at ||
+                            detailsData.createdAt ||
+                            detailsData.request_date ||
+                            detailsData.date;
+                          return dt ? new Date(dt).toLocaleDateString() : null;
+                        })()}
                       />
                       <DetailItem
                         label="Student Name"
-                        value={detailsData.student_name}
+                        value={
+                          detailsData.student_name ||
+                          detailsData.user?.name ||
+                          detailsData.user_name ||
+                          detailsData.trainee_name ||
+                          detailsData.customer_name ||
+                          detailsData.name
+                        }
                       />
                       <div className="space-y-2">
                         <div className="text-sm text-slate-500">Status</div>
@@ -964,6 +1120,7 @@ function RequestsTable({
                     </div>
                   </div>
                 )}
+
                 {/*orders  */}
                 {section === "orders" && (
                   <div className="bg-gradient-to-br from-white to-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
@@ -976,11 +1133,65 @@ function RequestsTable({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <DetailItem
                         label="Customer Name"
-                        value={detailsData.customer_name}
+                        value={
+                          detailsData.customer_name ||
+                          detailsData.order?.customer_name ||
+                          detailsData.customer_full_name ||
+                          detailsData.customerFullName ||
+                          detailsData.full_name ||
+                          detailsData.name ||
+                          detailsData.user?.name ||
+                          detailsData.customer?.name ||
+                          detailsData.customer?.full_name ||
+                          detailsData.billing_name ||
+                          detailsData.shipping_name
+                        }
+                      />
+                      <DetailItem
+                        label="Customer Email"
+                        value={
+                          detailsData.customer_email ||
+                          detailsData.order?.customer_email ||
+                          detailsData.user?.email ||
+                          detailsData.order?.email ||
+                          detailsData.email
+                        }
                       />
                       <DetailItem
                         label="Total Price"
-                        value={`$${detailsData.total_price}`}
+                        value={(() => {
+                          const total =
+                            detailsData.total_price ??
+                            detailsData.total ??
+                            detailsData.amount ??
+                            detailsData.order_total ??
+                            detailsData.price ??
+                            detailsData.order?.total;
+                          return total != null && total !== '' ? `$${total}` : '-';
+                        })()}
+                      />
+                      <DetailItem
+                        label="Created At"
+                        value={(() => {
+                          const dt =
+                            detailsData.created_at ||
+                            detailsData.createdAt ||
+                            detailsData.purchase_date ||
+                            detailsData.order_date ||
+                            detailsData.date ||
+                            detailsData.created ||
+                            detailsData.created_on ||
+                            detailsData.createdOn ||
+                            detailsData.orderDate ||
+                            detailsData.placed_at ||
+                            detailsData.placedAt ||
+                            detailsData.order?.created_at ||
+                            detailsData.order?.createdAt ||
+                            detailsData.order?.purchase_date;
+                          if (!dt) return null;
+                          const d = new Date(dt as any);
+                          return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                        })()}
                       />
                       <div className="space-y-2">
                         <div className="text-sm text-slate-500">Status</div>
@@ -997,6 +1208,7 @@ function RequestsTable({
                         </Badge>
                       </div>
                     </div>
+
                     <div className="mt-6 border-t border-slate-200 pt-4">
                       <h4 className="font-semibold text-slate-800 text-base mb-2">
                         Order Items

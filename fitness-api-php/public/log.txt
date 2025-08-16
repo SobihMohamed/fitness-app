@@ -1,1 +1,1 @@
-URL Detected: user/getProfile
+URL Detected: Courses/getAll

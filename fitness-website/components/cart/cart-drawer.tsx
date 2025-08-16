@@ -1,21 +1,33 @@
 "use client"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useCart } from "@/contexts/cart-context"
+import { useAuth } from "@/contexts/auth-context"
 import { ShoppingCart, Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
 
 export function CartDrawer() {
   const cartContext = useCart();
   const { items, total, isOpen } = cartContext.state;
-  const { toggleCart, closeCart, updateQuantity, removeItem, getCartCount } = cartContext;
+  const { toggleCart, closeCart, updateQuantity, removeItem, getCartCount, openCart } = cartContext;
+  const { user } = useAuth();
   const itemCount = getCartCount();
 
   return (
-    <Sheet open={isOpen} onOpenChange={toggleCart}>
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (open) {
+          openCart();
+        } else {
+          closeCart();
+        }
+      }}
+    >
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" onClick={toggleCart}>
+        <Button variant="ghost" size="icon" className="relative">
           <ShoppingCart className="h-5 w-5" />
           {itemCount > 0 && (
             <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-secondary">
@@ -37,15 +49,21 @@ export function CartDrawer() {
             <ShoppingCart className="h-16 w-16 text-muted" />
             <p className="text-lg font-medium text-foreground">Your cart is empty</p>
             <p className="text-sm text-center text-muted">Add some products to get started</p>
-            <Button onClick={() => {
-              closeCart();
-              if (typeof window !== 'undefined') {
-                const event = new CustomEvent('open-login-modal');
-                window.dispatchEvent(event);
-              }
-            }} className="bg-primary">
-              Shop Now
-            </Button>
+            {user ? (
+              <Button asChild className="bg-primary" onClick={closeCart}>
+                <Link href="/products">Shop Now</Link>
+              </Button>
+            ) : (
+              <Button onClick={() => {
+                closeCart();
+                if (typeof window !== 'undefined') {
+                  const event = new CustomEvent('open-login-modal');
+                  window.dispatchEvent(event);
+                }
+              }} className="bg-primary">
+                Shop Now
+              </Button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col h-full">
@@ -53,7 +71,13 @@ export function CartDrawer() {
               {items.map((item) => (
                 <div key={item.id} className="flex items-center space-x-4">
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
-                    <div className="w-full h-full flex items-center justify-center text-xs text-gray-500">Product</div>
+                    <Image
+                      src={item.image || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
                   </div>
                   <div className="flex-1 space-y-1">
                     <h4 className="font-medium text-sm text-foreground">{item.name}</h4>

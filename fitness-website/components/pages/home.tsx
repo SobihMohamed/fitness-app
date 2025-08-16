@@ -175,7 +175,16 @@ export function HomePage() {
 
   // Function to handle adding a product to the cart
   const handleHomeAddToCart = (product: Product) => {
-    addItem(product)
+    // Normalize to CartItem shape and ensure absolute image URL
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: getFullImageUrl(product.image),
+      category: product.category,
+      stock: product.stock,
+      description: product.description,
+    })
     toast.success(`${product.name} added to cart!`)
   }
 

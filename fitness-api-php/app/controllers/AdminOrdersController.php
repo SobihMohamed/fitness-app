@@ -48,7 +48,7 @@ class AdminOrdersController extends AbstractController{
     if (!$order)
         return $this->sendError("Request not found", 404);
     $ok = $this->orderModel
-                ->update($id, ["status"=>"approved"]);
+                ->update($id, ["status"=>"approve"]);
     if (!$ok) 
       return $this->sendError("Cannot approve",500);
 
@@ -66,7 +66,7 @@ class AdminOrdersController extends AbstractController{
         $excludeAdminId = $admin['id']
     );
 
-    return $this->json(["status"=>"success","message"=>"Request approved"]);
+    return $this->json(["status"=>"success","message"=>"Request approve"]);
   }
 
   // PUT reject/{id}

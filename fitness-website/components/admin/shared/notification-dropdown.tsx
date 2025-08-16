@@ -23,6 +23,34 @@ export function NotificationDropdown() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [markingIds, setMarkingIds] = useState<Record<string, boolean>>({});
+  const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({});
+
+  // Local overlay to persist read IDs for UI, in case backend doesn't update immediately
+  const LOCAL_READ_KEY = "adminNotificationReadIds";
+  const getLocalReadIds = (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(LOCAL_READ_KEY);
+      const arr: string[] = raw ? JSON.parse(raw) : [];
+      return new Set(arr.map(String));
+    } catch {
+      return new Set();
+    }
+  };
+  const addLocalReadId = (id: string) => {
+    try {
+      const set = getLocalReadIds();
+      set.add(String(id));
+      localStorage.setItem(LOCAL_READ_KEY, JSON.stringify(Array.from(set)));
+    } catch {}
+  };
+  const removeLocalReadId = (id: string) => {
+    try {
+      const set = getLocalReadIds();
+      set.delete(String(id));
+      localStorage.setItem(LOCAL_READ_KEY, JSON.stringify(Array.from(set)));
+    } catch {}
+  };
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem("adminAuth");
@@ -32,21 +60,59 @@ export function NotificationDropdown() {
     };
   };
 
+  // Robust read-state normalization (handles 0/1, "0"/"1", booleans, etc.)
+  const isReadNormalized = (val: any) => {
+    return (
+      val === true ||
+      val === 1 ||
+      val === "1" ||
+      val === "true" ||
+      val === "yes"
+    );
+  };
+
   const fetchNotifications = async () => {
     try {
-      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.getAllNotificationForThisAdmin, {
+      // cache-busting to avoid stale reads after updates
+      const baseUrl = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.getAllNotificationForThisAdmin;
+      const url = typeof baseUrl === "string" ? `${baseUrl}?ts=${Date.now()}` : baseUrl;
+      const response = await fetch(url as string, {
         headers: getAuthHeaders(),
+        cache: "no-store",
       });
       
       if (response.ok) {
         const data = await response.json();
-        // Convert is_read to boolean values
-        const notificationsWithBoolean = data.data?.map((notif: any) => ({
-          ...notif,
-          is_read: Boolean(notif.is_read)
-        })) || [];
-        setNotifications(notificationsWithBoolean);
-        const unread = notificationsWithBoolean.filter((notif: Notification) => !notif.is_read).length || 0;
+        // Normalize items: ensure id exists and parse is_read correctly
+        const normalized: Notification[] = (data?.data || data?.notifications || [])
+          .map((raw: any) => {
+            const rawRead = raw?.is_read ?? raw?.isRead ?? raw?.read;
+            const isRead =
+              rawRead === true ||
+              rawRead === 1 ||
+              rawRead === "1" ||
+              rawRead === "true" ||
+              rawRead === "yes";
+            return {
+              notification_id: String(
+                raw?.notification_id ?? raw?._id ?? raw?.id ?? ""
+              ),
+              message_title: raw?.message_title ?? raw?.title ?? "",
+              content: raw?.content ?? raw?.message ?? "",
+              is_read: !!isRead,
+              delivered_at: raw?.delivered_at ?? raw?.created_at ?? raw?.createdAt ?? new Date().toISOString(),
+            } as Notification;
+          })
+          .filter((n: Notification) => n.notification_id);
+
+        // Merge local overlay: any id in local set is treated as read in UI
+        const localSet = getLocalReadIds();
+        const merged = normalized.map((n) =>
+          localSet.has(String(n.notification_id)) ? { ...n, is_read: true } : n
+        );
+
+        setNotifications(merged);
+        const unread = merged.filter((notif: Notification) => !notif.is_read).length || 0;
         setUnreadCount(unread);
       }
     } catch (error) {
@@ -56,43 +122,126 @@ export function NotificationDropdown() {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.MarkAsRead(notificationId),
-        {
+      // prevent duplicate requests for the same notification
+      if (markingIds[notificationId]) return;
+      setMarkingIds((prev) => ({ ...prev, [notificationId]: true }));
+
+      const url = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.MarkAsRead(notificationId);
+      console.log("[AdminNotifications] MarkAsRead:", url, notificationId);
+
+      // OPTIMISTIC UPDATE: flip to read immediately
+      setNotifications((prev) => {
+        const next = prev.map((n) =>
+          String(n.notification_id) === String(notificationId)
+            ? { ...n, is_read: true }
+            : n
+        );
+        const newUnread = next.filter((n) => !n.is_read).length;
+        setUnreadCount(newUnread);
+        return next;
+      });
+
+      // Attempt 1: PUT with empty JSON body
+      let response = await fetch(url, {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({}),
+      });
+
+      // Attempt 2: Some servers reject body for PUT (400/415) -> retry with no body
+      if (!response.ok && (response.status === 400 || response.status === 415)) {
+        console.warn("MarkAsRead PUT with body failed, retrying without body. Status:", response.status);
+        response = await fetch(url, {
           method: "PUT",
           headers: getAuthHeaders(),
-        }
-      );
+        });
+      }
+
+      // Attempt 3: If method not allowed (405), fallback to POST
+      if (!response.ok && response.status === 405) {
+        console.warn("MarkAsRead PUT not allowed, retrying with POST");
+        response = await fetch(url, {
+          method: "POST",
+          headers: getAuthHeaders(),
+          body: JSON.stringify({}),
+        });
+      }
 
       if (response.ok) {
-        setNotifications(prev =>
-          prev.map(notif =>
-            notif.notification_id === notificationId
-              ? { ...notif, is_read: true }
-              : notif
-          )
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
+        console.log("Mark as read confirmed by server:", notificationId);
+        // Do not refetch immediately; rely on polling to avoid stale overrides
+        addLocalReadId(notificationId);
+      } else {
+        const text = await response.text();
+        console.error("Mark as read failed:", response.status, text);
+        // REVERT optimistic update on failure
+        setNotifications((prev) => {
+          const next = prev.map((n) =>
+            String(n.notification_id) === String(notificationId)
+              ? { ...n, is_read: false }
+              : n
+          );
+          const newUnread = next.filter((n) => !n.is_read).length;
+          setUnreadCount(newUnread);
+          return next;
+        });
       }
     } catch (error) {
       console.error("Error marking notification as read:", error);
+      // REVERT optimistic update on exception
+      setNotifications((prev) => {
+        const next = prev.map((n) =>
+          String(n.notification_id) === String(notificationId)
+            ? { ...n, is_read: false }
+            : n
+        );
+        const newUnread = next.filter((n) => !n.is_read).length;
+        setUnreadCount(newUnread);
+        return next;
+      });
+    }
+    finally {
+      setMarkingIds((prev) => {
+        const { [notificationId]: _, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
   const deleteNotification = async (notificationId: string) => {
     try {
-      const response = await fetch(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.DeleteNotification(notificationId),
-        {
-          method: "DELETE",
+      if (deletingIds[notificationId]) return;
+      setDeletingIds((prev) => ({ ...prev, [notificationId]: true }));
+
+      // If unread, mark as read first to satisfy backends that forbid deleting unread items
+      const target = notifications.find(n => n.notification_id === notificationId);
+      if (target && !target.is_read) {
+        await markAsRead(notificationId);
+      }
+
+      const url = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.DeleteNotification(notificationId);
+      console.log("[AdminNotifications] Delete:", url, notificationId);
+
+      let response = await fetch(url, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok && response.status === 405) {
+        console.warn("Delete with DELETE not allowed, retrying with POST");
+        response = await fetch(url, {
+          method: "POST",
           headers: getAuthHeaders(),
-        }
-      );
+          body: JSON.stringify({}),
+        });
+      }
 
       if (response.ok) {
         setNotifications(prev =>
           prev.filter(notif => notif.notification_id !== notificationId)
         );
+        // Maintain local overlay
+        removeLocalReadId(notificationId);
         // Update unread count if the deleted notification was unread
         const deletedNotification = notifications.find(
           notif => notif.notification_id === notificationId
@@ -100,9 +249,19 @@ export function NotificationDropdown() {
         if (deletedNotification && !deletedNotification.is_read) {
           setUnreadCount(prev => Math.max(0, prev - 1));
         }
+      } else {
+        const text = await response.text();
+        console.error("Delete notification failed:", response.status, text);
+        // Re-sync from server to reconcile any mismatch
+        fetchNotifications();
       }
     } catch (error) {
       console.error("Error deleting notification:", error);
+    } finally {
+      setDeletingIds((prev) => {
+        const { [notificationId]: _, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
@@ -111,6 +270,13 @@ export function NotificationDropdown() {
       fetchNotifications();
     }
   }, [isOpen]);
+
+  // Always keep counts fresh even when dropdown is closed
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -122,9 +288,9 @@ export function NotificationDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full">
-              {unreadCount}
+          {notifications.length > 0 && (
+            <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-blue-600 rounded-full">
+              {notifications.length}
             </span>
           )}
         </Button>
@@ -150,18 +316,20 @@ export function NotificationDropdown() {
         ) : (
           <ScrollArea className="h-96">
             <div className="p-2">
-              {notifications.map((notification) => (
+              {notifications.map((notification) => {
+                const isRead = isReadNormalized((notification as any).is_read);
+                return (
                 <div
                   key={notification.notification_id}
                   className={`p-4 border-b hover:bg-gray-50 ${
-                    !notification.is_read ? "bg-blue-50" : ""
+                    !isRead ? "bg-blue-50" : ""
                   }`}
                 >
                   <div className="flex justify-between">
                     <h4 className="font-medium">
                       {notification.message_title}
                     </h4>
-                    {!notification.is_read && (
+                    {!isRead && (
                       <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-blue-500"></span>
                     )}
                   </div>
@@ -173,28 +341,31 @@ export function NotificationDropdown() {
                       {formatTime(notification.delivered_at)}
                     </span>
                     <div className="flex space-x-1">
-                      {!notification.is_read && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => markAsRead(notification.notification_id)}
-                          className="flex items-center"
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          <span>Read</span>
-                        </Button>
-                      )}
                       <Button
                         variant="ghost"
-                        size="sm"
+                        size="icon"
                         onClick={() => deleteNotification(notification.notification_id)}
+                        disabled={!!deletingIds[notification.notification_id]}
+                        aria-label="Delete notification"
+                        title={deletingIds[notification.notification_id] ? "Deleting..." : "Delete"}
                       >
                         <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => markAsRead(notification.notification_id)}
+                        disabled={isRead || !!markingIds[notification.notification_id]}
+                        aria-label="Mark as read"
+                        title={isRead ? "Already read" : (markingIds[notification.notification_id] ? "Marking..." : "Mark as read")}
+                      >
+                        <Check className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </ScrollArea>
         )}
