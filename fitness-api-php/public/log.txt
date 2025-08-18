@@ -1,1 +1,1 @@
-URL Detected: Courses/getAll
+URL Detected: auth/logout

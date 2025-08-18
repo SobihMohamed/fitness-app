@@ -115,9 +115,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   const totalNotifications = notifications.trainingRequests + notifications.courseRequests + notifications.orders + notifications.expiringRequests;
   const totalRequests = notifications.trainingRequests + notifications.courseRequests + notifications.orders;
-  console.log("Total requests:", totalRequests, "Notifications:", notifications);
   if (!isAuthenticated) return null;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {sidebarOpen && (

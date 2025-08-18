@@ -289,7 +289,7 @@ export function NotificationDropdown() {
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
           {notifications.length > 0 && (
-            <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-blue-600 rounded-full">
+            <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-600 rounded-full">
               {notifications.length}
             </span>
           )}

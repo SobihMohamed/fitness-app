@@ -64,7 +64,7 @@ export const API_CONFIG = {
   // USER COURSES API
   USER_COURSES_API: {
     getAll: "http://localhost:8000/Courses/getAll",
-    getFeatured: "http://localhost:8000/Courses/getAll", // Placeholder - should be replaced with actual featured endpoint
+    getFeatured: "http://localhost:8000/Courses/getAll", 
     getById: (id: string) => `http://localhost:8000/Courses/singleCourse/${id}`,
     search: "http://localhost:8000/Courses/searchCourse",
     enroll: "http://localhost:8000/CoursesRequests/create",
@@ -73,7 +73,7 @@ export const API_CONFIG = {
   // USER PRODUCTS API
   USER_PRODUCTS_API: {
     getAll: "http://localhost:8000/Products/getAll",
-    getFeatured: "http://localhost:8000/Products/getAll", // Placeholder - should be replaced with actual featured endpoint
+    getFeatured: "http://localhost:8000/Products/getAll", 
     getById: (id: string) => `http://localhost:8000/Products/SingleProduct/${id}`,
     search: "http://localhost:8000/Products/searchProduct",
   },
