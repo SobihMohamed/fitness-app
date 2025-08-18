@@ -1,1 +1,1 @@
-URL Detected: auth/logout
+URL Detected: AdminNotifications/getAdminNotifications
