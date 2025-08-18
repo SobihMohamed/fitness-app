@@ -9,70 +9,43 @@ import { Badge } from "@/components/ui/badge"
 import { Play, Star, Users, Award, TrendingUp, ArrowRight, Heart, ShoppingCart, BookOpen, Settings } from "lucide-react"
 import { ProtectedAction } from "../auth/Protected-Route"
 import { useCart } from "@/contexts/cart-context"
+import axios from "axios"
+import { API_CONFIG } from "@/config/api"
+const { TARGET_URL: API_TARGET } = API_CONFIG;
+  
+  // Helper function to construct full image URL
+  const getFullImageUrl = (imagePath: string) => {
+    if (!imagePath) return "/placeholder.svg";
+    if (imagePath.startsWith("http")) return imagePath;
+    return `${API_TARGET}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
+  };
+import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
 
-// Sample data for featured products and courses
-// In a real application, this data would come from an API or database
-const featuredProducts = [
-  {
-    id: 1,
-    name: "Premium Whey Protein",
-    price: 49.99,
-    image: "/images/whey-protein.jpg",
-    rating: 4.8,
-    reviews: 124,
-  },
-  {
-    id: 2,
-    name: "Resistance Bands Set",
-    price: 29.99,
-    image: "/images/resistance-bands-gym.jpg",
-    rating: 4.9,
-    reviews: 89,
-  },
-  {
-    id: 3,
-    name: "Smart Fitness Tracker",
-    price: 199.99,
-    image: "/images/smart-watch.jpg",
-    rating: 4.7,
-    reviews: 256,
-  },
-]
+// Types for API responses
+interface Product {
+  id: string
+  name: string
+  price: number
+  image: string
+  category: string
+  description: string
+  rating?: number
+  reviews?: number
+  stock?: number
+}
 
-// Sample data for featured courses
-// In a real application, this data would come from an API or database
-const featuredCourses = [
-  {
-    id: 1,
-    title: "Complete Strength Training",
-    instructor: "Mike Johnson",
-    students: 1250,
-    rating: 4.9,
-    price: 89,
-    image: "/images/strength-masterclass.jpg",
-    category: "Strength Training",
-  },
-  {
-    id: 2,
-    title: "Advanced HIIT Workouts",
-    instructor: "Sarah Davis",
-    students: 890,
-    rating: 4.8,
-    price: 79,
-    image: "/images/hiit-advanced.jpg",
-    category: "Cardio",
-  },
-  {
-    id: 3,
-    title: "Yoga for Flexibility",
-    instructor: "Emma Wilson",
-    students: 2100,
-    rating: 4.9,
-    price: 69,
-    image: "/images/yoga-mindfulness.jpg",
-    category: "Yoga",
-  },
-]
+interface Course {
+  id: string
+  title: string
+  instructor: string
+  students: number
+  rating: number
+  price: number
+  image: string
+  category: string
+  description?: string
+}
 
 // Statistics data for the stats section
 // In a real application, this data would come from an API or database
@@ -122,24 +95,97 @@ const features = [
 
 export function HomePage() {
   const [isVisible, setIsVisible] = useState(false)
-    useEffect(() => {
-      setIsVisible(true)
-    
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([])
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true)
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true)
+  const { addItem } = useCart()
+  
+  useEffect(() => {
+    setIsVisible(true)
+  }, [])
+  
+  // Fetch featured products
+  useEffect(() => {
+    const fetchFeaturedProducts = async () => {
+      try {
+        const response = await axios.get(API_CONFIG.USER_PRODUCTS_API.getFeatured)
+        if (response.data.status === "success") {
+          setFeaturedProducts(response.data.data || [])
+        }
+      } catch (error) {
+        console.error("Error fetching featured products:", error)
+        toast.error("Failed to load featured products")
+      } finally {
+        setIsLoadingProducts(false)
+      }
+    }
+
+    fetchFeaturedProducts()
   }, [])
 
+  // Fetch featured courses
+  useEffect(() => {
+    const fetchFeaturedCourses = async () => {
+      try {
+        const response = await axios.get(API_CONFIG.USER_COURSES_API.getFeatured)
+        if (response.data.status === "success") {
+          setFeaturedCourses(response.data.data || [])
+        }
+      } catch (error) {
+        console.error("Error fetching featured courses:", error)
+        toast.error("Failed to load featured courses")
+      } finally {
+        setIsLoadingCourses(false)
+      }
+    }
+
+    fetchFeaturedCourses()
+  }, [])
 
   // Function to handle course enrollment
   // This is a placeholder function. In a real application, you would integrate this with your payment system.
   // It could redirect to a payment page or open a payment modal.
-   const handleCourseEnrollment = (course: any) => {
-    alert(`Enrolling in "${course.title}" for $${course.price}... (This would integrate with your payment system)`)
+  const handleCourseEnrollment = async (course: Course) => {
+    try {
+      const response = await axios.post(
+        API_CONFIG.USER_COURSES_API.enroll, 
+        { course_id: course.id },
+        {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`
+          }
+        }
+      )
+      
+      if (response.data.status === "success") {
+        toast.success("Successfully enrolled in course!")
+      } else {
+        toast.error(response.data.message || "Failed to enroll in course")
+      }
+    } catch (error: any) {
+      console.error("Error enrolling in course:", error)
+      if (error.response?.status === 401) {
+        toast.error("Please login to enroll in courses")
+      } else {
+        toast.error("Failed to enroll in course. Please try again.")
+      }
+    }
   }
 
   // Function to handle adding a product to the cart
-  // This is a placeholder function. In a real application, you would integrate this with your cart system.
-  // It could add the product to the cart context or redirect to a cart page.
-   const handleHomeAddToCart = (course: any) => {
-    alert(`Enrolling in "${course.title}" for $${course.price}... (This would integrate with your payment system)`)
+  const handleHomeAddToCart = (product: Product) => {
+    // Normalize to CartItem shape and ensure absolute image URL
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: getFullImageUrl(product.image),
+      category: product.category,
+      stock: product.stock,
+      description: product.description,
+    })
+    toast.success(`${product.name} added to cart!`)
   }
 
 
@@ -319,53 +365,75 @@ export function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCourses.map((course) => (
-              <Card
-                key={course.id}
-                className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
-              >
-                <CardHeader className="p-0">
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    <Image
-                      src={course.image || "/placeholder.svg"}
-                      alt={course.title}
-                      width={300}
-                      height={200}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{course.category}</Badge>
+            {isLoadingCourses ? (
+              // Loading skeletons
+              Array(3).fill(0).map((_, index) => (
+                <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+                  <CardHeader className="p-0">
+                    <Skeleton className="w-full h-48 rounded-t-lg" />
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-10 w-32" />
                     </div>
-                    <div className="absolute top-4 right-4">
-                      <Badge variant="outline" className="bg-white">
-                        {course.rating} ★
-                      </Badge>
+                  </CardContent>
+                </Card>
+              ))
+            ) : featuredCourses.length > 0 ? (
+              featuredCourses.map((course) => (
+                <Card
+                  key={course.id}
+                  className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
+                >
+                  <CardHeader className="p-0">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      <Image
+                        src={getFullImageUrl(course.image)}
+                        alt={course.title}
+                        width={300}
+                        height={200}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-4 left-4">
+                        <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{course.category}</Badge>
+                      </div>
+                      <div className="absolute top-4 right-4">
+                        <Badge variant="outline" className="bg-white">
+                          {course.rating} ★
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <CardTitle className="text-xl mb-2" style={{ color: "#212529" }}>
-                    {course.title}
-                  </CardTitle>
-                  <CardDescription className="mb-4" style={{ color: "#6C757D" }}>
-                    by {course.instructor} • {course.students.toLocaleString()} students
-                  </CardDescription>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                      ${course.price}
-                    </span>
-                  <ProtectedAction onAction={() => handleCourseEnrollment(course)}>
-                    
-                    <Button style={{ backgroundColor: "#007BFF" }}>
-                      <Play className="h-4 w-4 mr-2" />
-                      Enroll Now
-                    </Button>
-                  </ProtectedAction>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <CardTitle className="text-xl mb-2" style={{ color: "#212529" }}>
+                      {course.title}
+                    </CardTitle>
+                    <CardDescription className="mb-4" style={{ color: "#6C757D" }}>
+                      by {course.instructor} • {(course.students || 0).toLocaleString()} students
+                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
+                        ${course.price}
+                      </span>
+                    <ProtectedAction onAction={() => handleCourseEnrollment(course)}>
+                      <Button style={{ backgroundColor: "#007BFF" }}>
+                        <Play className="h-4 w-4 mr-2" />
+                        Enroll Now
+                      </Button>
+                    </ProtectedAction>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-gray-500">No featured courses available at the moment.</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-12">
@@ -392,50 +460,72 @@ export function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => (
-              <Card
-                key={product.id}
-                className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
-              >
-                <CardHeader className="p-0">
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    <Image
-                      src={product.image || "/placeholder.svg"}
-                      alt={product.name}
-                      width={300}
-                      height={300}
-                      className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-4 right-4">
-                      <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{product.rating} ★</Badge>
+            {isLoadingProducts ? (
+              // Loading skeletons
+              Array(3).fill(0).map((_, index) => (
+                <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+                  <CardHeader className="p-0">
+                    <Skeleton className="w-full h-64 rounded-t-lg" />
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-4" />
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-8 w-16" />
+                      <Skeleton className="h-10 w-32" />
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <CardTitle className="text-xl mb-2" style={{ color: "#212529" }}>
-                    {product.name}
-                  </CardTitle>
-                  <CardDescription className="mb-4" style={{ color: "#6C757D" }}>
-                    {product.reviews} reviews
-                  </CardDescription>
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                      ${product.price}
-                    </span>
+                  </CardContent>
+                </Card>
+              ))
+            ) : featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => (
+                <Card
+                  key={product.id}
+                  className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
+                >
+                  <CardHeader className="p-0">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      <Image
+                        src={getFullImageUrl(product.image)}
+                        alt={product.name}
+                        width={300}
+                        height={300}
+                        className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                      <div className="absolute top-4 right-4">
+                        <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{product.rating} ★</Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <CardTitle className="text-xl mb-2" style={{ color: "#212529" }}>
+                      {product.name}
+                    </CardTitle>
+                    <CardDescription className="mb-4" style={{ color: "#6C757D" }}>
+                      {(product.reviews || 0)} reviews
+                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
+                        ${product.price}
+                      </span>
 
-                  
-                  <ProtectedAction onAction={() => handleHomeAddToCart(product)}>
-
-                    <Button style={{ backgroundColor: "#007BFF" }}>
-                      <ShoppingCart className="h-4 w-4 mr-2" />
-                      Add to Cart
-                    </Button>
-                  </ProtectedAction>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    <ProtectedAction onAction={() => handleHomeAddToCart(product)}>
+                      <Button style={{ backgroundColor: "#007BFF" }}>
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Add to Cart
+                      </Button>
+                    </ProtectedAction>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-gray-500">No featured products available at the moment.</p>
+              </div>
+            )}
           </div>
 
           <div className="text-center mt-12">

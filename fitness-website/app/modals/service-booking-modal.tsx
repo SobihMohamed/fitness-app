@@ -12,6 +12,7 @@ interface ServiceBookingModalProps {
   onClose: () => void
   serviceName: string
   servicePrice: string
+  apiEndpoint?: string
 }
 
 interface ServiceBookingData {
@@ -43,7 +44,7 @@ interface ServiceBookingData {
   enjoyedExercises: string
 }
 
-export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice }: ServiceBookingModalProps) {
+export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice, apiEndpoint }: ServiceBookingModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
@@ -53,7 +54,6 @@ export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice
     setSubmitStatus("idle")
 
     try {
-      const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
       const token = sessionStorage.getItem("token")
 
       const bookingData = {
@@ -62,9 +62,10 @@ export function ServiceBookingModal({ isOpen, onClose, serviceName, servicePrice
         ...formData,
       }
 
-      
+      // Use the provided API endpoint or fall back to a default
+      const bookingEndpoint = apiEndpoint || `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/services/book`
 
-      const response = await axios.post(`${baseURL}/services/book`, bookingData, {
+      const response = await axios.post(bookingEndpoint, bookingData, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

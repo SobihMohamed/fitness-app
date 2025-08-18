@@ -8,12 +8,22 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/contexts/cart-context"
+import type { CartItem } from "@/contexts/cart-context"
 import { Plus, Minus, Trash2, ShoppingCart, ArrowLeft, Tag } from "lucide-react"
 import { useState, useEffect } from "react"
 
 export default function CartPage() {
-  const { items, total, itemCount, updateQuantity, removeItem, clearCart } =
-    useCart();
+  const {
+    state,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    getCartTotal,
+    getCartCount,
+  } = useCart();
+  const items = state.items;
+  const total = getCartTotal();
+  const itemCount = getCartCount();
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [invalidCode, setInvalidCode] = useState(false);
@@ -55,7 +65,7 @@ export default function CartPage() {
           <p className="text-lg text-gray-500">
             Looks like you haven't added any items to your cart yet.
           </p>
-          <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+          <Button size="lg" className="bg-blue-600 hover:bg-blue-700" asChild>
             <Link href="/products">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
@@ -70,7 +80,7 @@ export default function CartPage() {
     <div className="min-h-screen bg-gray-100">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <Button variant="ghost" className="mb-4">
+          <Button variant="ghost" className="mb-4" asChild>
             <Link href="/products">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Continue Shopping
@@ -96,7 +106,7 @@ export default function CartPage() {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {items.map((item, index) => (
+                {items.map((item: CartItem, index: number) => (
                   <div key={item.id}>
                     <div className="flex items-center space-x-4">
                       <div className="relative w-20 h-20 rounded-lg overflow-hidden">
@@ -244,6 +254,7 @@ export default function CartPage() {
               className="w-full"
               size="lg"
               style={{ backgroundColor: "#007BFF" }}
+              asChild
             >
               <Link href="/checkout">Proceed to Checkout</Link>
             </Button>

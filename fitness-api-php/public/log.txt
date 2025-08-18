@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 URL Detected: ManageAdmins/getAllAdmins
 =======
 URL Detected: AdminTrainingRequests/canecl/3
 >>>>>>> upstream/main
+=======
+URL Detected: ManageAdmins/getAllAdmins
+>>>>>>> nagy101-main
