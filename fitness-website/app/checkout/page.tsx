@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/contexts/cart-context"
+import type { CartItem } from "@/contexts/cart-context"
 import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle } from "lucide-react"
 
 interface CheckoutForm {
@@ -35,7 +36,10 @@ interface CheckoutForm {
 }
 
 export default function CheckoutPage() {
-  const { items, total, itemCount, clearCart } = useCart()
+  const { state, clearCart, getCartTotal, getCartCount } = useCart()
+  const items = state.items
+  const total = getCartTotal()
+  const itemCount = getCartCount()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
   const [formData, setFormData] = useState<CheckoutForm>({
@@ -347,7 +351,7 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
-                    {items.map((item) => (
+                    {items.map((item: CartItem) => (
                       <div key={item.id} className="flex items-center space-x-3">
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden">
                           <Image

@@ -68,16 +68,19 @@ export function AdminDashboard() {
 
   const adminCount = parseInt(stats.find((s) => s.title === "Admins")?.value ?? "0", 10);
 
+  // Calculate order status data with protection against negative values
   const orderStatusData = orderStats
     ? [
         { name: "Pending", value: orderStats.pendingOrders },
         { name: "Completed", value: orderStats.completedOrders },
         {
           name: "Cancelled",
-          value:
+          value: Math.max(
+            0,
             orderStats.totalOrders -
-            orderStats.pendingOrders -
-            orderStats.completedOrders,
+              orderStats.pendingOrders -
+              orderStats.completedOrders
+          ),
         },
       ]
     : [
@@ -111,32 +114,23 @@ export function AdminDashboard() {
 
         {/* Stats Cards */}
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-  {/* Dedicated Admins Card */}
-  <div className="transform transition-all hover:scale-[1.03]">
-    <>
-    <StatsCard
-      title="Admins"
-      value={adminCount}
-      icon={<UserCheck className="h-6 w-6 text-indigo-600" />}
-      color="from-indigo-100 to-indigo-200"
-    />
-    <div className="mt-1 ml-2">
-      <Link href="/admin/users?role=admin" className="text-xs text-indigo-700 underline">Manage Admins</Link>
-    </div>
-  </>
-  </div>
-  {/* Render other stats except Admins */}
-  {stats.filter((stat) => stat.title !== "Admins").map((stat, index) => (
+  {/* Render all stats including Admins */}
+  {stats.map((stat, index) => (
     <div
       key={index}
       className="transform transition-all hover:scale-[1.03]"
     >
       <StatsCard
         title={stat.title}
-        value={stat.value}
+        value={stat.title === "Admins" ? adminCount : stat.value}
         icon={<stat.icon className="h-6 w-6" />}
         color={stat.color}
       />
+      {stat.title === "Admins" && (
+        <div className="mt-1 ml-2">
+          <Link href="/admin/users?role=admin" className="text-xs text-indigo-700 underline">Manage Admins</Link>
+        </div>
+      )}
     </div>
   ))}
 </div>
@@ -318,6 +312,47 @@ export function AdminDashboard() {
         {/* Recent Activity + Top Products */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity */}
+          <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
+            <CardHeader>
+              <CardTitle className="text-gray-900 flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-blue-500" />
+                Recent Activity
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Latest actions on the platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity && recentActivity.length > 0 ? (
+                  recentActivity.map((activity: any, index: number) => (
+                    <div key={index} className="flex items-start space-x-3">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Activity className="h-4 w-4 text-blue-500" />
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {activity.title || activity.name || "Activity"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {activity.description || activity.details || "No details available"}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {activity.time || activity.timestamp || new Date().toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    No recent activity to display
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Top Products */}
           <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">

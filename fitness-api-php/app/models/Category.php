@@ -20,13 +20,19 @@ class Category{
     }
   }
   public function getAllProductsByCatId($categId){
+    if (!is_numeric($categId) || $categId <= 0) {
+      return false;
+    }
+    
     $productDB = new DB("products");
     try{
-      return $productDB
+      $result = $productDB
               ->select()
               ->where("category_id" , "=" , $categId)
               ->fetchAll();
+      return $result !== false ? $result : [];
     }catch(Exception $e){
+      error_log("Database error in getAllProductsByCatId: " . $e->getMessage());
       return false;
     }
   }

@@ -3,7 +3,6 @@
 import type React from "react";
 
 import { useEffect, useState } from "react";
- 
 import { useLoading } from "@/hooks/use-loading";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -60,6 +59,7 @@ import Loading from "@/app/loading";
 
 
 import { API_CONFIG } from "@/config/api";
+import { toast } from "sonner";
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -188,29 +188,6 @@ export default function ProductsManagement() {
     });
   };
 
-  // Fetch categories from the backend API
-  // useEffect(() => {
-  //   const fetchCategories = async () => {
-  //     try {
-  //       const res = await fetch(`${API_BASE}/AdminCategories/getAll`, {
-  //         headers: getAuthHeaders(),
-  //       });
-  //       const data = await res.json();
-  //       if (res.ok) {
-  //         setCategories(data.data || []);
-  //       } else {
-  //         showErrorToast("Failed to load product categories");
-  //       }
-  //     } catch (err) {
-  //       showErrorToast("Network error while loading product categories");
-  //     }
-  //   };
-  //   fetchCategories();
-  // }, []);
-
-  // useEffect(() => {
-  //   fetchProducts();
-  // }, []);
 
   const addCategory = async () => {
     if (!newCategoryName.trim()) {

@@ -19,7 +19,6 @@ class User {
           ->excute();
           return true;
     }catch(Exception $e){
-      echo "DB Error: " . $e->getMessage();
       return false;
     }
   }

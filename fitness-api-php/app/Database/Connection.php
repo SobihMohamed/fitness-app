@@ -6,7 +6,7 @@
     private static $instance = null;
     private function __construct(){
       $config = require __DIR__."/../../config/config.php";
-      $this->connection = new mysqli($config['dn_host'],$config['dn_user'],$config['db_pass'],$config['dn_name']);
+      $this->connection = new mysqli($config['db_host'],$config['dn_user'],$config['db_pass'],$config['dn_name']);
       if($this->connection->connect_error){
         die("DataBase connection faield: " .$this->connection->connect_error);
       }

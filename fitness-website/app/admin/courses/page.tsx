@@ -1,7 +1,4 @@
 "use client";
-
-import type React from "react";
-
 import { useEffect, useState } from "react";
 import { useLoading } from "@/hooks/use-loading";
 import { Button } from "@/components/ui/button";

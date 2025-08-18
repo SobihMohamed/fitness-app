@@ -8,20 +8,21 @@ import {
   Package,
   FileText,
   Users,
-  Settings,
   LogOut,
   Menu,
   X,
   Badge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdown } from "@/components/admin/shared/notification-dropdown";
+import { API_CONFIG } from "@/config/api";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
   { icon: Package, label: "Products", href: "/admin/products" },
   { icon: FileText, label: "Courses", href: "/admin/courses" },
   { icon: Users, label: "Users", href: "/admin/users" },
-  { icon: Settings, label: "Settings", href: "/admin/settings" },
+  { icon: FileText, label: "Requests", href: "/admin/requests" },
 ];
 
 interface NotificationData {
@@ -55,23 +56,39 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const fetchNotificationCounts = async () => {
     try {
       const [trainingRes, courseRes, ordersRes, expiringRes] = await Promise.all([
-        fetch("http://localhost:8000/AdminTrainingRequests/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminCoursesRequests/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminOrders/getAll", { headers: getAuthHeaders() }),
-        fetch("http://localhost:8000/AdminTrainingRequests/getExpirationSoon", { headers: getAuthHeaders() })
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getTheTranieesWhoseTrainingRequestEndSoon, { headers: getAuthHeaders() })
       ]);
 
-      const [trainingData, courseData, ordersData, expiringData] = await Promise.all([
-        trainingRes.json(),
-        courseRes.json(),
-        ordersRes.json(),
-        expiringRes.json()
-      ]);
+      // Handle responses, including 404 for expiring requests
+      const trainingData = await trainingRes.json();
+      const courseData = await courseRes.json();
+      const ordersData = await ordersRes.json();
+      
+      // Handle expiring requests response which may return 404 when none exist
+      let expiringData = { data: [] as any[] };
+      if (expiringRes.ok) {
+        expiringData = await expiringRes.json();
+      } else if (expiringRes.status === 404) {
+        // Silently treat as zero expiring requests
+        expiringData = { data: [] };
+      } else {
+        // Non-404 errors only: log and continue
+        console.warn("Expiring requests endpoint error:", expiringRes.status);
+      }
 
       setNotifications({
-        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending").length || 0,
-        courseRequests: courseData.data?.filter((req: any) => req.status === "pending").length || 0,
-        orders: ordersData.data?.filter((order: any) => order.status === "pending").length || 0,
+        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
+        courseRequests: courseData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
+        orders: ordersData.data?.filter((order: any) => order.status === "pending" || order.order_status === "pending").length || 0,
+        expiringRequests: expiringData.data?.length || 0,
+      });
+      console.log("Notification data:", {
+        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
+        courseRequests: courseData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
+        orders: ordersData.data?.filter((order: any) => order.status === "pending" || order.order_status === "pending").length || 0,
         expiringRequests: expiringData.data?.length || 0,
       });
     } catch (error) {
@@ -97,8 +114,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   };
 
   const totalNotifications = notifications.trainingRequests + notifications.courseRequests + notifications.orders + notifications.expiringRequests;
+  const totalRequests = notifications.trainingRequests + notifications.courseRequests + notifications.orders;
   if (!isAuthenticated) return null;
-
   return (
     <div className="min-h-screen bg-gray-50">
       {sidebarOpen && (
@@ -139,12 +156,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                   onClick={() => setSidebarOpen(false)}
                 >
                   <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                  {item.href === "/admin/settings" && totalNotifications > 0 && (
-                    <Badge className="bg-red-500 text-white ml-auto">
-                      {totalNotifications}
-                    </Badge>
-                  )}
+                  <span className="relative">
+                    {item.label}
+                    {item.href === "/admin/requests" && totalRequests > 0 && (
+                      <span className="absolute top-1 -right-10 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-md">
+                        {totalRequests}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               </li>
             ))}
@@ -181,14 +200,23 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
                 Admin Dashboard
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">A</span>
+            <div className="flex items-center space-x-6">
+              {/* Notification Bell */}
+              <div className="relative">
+                <NotificationDropdown />
+              </div>
+              
+              {/* User Profile with Notification Count */}
+              <div className="flex flex-col items-center relative">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <span className="text-white font-medium">A</span>
+                  </div>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-gray-900">Admin User</p>
+                    <p className="text-xs text-gray-500">Administrator</p>
+                  </div>
                 </div>
-                <span className="text-sm font-medium text-gray-700 hidden md:block">
-                  Admin User
-                </span>
               </div>
             </div>
           </div>

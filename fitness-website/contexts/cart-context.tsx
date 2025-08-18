@@ -2,92 +2,108 @@
 
 import type React from "react"
 import { createContext, useContext, useReducer, useEffect } from "react"
+import { toast } from "react-hot-toast"
 
 export interface CartItem {
-  id: number
+  id: string
   name: string
   price: number
   image: string
-  category: string
+  category?: string
   quantity: number
-  inStock: boolean
+  description?: string
+  stock?: number
 }
 
 interface CartState {
   items: CartItem[]
   total: number
-  itemCount: number
   isOpen: boolean
 }
 
 type CartAction =
   | { type: "ADD_ITEM"; payload: Omit<CartItem, "quantity"> }
-  | { type: "REMOVE_ITEM"; payload: number }
-  | { type: "UPDATE_QUANTITY"; payload: { id: number; quantity: number } }
+  | { type: "REMOVE_ITEM"; payload: string }
+  | { type: "UPDATE_QUANTITY"; payload: { id: string; quantity: number } }
   | { type: "CLEAR_CART" }
   | { type: "TOGGLE_CART" }
   | { type: "OPEN_CART" }
   | { type: "CLOSE_CART" }
-  | { type: "LOAD_CART"; payload: CartItem[] }
+  | { type: "LOAD_CART"; payload: CartState }
 
 const initialState: CartState = {
   items: [],
   total: 0,
-  itemCount: 0,
   isOpen: false,
 }
 
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existingItem = state.items.find((item) => item.id === action.payload.id)
+      const existingItemIndex = state.items.findIndex((item) => item.id === action.payload.id)
+      const item = action.payload
+      
+      // Check stock if available
+      if (item.stock !== undefined) {
+        const currentQuantity = existingItemIndex > -1 ? state.items[existingItemIndex].quantity : 0
+        if (currentQuantity >= item.stock) {
+          toast.error(`Sorry, only ${item.stock} items available in stock`)
+          return state
+        }
+      }
 
-      let newItems: CartItem[]
-      if (existingItem) {
-        newItems = state.items.map((item) =>
-          item.id === action.payload.id ? { ...item, quantity: item.quantity + 1 } : item,
-        )
+      let updatedItems
+      if (existingItemIndex > -1) {
+        // Item exists, update quantity
+        updatedItems = [...state.items]
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + 1,
+        }
       } else {
-        newItems = [...state.items, { ...action.payload, quantity: 1 }]
+        // Item doesn't exist, add new item with quantity 1
+        updatedItems = [...state.items, { ...item, quantity: 1 }]
+        toast.success(`${item.name} added to cart`)
       }
-
-      const total = newItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0)
-
-      return {
-        ...state,
-        items: newItems,
-        total,
-        itemCount,
-      }
+      
+      // Calculate new total
+      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      
+      return { ...state, items: updatedItems, total }
     }
 
     case "REMOVE_ITEM": {
-      const newItems = state.items.filter((item) => item.id !== action.payload)
-      const total = newItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0)
-
+      const updatedItems = state.items.filter((item) => item.id !== action.payload)
+      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      
       return {
         ...state,
-        items: newItems,
+        items: updatedItems,
         total,
-        itemCount,
       }
     }
 
     case "UPDATE_QUANTITY": {
-      const newItems = state.items
-        .map((item) => (item.id === action.payload.id ? { ...item, quantity: action.payload.quantity } : item))
+      const { id, quantity } = action.payload
+      
+      // Find the item to check stock if needed
+      const itemToUpdate = state.items.find(item => item.id === id)
+      
+      if (itemToUpdate && itemToUpdate.stock !== undefined && quantity > itemToUpdate.stock) {
+        toast.error(`Sorry, only ${itemToUpdate.stock} items available in stock`)
+        return state
+      }
+      
+      const updatedItems = state.items
+        .map((item) => item.id === id ? { ...item, quantity } : item)
         .filter((item) => item.quantity > 0)
-
-      const total = newItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0)
-
+      
+      const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      
       return {
         ...state,
-        items: newItems,
+        items: updatedItems,
         total,
-        itemCount,
       }
     }
 
@@ -96,7 +112,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: [],
         total: 0,
-        itemCount: 0,
       }
 
     case "TOGGLE_CART":
@@ -118,14 +133,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
 
     case "LOAD_CART":
-      const total = action.payload.reduce((sum, item) => sum + item.price * item.quantity, 0)
-      const itemCount = action.payload.reduce((sum, item) => sum + item.quantity, 0)
-
       return {
         ...state,
-        items: action.payload,
-        total,
-        itemCount,
+        ...action.payload
       }
 
     default:
@@ -133,14 +143,17 @@ function cartReducer(state: CartState, action: CartAction): CartState {
   }
 }
 
-interface CartContextType extends CartState {
+interface CartContextType {
+  state: CartState
   addItem: (item: Omit<CartItem, "quantity">) => void
-  removeItem: (id: number) => void
-  updateQuantity: (id: number, quantity: number) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
   toggleCart: () => void
   openCart: () => void
   closeCart: () => void
+  getCartTotal: () => number
+  getCartCount: () => number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
@@ -149,41 +162,63 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("fitpro-cart")
+    const savedCart = localStorage.getItem("cart")
     if (savedCart) {
       try {
-        const cartItems = JSON.parse(savedCart)
-        dispatch({ type: "LOAD_CART", payload: cartItems })
+        const parsedCart = JSON.parse(savedCart)
+        if (parsedCart && parsedCart.items) {
+          // Calculate total when loading from storage
+          const total = parsedCart.items.reduce(
+            (sum: number, item: CartItem) => sum + (item.price * item.quantity), 
+            0
+          )
+          dispatch({ 
+            type: "LOAD_CART", 
+            payload: { ...parsedCart, total } 
+          })
+        }
       } catch (error) {
-        console.error("Error loading cart from localStorage:", error)
+        console.error("Error parsing cart from localStorage:", error)
+        localStorage.removeItem("cart") // Clear invalid cart data
       }
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("fitpro-cart", JSON.stringify(state.items))
-  }, [state.items])
+    if (state.items.length > 0 || state.isOpen) {
+      localStorage.setItem("cart", JSON.stringify(state))
+    }
+  }, [state])
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     dispatch({ type: "ADD_ITEM", payload: item })
   }
 
-  const removeItem = (id: number) => {
-    dispatch({ type: "REMOVE_ITEM", payload: id })
+  const removeItem = (id: string) => {
+    const itemToRemove = state.items.find(item => item.id === id)
+    if (itemToRemove) {
+      dispatch({ type: "REMOVE_ITEM", payload: id })
+      toast.success(`${itemToRemove.name} removed from cart`)
+    }
   }
 
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = (id: string, quantity: number) => {
+    if (quantity < 1) {
+      removeItem(id)
+      return
+    }
     dispatch({ type: "UPDATE_QUANTITY", payload: { id, quantity } })
   }
 
   const clearCart = () => {
     dispatch({ type: "CLEAR_CART" })
+    toast.success("Cart cleared")
   }
 
   const toggleCart = () => {
     dispatch({ type: "TOGGLE_CART" })
   }
-
+  
   const openCart = () => {
     dispatch({ type: "OPEN_CART" })
   }
@@ -191,11 +226,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const closeCart = () => {
     dispatch({ type: "CLOSE_CART" })
   }
+  
+  const getCartTotal = () => {
+    return state.total
+  }
+  
+  const getCartCount = () => {
+    return state.items.reduce((count, item) => count + item.quantity, 0)
+  }
 
   return (
     <CartContext.Provider
       value={{
-        ...state,
+        state,
         addItem,
         removeItem,
         updateQuantity,
@@ -203,6 +246,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         toggleCart,
         openCart,
         closeCart,
+        getCartTotal,
+        getCartCount,
       }}
     >
       {children}
