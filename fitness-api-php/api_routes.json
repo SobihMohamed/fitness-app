@@ -48,6 +48,14 @@
         "path": "/Blogs/singleBlog/{id}"
       }
     },
+    "Services": {
+      "getAll": { "method": "GET", "path": "/Services/getAll" },
+      "search Service": { "method": "POST", "path": "/Services/searchService" },
+      "View Single Service": {
+        "method": "GET",
+        "path": "/Services/singleService/{id}"
+      }
+    },
     "RequestForTraining": {
       "createRequestToAdmin": {
         "method": "POST",
@@ -148,6 +156,16 @@
       "add": { "method": "POST", "path": "/AdminBlogs/addBlog" },
       "update": { "method": "POST", "path": "/AdminBlogs/updateBlog" },
       "delete": { "method": "DELETE", "path": "/AdminBlogs/deleteBlog" }
+    },
+    "Admin Service": {
+      "getAllServices": { "method": "GET", "path": "/AdminServices/getAll" },
+      "getSingleService": {
+        "method": "GET",
+        "path": "/AdminServices/getServiceById/{id}"
+      },
+      "add": { "method": "POST", "path": "/AdminServices/addService" },
+      "update": { "method": "POST", "path": "/AdminServices/updateService" },
+      "delete": { "method": "DELETE", "path": "/AdminServices/deleteService" }
     },
     "AdminManageTrainingRequests": {
       "getAllRequests": {
