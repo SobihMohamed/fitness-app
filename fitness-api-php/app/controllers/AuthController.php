@@ -80,7 +80,6 @@ class AuthController extends AbstractController{
           "status" => "success"
       ]);
   }
-
   // after enter email to send otp
   public function forgetPassword(){
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
