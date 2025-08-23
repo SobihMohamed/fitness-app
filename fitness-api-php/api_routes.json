@@ -40,6 +40,14 @@
         "path": "/Courses/singleCourse/{id}"
       }
     },
+    "Blogs": {
+      "getAll": { "method": "GET", "path": "/Blogs/getAll" },
+      "search Blog": { "method": "POST", "path": "/Blogs/searchBlog" },
+      "View Single Blog": {
+        "method": "GET",
+        "path": "/Blogs/singleBlog/{id}"
+      }
+    },
     "RequestForTraining": {
       "createRequestToAdmin": {
         "method": "POST",
@@ -130,6 +138,16 @@
       "add": { "method": "POST", "path": "/AdminCourses/addCourse" },
       "update": { "method": "POST", "path": "/AdminCourses/updateCourse" },
       "delete": { "method": "DELETE", "path": "/AdminCourses/deleteCourse" }
+    },
+    "AdminBlog": {
+      "getAllBlogs": { "method": "GET", "path": "/AdminBlogs/getAll" },
+      "getSingleBlog": {
+        "method": "GET",
+        "path": "/AdminBlogs/getBlogById/{id}"
+      },
+      "add": { "method": "POST", "path": "/AdminBlogs/addBlog" },
+      "update": { "method": "POST", "path": "/AdminBlogs/updateBlog" },
+      "delete": { "method": "DELETE", "path": "/AdminBlogs/deleteBlog" }
     },
     "AdminManageTrainingRequests": {
       "getAllRequests": {
