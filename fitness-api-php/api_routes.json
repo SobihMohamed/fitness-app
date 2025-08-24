@@ -55,6 +55,7 @@
         "method": "GET",
         "path": "/Services/singleService/{id}"
       }
+      
     },
     "RequestForTraining": {
       "createRequestToAdmin": {
