@@ -296,6 +296,16 @@ function RequestsTable({
     } else if (data) {
       normalizedItems = [data];
     }
+
+    // Ensure consistent status field across all items
+    normalizedItems = normalizedItems.map(item => {
+      // If status is not at the top level, check common alternative fields
+      if (!item.status) {
+        const status = item.request_status || item.order_status || 'pending';
+        return { ...item, status };
+      }
+      return item;
+    });
     
     // Filter items based on search and filter criteria
     const filteredItems = normalizedItems.filter((item: RequestItem) => {
@@ -632,22 +642,15 @@ function RequestsTable({
                     </td>
                     <td className="px-4 py-3">
                       <Badge
-                        className={`${
-                          (item.status ||
-                            item.request_status ||
-                            item.order_status) === "approved"
-                            ? "bg-green-100 text-green-800 hover:bg-green-200"
-                            : (item.status ||
-                                item.request_status ||
-                                item.order_status) === "cancelled"
-                            ? "bg-red-100 text-red-800 hover:bg-red-200"
-                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                        className={`capitalize ${
+                          item.status === 'approved'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : item.status === 'cancelled'
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                         }`}
                       >
-                        {item.status ||
-                          item.request_status ||
-                          item.order_status ||
-                          "pending"}
+                        {item.status || 'pending'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -677,6 +680,7 @@ function RequestsTable({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
+                        {/* Always show details button */}
                         <Button
                           size="sm"
                           variant="outline"
@@ -691,42 +695,45 @@ function RequestsTable({
                         >
                           <Eye className="h-4 w-4 text-indigo-600" />
                         </Button>
-                        {(item.status ||
-                          item.request_status ||
-                          item.order_status) !== "approved" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              setConfirm({
-                                type: "approve",
-                                id: item.id || item.request_id || item.order_id,
-                              })
-                            }
-                            className="h-9 w-9 p-0 hover:bg-green-50 hover:border-green-200 transition-all duration-150"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
+
+                        {/* Show action buttons only for pending items */}
+                        {item.status === 'pending' && (
+                          <>
+                            {/* Approve button */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!!actionLoading}
+                              onClick={() =>
+                                setConfirm({
+                                  type: "approve",
+                                  id: item.id || item.request_id || item.order_id,
+                                })
+                              }
+                              className="h-9 w-9 p-0 hover:bg-green-50 hover:border-green-200 transition-all duration-150"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+
+                            {/* Cancel button */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!!actionLoading}
+                              onClick={() =>
+                                setConfirm({
+                                  type: "cancel",
+                                  id: item.id || item.request_id || item.order_id,
+                                })
+                              }
+                              className="h-9 w-9 p-0 hover:bg-yellow-50 hover:border-yellow-200 transition-all duration-150"
+                            >
+                              <XCircle className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                          </>
                         )}
-                        {(item.status ||
-                          item.request_status ||
-                          item.order_status) !== "cancelled" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              setConfirm({
-                                type: "cancel",
-                                id: item.id || item.request_id || item.order_id,
-                              })
-                            }
-                            className="h-9 w-9 p-0 hover:bg-yellow-50 hover:border-yellow-200 transition-all duration-150"
-                          >
-                            <XCircle className="h-4 w-4 text-yellow-600" />
-                          </Button>
-                        )}
+
+                        {/* Always show delete button */}
                         <Button
                           size="sm"
                           variant="outline"
@@ -1196,15 +1203,15 @@ function RequestsTable({
                       <div className="space-y-2">
                         <div className="text-sm text-slate-500">Status</div>
                         <Badge
-                          className={`${
-                            detailsData.status === "approved"
-                              ? "bg-green-100 text-green-800"
-                              : detailsData.status === "cancelled"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
+                          className={`capitalize ${
+                            detailsData.status === 'approved'
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : detailsData.status === 'cancelled'
+                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                           }`}
                         >
-                          {detailsData.status || "pending"}
+                          {detailsData.status || 'pending'}
                         </Badge>
                       </div>
                     </div>
