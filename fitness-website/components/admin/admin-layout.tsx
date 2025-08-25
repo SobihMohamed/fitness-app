@@ -23,6 +23,8 @@ const sidebarItems = [
   { icon: FileText, label: "Courses", href: "/admin/courses" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: FileText, label: "Requests", href: "/admin/requests" },
+  { icon: Badge, label: "Services", href: "/admin/services" },
+  { icon: FileText, label: "Blogs", href: "/admin/blogs" },
 ];
 
 interface NotificationData {
