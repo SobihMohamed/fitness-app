@@ -1,1 +1,1 @@
-URL Detected: AdminOrders/showOrder/2
+URL Detected: AdminNotifications/getAdminNotifications
