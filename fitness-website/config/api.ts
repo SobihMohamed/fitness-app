@@ -197,11 +197,10 @@ export const API_CONFIG = {
       getSingleBlog: (id: string) =>
         `http://localhost:8000/AdminBlogs/getBlogById/${id}`,
       add: "http://localhost:8000/AdminBlogs/addBlog",
-      update: "http://localhost:8000/AdminBlogs/updateBlog",
+      update: (id: string) =>
+        `http://localhost:8000/AdminBlogs/updateBlog/${id}`,
       delete: (id: string) =>
         `http://localhost:8000/AdminBlogs/deleteBlog/${id}`,
+    },
   },
-  }
-
-  
 };
