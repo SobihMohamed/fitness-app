@@ -53,6 +53,7 @@ import { ProtectedAction } from "@/components/auth/Protected-Route";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
 import axios from "axios";
+import { formatNumber } from "@/utils/format";
 
 // <CHANGE> Enhanced TypeScript interfaces with better typing
 interface Lesson {
@@ -132,7 +133,7 @@ const CourseStats = memo(({ course }: { course: Course }) => (
     </div>
     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
       <Users className="h-4 w-4" />
-      <span>{course.students.toLocaleString()} students</span>
+      <span>{formatNumber(course.students)} students</span>
     </div>
     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
       <Clock className="h-4 w-4" />
@@ -699,7 +700,7 @@ export default function CourseDetailPage() {
                 )}
                 {userEnrolled && (
                   <Badge className="bg-green-500 text-white border-0">
-                    <CheckCircle className="h-3 w-3 mr-1" />
+                    <CheckCircle className="h-3 w-3" />
                     Enrolled
                   </Badge>
                 )}
@@ -871,7 +872,7 @@ export default function CourseDetailPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>{courseStats.totalLessons} lessons</span>
+                      <span>{formatNumber(courseStats.totalLessons)} lessons</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
@@ -967,13 +968,13 @@ export default function CourseDetailPage() {
                       <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
                         <BookOpen className="h-4 w-4 text-indigo-500" />
                         <span className="font-medium">
-                          {course.instructor.courses} courses
+                          {formatNumber(course.instructor.courses)} courses
                         </span>
                       </div>
                       <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
                         <Users className="h-4 w-4 text-indigo-500" />
                         <span className="font-medium">
-                          {course.instructor.students.toLocaleString()} students
+                          {formatNumber(course.instructor.students)} students
                         </span>
                       </div>
                     </div>

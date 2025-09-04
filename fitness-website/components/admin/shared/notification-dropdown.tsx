@@ -5,6 +5,7 @@ import { Bell, Check, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { API_CONFIG } from "@/config/api";
+import { formatDateTimeUTC } from "@/utils/format";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,14 +74,14 @@ export function NotificationDropdown() {
 
   const fetchNotifications = async () => {
     try {
-      // cache-busting to avoid stale reads after updates
+      // Rely on no-store and polling; avoid non-deterministic Date.now cache-busting
       const baseUrl = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.getAllNotificationForThisAdmin;
-      const url = typeof baseUrl === "string" ? `${baseUrl}?ts=${Date.now()}` : baseUrl;
+      const url = baseUrl as string;
       const response = await fetch(url as string, {
         headers: getAuthHeaders(),
         cache: "no-store",
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         // Normalize items: ensure id exists and parse is_read correctly
@@ -100,7 +101,7 @@ export function NotificationDropdown() {
               message_title: raw?.message_title ?? raw?.title ?? "",
               content: raw?.content ?? raw?.message ?? "",
               is_read: !!isRead,
-              delivered_at: raw?.delivered_at ?? raw?.created_at ?? raw?.createdAt ?? new Date().toISOString(),
+              delivered_at: raw?.delivered_at ?? raw?.created_at ?? raw?.createdAt ?? "",
             } as Notification;
           })
           .filter((n: Notification) => n.notification_id);
@@ -279,8 +280,7 @@ export function NotificationDropdown() {
   }, []);
 
   const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleString();
+    return formatDateTimeUTC(dateString);
   };
 
   return (

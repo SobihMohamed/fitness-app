@@ -78,6 +78,17 @@ export const API_CONFIG = {
     search: "http://localhost:8000/Products/searchProduct",
   },
 
+  USER_SERVICES_API: {
+    getAll: "http://localhost:8000/Services/getAll",
+    getById: (id: string) => `http://localhost:8000/Services/getServiceById/${id}`,
+    search: "http://localhost:8000/Services/searchService",
+  },
+  USER_BLOG_API:{
+    getAll: "http://localhost:8000/Blogs/getAll",
+    getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
+    search: "http://localhost:8000/Blogs/searchBlog",
+  },
+
   // ADMIN FUNCTIONS
   ADMIN_FUNCTIONS: {
     adminUsers: {
@@ -172,7 +183,24 @@ export const API_CONFIG = {
       DeleteNotification: (id: string) =>
         `http://localhost:8000/AdminNotifications/delete/${id}`,
     },
+    AdminServices: {
+      getAllServices: "http://localhost:8000/AdminServices/getAll",
+      getSingleService: (id: string) =>
+        `http://localhost:8000/AdminServices/getServiceById/${id}`,
+      add: "http://localhost:8000/AdminServices/addService",
+      update: "http://localhost:8000/AdminServices/updateService",
+      delete: (id: string) =>
+        `http://localhost:8000/AdminServices/deleteService/${id}`,
+    },
+    AdminBlogs: {
+      getAllBlogs: "http://localhost:8000/AdminBlogs/getAll",
+      getSingleBlog: (id: string) =>
+        `http://localhost:8000/AdminBlogs/getBlogById/${id}`,
+      add: "http://localhost:8000/AdminBlogs/addBlog",
+      update: (id: string) =>
+        `http://localhost:8000/AdminBlogs/updateBlog/${id}`,
+      delete: (id: string) =>
+        `http://localhost:8000/AdminBlogs/deleteBlog/${id}`,
+    },
   },
-
-  
 };

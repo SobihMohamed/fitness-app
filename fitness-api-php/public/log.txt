@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 URL Detected: AdminProducts/deleteProduct/12
+=======
+URL Detected: Services/getAll
+>>>>>>> 68e66a85f8ddfe098b23abe061b7e15bc8d0af42

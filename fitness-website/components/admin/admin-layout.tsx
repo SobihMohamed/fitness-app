@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/admin/shared/notification-dropdown";
+import { LoadingSpinner } from "@/components/admin/shared/loading-spinner";
 import { API_CONFIG } from "@/config/api";
 
 const sidebarItems = [
@@ -23,6 +24,8 @@ const sidebarItems = [
   { icon: FileText, label: "Courses", href: "/admin/courses" },
   { icon: Users, label: "Users", href: "/admin/users" },
   { icon: FileText, label: "Requests", href: "/admin/requests" },
+  { icon: Badge, label: "Services", href: "/admin/services" },
+  { icon: FileText, label: "Blogs", href: "/admin/blogs" },
 ];
 
 interface NotificationData {
@@ -34,6 +37,7 @@ interface NotificationData {
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [notifications, setNotifications] = useState<NotificationData>({
     trainingRequests: 0,
     courseRequests: 0,
@@ -52,6 +56,26 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     };
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("adminAuth");
+    setIsAuthenticated(false);
+    router.push("/admin/login");
+  };
+
+  // Validate token by making a test API call
+  const validateToken = async () => {
+    try {
+      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, {
+        headers: getAuthHeaders(),
+        method: 'GET'
+      });
+      return response.ok;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      return false;
+    }
+  };
+
   // Fetch notification counts
   const fetchNotificationCounts = async () => {
     try {
@@ -62,11 +86,18 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getTheTranieesWhoseTrainingRequestEndSoon, { headers: getAuthHeaders() })
       ]);
 
+      // Check for authentication errors (401 Unauthorized)
+      if (trainingRes.status === 401 || courseRes.status === 401 || ordersRes.status === 401 || expiringRes.status === 401) {
+        console.warn("Token expired or invalid, logging out");
+        handleLogout();
+        return;
+      }
+
       // Handle responses, including 404 for expiring requests
       const trainingData = await trainingRes.json();
       const courseData = await courseRes.json();
       const ordersData = await ordersRes.json();
-      
+
       // Handle expiring requests response which may return 404 when none exist
       let expiringData = { data: [] as any[] };
       if (expiringRes.ok) {
@@ -96,26 +127,42 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     }
   };
   useEffect(() => {
-    const token = localStorage.getItem("adminAuth"); 
-    if (!token) {
-      router.push("/admin/login");
-    } else {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("adminAuth");
+      if (!token) {
+        router.push("/admin/login");
+        return;
+      }
+
+      // Validate token
+      const isValid = await validateToken();
+      if (!isValid) {
+        console.warn("Token validation failed, logging out");
+        handleLogout();
+        return;
+      }
+
       setIsAuthenticated(true);
       fetchNotificationCounts();
+      setIsLoading(false);
       // Set up periodic refresh for notifications
-      const interval = setInterval(fetchNotificationCounts, 30000); // Every 30 seconds
+      const interval = setInterval(fetchNotificationCounts, 60000); // Every 60 seconds for better performance
       return () => clearInterval(interval);
-    }
-  }, [router]);
+    };
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminAuth");
-    router.push("/admin/login");
-  };
+    checkAuth();
+  }, [router]);
 
   const totalNotifications = notifications.trainingRequests + notifications.courseRequests + notifications.orders + notifications.expiringRequests;
   const totalRequests = notifications.trainingRequests + notifications.courseRequests + notifications.orders;
   if (!isAuthenticated) return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <LoadingSpinner fullScreen message="Loading admin interface..." />
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       {sidebarOpen && (
@@ -186,7 +233,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="w-full">
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-30">
+        <header className="bg-white shadow-sm border-b px-6 py-4 fixed top-0 left-0 right-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -223,7 +270,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">{children}</main>
+        <main className="pt-20 p-6 pb-20">{children}</main>
       </div>
     </div>
   );
