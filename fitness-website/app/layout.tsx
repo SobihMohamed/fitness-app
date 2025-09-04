@@ -83,7 +83,7 @@ export const metadata: Metadata = {
     "msapplication-config": "/browserconfig.xml",
     "theme-color": "#ffffff",
   },
-    generator: 'v0.dev'
+    
 }
 
 export default function RootLayout({
