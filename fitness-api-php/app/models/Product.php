@@ -37,7 +37,7 @@ class Product{
                 ->insert($data)
                 ->excute();
     } catch (Exception $e) {
-      // var_dump($e->getMessage());
+      var_dump($e->getMessage());
       return false;
     }
   }
@@ -73,6 +73,9 @@ class Product{
     }catch(Exception $e){
       return false;
     }
+  }
+  public function lastInserted (){
+    return $this->db->getLastInsertedId();
   }
 }
 ?>

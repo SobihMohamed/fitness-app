@@ -45,7 +45,7 @@ class DB implements dbContract{
     $this->sql = "INSERT INTO `$this->table` ($columns) VALUES ($values)";
     
     return $this;
-}
+  }
 
   public function select($columns="*"){
     $this->sql = "SELECT $columns FROM $this->table ";

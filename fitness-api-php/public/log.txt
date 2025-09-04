@@ -1,1 +1,1 @@
-URL Detected: Services/searchService
+URL Detected: AdminProducts/deleteProduct/12
