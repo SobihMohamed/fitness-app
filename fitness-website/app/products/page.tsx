@@ -380,7 +380,7 @@ export default function ProductsPage() {
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold text-primary">${product.price.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-primary">{product.price.toFixed(2)} EGP</span>
                         <Badge
                           variant={
                             product.stock_quantity > 10

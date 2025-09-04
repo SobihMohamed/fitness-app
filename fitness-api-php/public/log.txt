@@ -1,1 +1,1 @@
-URL Detected: Blogs/getAll
+URL Detected: Services/getAll

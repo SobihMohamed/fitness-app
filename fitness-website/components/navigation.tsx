@@ -29,8 +29,8 @@ export function Navigation() {
 
   const { user } = useAuth();
 
-  // Navbar should be hidden only on admin login page
-  if (pathname === "/admin/login") return null;
+  // Navbar should be hidden on all admin pages
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <>
