@@ -305,7 +305,7 @@ export default function CoursesManagement() {
 
   const formatPrice = (price: string) => {
     const numPrice = Number.parseFloat(price);
-    return numPrice === 0 ? "Free" : `$${numPrice.toFixed(2)}`;
+    return numPrice === 0 ? "Free" : `${numPrice.toFixed(1)}EGP`;
   };
 
   // Load courses on mount
@@ -406,7 +406,6 @@ export default function CoursesManagement() {
                     Avg Price
                   </p>
                   <p className="text-3xl font-bold text-purple-900">
-                    $
                     {courses.length > 0
                       ? (
                           courses.reduce(
@@ -415,6 +414,7 @@ export default function CoursesManagement() {
                           ) / courses.length
                         ).toFixed(0)
                       : "0"}
+                     <span> EGP</span>
                   </p>
                 </div>
                 <div className="p-3 bg-purple-200 rounded-full">

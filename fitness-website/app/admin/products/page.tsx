@@ -1012,7 +1012,7 @@ export default function ProductsManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="font-semibold text-indigo-600">
-                        ${product.price}
+                        {product.price} EGP
                       </TableCell>
                       <TableCell>
                         <Badge

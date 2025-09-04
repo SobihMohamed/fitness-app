@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { API_CONFIG } from "@/config/api";
 import { Button } from "@/components/ui/button";
+import { formatDateUTC } from "@/utils/format";
 import {
   Card,
   CardContent,
@@ -296,6 +297,16 @@ function RequestsTable({
     } else if (data) {
       normalizedItems = [data];
     }
+
+    // Ensure consistent status field across all items
+    normalizedItems = normalizedItems.map(item => {
+      // If status is not at the top level, check common alternative fields
+      if (!item.status) {
+        const status = item.request_status || item.order_status || 'pending';
+        return { ...item, status };
+      }
+      return item;
+    });
     
     // Filter items based on search and filter criteria
     const filteredItems = normalizedItems.filter((item: RequestItem) => {
@@ -632,22 +643,15 @@ function RequestsTable({
                     </td>
                     <td className="px-4 py-3">
                       <Badge
-                        className={`${
-                          (item.status ||
-                            item.request_status ||
-                            item.order_status) === "approved"
-                            ? "bg-green-100 text-green-800 hover:bg-green-200"
-                            : (item.status ||
-                                item.request_status ||
-                                item.order_status) === "cancelled"
-                            ? "bg-red-100 text-red-800 hover:bg-red-200"
-                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                        className={`capitalize ${
+                          item.status === 'approved'
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : item.status === 'cancelled'
+                            ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                         }`}
                       >
-                        {item.status ||
-                          item.request_status ||
-                          item.order_status ||
-                          "pending"}
+                        {item.status || 'pending'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-slate-700">
@@ -671,12 +675,12 @@ function RequestsTable({
                           item.order?.order_date ||
                           item.order?.date;
                         if (!dt) return "-";
-                        const d = new Date(dt as any);
-                        return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                        return formatDateUTC(dt as any);
                       })()}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
+                        {/* Always show details button */}
                         <Button
                           size="sm"
                           variant="outline"
@@ -691,42 +695,45 @@ function RequestsTable({
                         >
                           <Eye className="h-4 w-4 text-indigo-600" />
                         </Button>
-                        {(item.status ||
-                          item.request_status ||
-                          item.order_status) !== "approved" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              setConfirm({
-                                type: "approve",
-                                id: item.id || item.request_id || item.order_id,
-                              })
-                            }
-                            className="h-9 w-9 p-0 hover:bg-green-50 hover:border-green-200 transition-all duration-150"
-                          >
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          </Button>
+
+                        {/* Show action buttons only for pending items */}
+                        {item.status === 'pending' && (
+                          <>
+                            {/* Approve button */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!!actionLoading}
+                              onClick={() =>
+                                setConfirm({
+                                  type: "approve",
+                                  id: item.id || item.request_id || item.order_id,
+                                })
+                              }
+                              className="h-9 w-9 p-0 hover:bg-green-50 hover:border-green-200 transition-all duration-150"
+                            >
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            </Button>
+
+                            {/* Cancel button */}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!!actionLoading}
+                              onClick={() =>
+                                setConfirm({
+                                  type: "cancel",
+                                  id: item.id || item.request_id || item.order_id,
+                                })
+                              }
+                              className="h-9 w-9 p-0 hover:bg-yellow-50 hover:border-yellow-200 transition-all duration-150"
+                            >
+                              <XCircle className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                          </>
                         )}
-                        {(item.status ||
-                          item.request_status ||
-                          item.order_status) !== "cancelled" && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!!actionLoading}
-                            onClick={() =>
-                              setConfirm({
-                                type: "cancel",
-                                id: item.id || item.request_id || item.order_id,
-                              })
-                            }
-                            className="h-9 w-9 p-0 hover:bg-yellow-50 hover:border-yellow-200 transition-all duration-150"
-                          >
-                            <XCircle className="h-4 w-4 text-yellow-600" />
-                          </Button>
-                        )}
+
+                        {/* Always show delete button */}
                         <Button
                           size="sm"
                           variant="outline"
@@ -946,9 +953,7 @@ function RequestsTable({
                           label="Start Date"
                           value={
                             detailsData.start_date
-                              ? new Date(
-                                  detailsData.start_date
-                                ).toLocaleDateString()
+                              ? formatDateUTC(detailsData.start_date)
                               : null
                           }
                         />
@@ -956,9 +961,7 @@ function RequestsTable({
                           label="End Date"
                           value={
                             detailsData.end_date
-                              ? new Date(
-                                  detailsData.end_date
-                                ).toLocaleDateString()
+                              ? formatDateUTC(detailsData.end_date)
                               : null
                           }
                         />
@@ -1078,7 +1081,7 @@ function RequestsTable({
                             detailsData.course?.price ??
                             detailsData.price ??
                             detailsData.request?.course_price;
-                          return price != null && price !== '' ? `$${price}` : '-';
+                          return price != null && price !== '' ? `${price} EGP` : '-';
                         })()}
                       />
                       <DetailItem
@@ -1089,7 +1092,7 @@ function RequestsTable({
                             detailsData.createdAt ||
                             detailsData.request_date ||
                             detailsData.date;
-                          return dt ? new Date(dt).toLocaleDateString() : null;
+                          return dt ? formatDateUTC(dt) : null;
                         })()}
                       />
                       <DetailItem
@@ -1167,7 +1170,7 @@ function RequestsTable({
                             detailsData.order_total ??
                             detailsData.price ??
                             detailsData.order?.total;
-                          return total != null && total !== '' ? `$${total}` : '-';
+                          return total != null && total !== '' ? `${total} EGP` : '-';
                         })()}
                       />
                       <DetailItem
@@ -1190,21 +1193,21 @@ function RequestsTable({
                             detailsData.order?.purchase_date;
                           if (!dt) return null;
                           const d = new Date(dt as any);
-                          return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                          return isNaN(d.getTime()) ? String(dt).slice(0, 10) : formatDateUTC(dt as any);
                         })()}
                       />
                       <div className="space-y-2">
                         <div className="text-sm text-slate-500">Status</div>
                         <Badge
-                          className={`${
-                            detailsData.status === "approved"
-                              ? "bg-green-100 text-green-800"
-                              : detailsData.status === "cancelled"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-yellow-100 text-yellow-800"
+                          className={`capitalize ${
+                            detailsData.status === 'approved'
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : detailsData.status === 'cancelled'
+                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
+                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
                           }`}
                         >
-                          {detailsData.status || "pending"}
+                          {detailsData.status || 'pending'}
                         </Badge>
                       </div>
                     </div>
@@ -1225,7 +1228,7 @@ function RequestsTable({
                                   {item.product_name}
                                 </span>
                                 <span className="text-sm text-slate-500">
-                                  Qty: {item.quantity} | ${item.price} each
+                                  Qty: {item.quantity} | {item.price} EGP each
                                 </span>
                               </li>
                             )

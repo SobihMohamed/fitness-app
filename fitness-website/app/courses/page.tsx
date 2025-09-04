@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatNumber } from "@/utils/format";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -72,7 +73,7 @@ const scaleOnHover = {
   whileHover: {
     scale: 1.02,
     y: -4,
-    transition: { type: "spring", stiffness: 300, damping: 20 },
+    transition: { type: "spring" as const, stiffness: 300, damping: 20 },
   },
 };
 
@@ -300,7 +301,7 @@ export default function CoursesPage() {
                       </span>
                     </div>
                     <div className="text-2xl font-bold bg-black/40 backdrop-blur-sm rounded-full px-3 py-1">
-                      ${course.price.toFixed(0)}
+                      {course.price.toFixed(0)} EGP
                     </div>
                   </div>
                 </div>
@@ -335,7 +336,7 @@ export default function CoursesPage() {
                     <div className="flex items-center gap-1.5 bg-purple-50 px-3 py-1.5 rounded-full">
                       <Users className="h-4 w-4 text-purple-600" />
                       <span className="font-medium">
-                        {course.students.toLocaleString()}
+                        {formatNumber(course.students)}
                       </span>
                     </div>
                   </div>
