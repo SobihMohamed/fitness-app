@@ -167,7 +167,7 @@ export default function CartPage() {
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
                             <p className="text-sm text-gray-500">
-                              ${item.price.toFixed(2)} each
+                              {item.price.toFixed(2)} EGP
                             </p>
                           </div>
                         </div>

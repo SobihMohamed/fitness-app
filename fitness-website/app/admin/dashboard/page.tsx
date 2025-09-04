@@ -34,6 +34,7 @@ import {
   Cell,
 } from "recharts";
 import Link from "next/link";
+import { formatDateTimeUTC } from "@/utils/format";
 
 export default function AdminDashboardWrapper() {
   const { isLoading, isAuthenticated } = useAdminAuth();
@@ -340,7 +341,7 @@ export function AdminDashboard() {
                           {activity.description || activity.details || "No details available"}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {activity.time || activity.timestamp || new Date().toLocaleString()}
+                          {activity.time || activity.timestamp || formatDateTimeUTC(new Date())}
                         </p>
                       </div>
                     </div>

@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { API_CONFIG } from "@/config/api";
 import { Button } from "@/components/ui/button";
+import { formatDateUTC } from "@/utils/format";
 import {
   Card,
   CardContent,
@@ -674,8 +675,7 @@ function RequestsTable({
                           item.order?.order_date ||
                           item.order?.date;
                         if (!dt) return "-";
-                        const d = new Date(dt as any);
-                        return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                        return formatDateUTC(dt as any);
                       })()}
                     </td>
                     <td className="px-4 py-3">
@@ -953,9 +953,7 @@ function RequestsTable({
                           label="Start Date"
                           value={
                             detailsData.start_date
-                              ? new Date(
-                                  detailsData.start_date
-                                ).toLocaleDateString()
+                              ? formatDateUTC(detailsData.start_date)
                               : null
                           }
                         />
@@ -963,9 +961,7 @@ function RequestsTable({
                           label="End Date"
                           value={
                             detailsData.end_date
-                              ? new Date(
-                                  detailsData.end_date
-                                ).toLocaleDateString()
+                              ? formatDateUTC(detailsData.end_date)
                               : null
                           }
                         />
@@ -1085,7 +1081,7 @@ function RequestsTable({
                             detailsData.course?.price ??
                             detailsData.price ??
                             detailsData.request?.course_price;
-                          return price != null && price !== '' ? `$${price}` : '-';
+                          return price != null && price !== '' ? `${price} EGP` : '-';
                         })()}
                       />
                       <DetailItem
@@ -1096,7 +1092,7 @@ function RequestsTable({
                             detailsData.createdAt ||
                             detailsData.request_date ||
                             detailsData.date;
-                          return dt ? new Date(dt).toLocaleDateString() : null;
+                          return dt ? formatDateUTC(dt) : null;
                         })()}
                       />
                       <DetailItem
@@ -1174,7 +1170,7 @@ function RequestsTable({
                             detailsData.order_total ??
                             detailsData.price ??
                             detailsData.order?.total;
-                          return total != null && total !== '' ? `$${total}` : '-';
+                          return total != null && total !== '' ? `${total} EGP` : '-';
                         })()}
                       />
                       <DetailItem
@@ -1197,7 +1193,7 @@ function RequestsTable({
                             detailsData.order?.purchase_date;
                           if (!dt) return null;
                           const d = new Date(dt as any);
-                          return isNaN(d.getTime()) ? String(dt).slice(0, 10) : d.toLocaleDateString();
+                          return isNaN(d.getTime()) ? String(dt).slice(0, 10) : formatDateUTC(dt as any);
                         })()}
                       />
                       <div className="space-y-2">
@@ -1232,7 +1228,7 @@ function RequestsTable({
                                   {item.product_name}
                                 </span>
                                 <span className="text-sm text-slate-500">
-                                  Qty: {item.quantity} | ${item.price} each
+                                  Qty: {item.quantity} | {item.price} EGP each
                                 </span>
                               </li>
                             )

@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { API_CONFIG } from "@/config/api"
 import { Calendar, User, Eye, Heart, MessageCircle, Clock, AlertCircle } from "lucide-react"
+import { formatDateUTC } from "@/utils/format"
 
 interface BlogPost {
   id: string
@@ -101,7 +102,7 @@ export default function SingleBlogPage() {
               <User className="h-4 w-4" /> {blog.author} 
             </span>
             <span className="flex items-center gap-1 text-sm">
-              <Calendar className="h-4 w-4" /> {new Date(blog.createdAt).toLocaleDateString()}
+              <Calendar className="h-4 w-4" /> {formatDateUTC(blog.createdAt)}
             </span>
           </div>
         </CardHeader>
