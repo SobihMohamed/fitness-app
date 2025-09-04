@@ -14,6 +14,7 @@ import { API_CONFIG } from "@/config/api"
 import Loading from "@/app/loading"
 import { useLoading } from "@/hooks/use-loading"
 import { useAdminApi } from "@/hooks/admin/use-admin-api"
+import { formatNumber, formatDateUTC } from "@/utils/format"
 
 type Service = {
   service_id: string
@@ -241,6 +242,8 @@ export default function AdminServicesPage() {
     }, 0)
   }, [services])
 
+  // Use centralized deterministic formatters to avoid SSR/CSR mismatch
+
   // Initial load wrapper to align with Blogs page
   useEffect(() => {
     const init = async () => {
@@ -297,7 +300,7 @@ export default function AdminServicesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-emerald-700 mb-1">Total Price</p>
-                  <p className="text-3xl font-bold text-emerald-900">{totalPrice.toLocaleString()}</p>
+                  <p className="text-3xl font-bold text-emerald-900">{formatNumber(totalPrice)} EGP</p>
                 </div>
                 <div className="p-3 bg-emerald-200 rounded-full">
                   <DollarSign className="h-8 w-8 text-emerald-700" />
@@ -356,9 +359,9 @@ export default function AdminServicesPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-semibold text-slate-900">{s.title}</TableCell>
-                        <TableCell className="text-slate-700">{s.price}</TableCell>
+                        <TableCell className="text-slate-700">{s.price} EGP</TableCell>
                         <TableCell className="text-slate-700">{s.duration}</TableCell>
-                        <TableCell className="text-slate-700">{s.created_at ? new Date(s.created_at).toLocaleDateString() : "-"}</TableCell>
+                        <TableCell className="text-slate-700">{s.created_at ? formatDateUTC(s.created_at) : "-"}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end items-center gap-2">
                             <Button

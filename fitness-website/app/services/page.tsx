@@ -335,7 +335,7 @@ export default function ServicesPage() {
                       )}
 
                       <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-primary">{service.price}</span>
+                        <span className="text-lg font-bold text-primary">{service.price} EGP</span>
                         <ProtectedAction onAction={() => handleServiceBooking(service.title, service.price)}>
                           <Button className="bg-primary hover:bg-primary/90">Book Now</Button>
                         </ProtectedAction>
@@ -432,7 +432,7 @@ export default function ServicesPage() {
                   <div className="text-center mb-8">
                     <h3 className="text-2xl font-bold mb-2 text-foreground">{pkg.name}</h3>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold text-primary">{pkg.price}</span>
+                      <span className="text-4xl font-bold text-primary">{pkg.price} EGP</span>
                       <span className="text-muted-foreground">{pkg.period}</span>
                     </div>
                     <p className="text-muted-foreground">{pkg.description}</p>

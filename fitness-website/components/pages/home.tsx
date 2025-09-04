@@ -21,6 +21,7 @@ const { TARGET_URL: API_TARGET } = API_CONFIG;
   };
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { formatNumber } from "@/utils/format"
 
 // Types for API responses
 interface Product {
@@ -100,6 +101,8 @@ export function HomePage() {
   const [isLoadingProducts, setIsLoadingProducts] = useState(true)
   const [isLoadingCourses, setIsLoadingCourses] = useState(true)
   const { addItem } = useCart()
+  
+  // Use centralized deterministic number formatter
   
   useEffect(() => {
     setIsVisible(true)
@@ -260,6 +263,9 @@ export function HomePage() {
                   height={600}
                   className="rounded-2xl shadow-2xl"
                   loading="eager"
+                  priority
+                  // Maintain aspect ratio if CSS modifies width
+                  style={{ width: "auto", height: "auto" }}
                 />
                 <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
                   <div className="flex items-center space-x-3">
@@ -298,8 +304,8 @@ export function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="transition-all duration-300 border-0 shadow-md bg-white">
+            {features.map((feature) => (
+              <Card key={feature.title} className="transition-all duration-300 border-0 shadow-md bg-white">
                 <CardHeader className="text-center">
                   <div className="flex justify-center mb-4">
                     <div className={`flex items-center justify-center w-16 h-16 rounded-full ${feature.bgColor}`}>
@@ -334,8 +340,8 @@ export function HomePage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
                 <div
                   className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4"
                   style={{ backgroundColor: "#E3F2FD" }}
@@ -383,9 +389,9 @@ export function HomePage() {
                 </Card>
               ))
             ) : featuredCourses.length > 0 ? (
-              featuredCourses.map((course) => (
+              featuredCourses.map((course, index) => (
                 <Card
-                  key={course.id}
+                  key={`${course.id}-${index}`}
                   className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
                 >
                   <CardHeader className="p-0">
@@ -413,11 +419,11 @@ export function HomePage() {
                       {course.title}
                     </CardTitle>
                     <CardDescription className="mb-4" style={{ color: "#6C757D" }}>
-                      by {course.instructor} • {(course.students || 0).toLocaleString()} students
+                      by {course.instructor} • {formatNumber(course.students || 0)} students
                     </CardDescription>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                        ${course.price}
+                        {course.price} EGP
                       </span>
                     <ProtectedAction onAction={() => handleCourseEnrollment(course)}>
                       <Button style={{ backgroundColor: "#007BFF" }}>
@@ -478,9 +484,9 @@ export function HomePage() {
                 </Card>
               ))
             ) : featuredProducts.length > 0 ? (
-              featuredProducts.map((product) => (
+              featuredProducts.map((product, index) => (
                 <Card
-                  key={product.id}
+                  key={`${product.id}-${index}`}
                   className="group hover:shadow-lg transition-all duration-300 border-0 shadow-md bg-white"
                 >
                   <CardHeader className="p-0">
@@ -507,7 +513,7 @@ export function HomePage() {
                     </CardDescription>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                        ${product.price}
+                        {product.price} EGP
                       </span>
 
                     

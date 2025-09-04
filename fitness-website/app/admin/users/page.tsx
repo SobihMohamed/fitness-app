@@ -57,6 +57,7 @@ import {
 import Loading from "@/app/loading";
 import { useLoading } from "@/hooks/use-loading";
 import { API_CONFIG } from "@/config/api";
+import { formatDateUTC } from "@/utils/format";
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -441,11 +442,7 @@ export default function UsersManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return formatDateUTC(dateString);
   };
 
   // Show initial loading screen

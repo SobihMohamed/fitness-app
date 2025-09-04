@@ -135,7 +135,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "LOAD_CART":
       return {
         ...state,
-        ...action.payload
+        ...action.payload,
+        // Never auto-open cart on load
+        isOpen: false,
       }
 
     default:
@@ -174,7 +176,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           )
           dispatch({ 
             type: "LOAD_CART", 
-            payload: { ...parsedCart, total } 
+            // Only load items and total, force isOpen false to avoid auto-opening on reload
+            payload: { items: parsedCart.items, total, isOpen: false } 
           })
         }
       } catch (error) {
@@ -185,8 +188,12 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (state.items.length > 0 || state.isOpen) {
-      localStorage.setItem("cart", JSON.stringify(state))
+    // Persist only cart items and total, not UI open state
+    if (state.items.length > 0) {
+      localStorage.setItem("cart", JSON.stringify({ items: state.items, total: state.total }))
+    } else {
+      // Clear storage when cart becomes empty
+      localStorage.removeItem("cart")
     }
   }, [state])
 
