@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -24,6 +23,7 @@ import {
   BookOpen,
   AlertCircle,
 } from "lucide-react"
+import { formatNumber, formatDateUTC, timeOrEpoch, hashPercent } from "@/utils/format"
 
 interface BlogPost {
   id: string
@@ -241,7 +241,7 @@ export default function BlogPage() {
       .map(([name, posts], index) => ({
         name,
         posts,
-        trend: `+${Math.floor(Math.random() * 20) + 5}%`, // Simulated trend
+        trend: `+${hashPercent(String(name))}%`,
       }))
   }
 
@@ -261,8 +261,8 @@ export default function BlogPage() {
         return (b.comments || 0) - (a.comments || 0)
       default:
         return (
-          new Date(b.createdAt || b.updatedAt || Date.now()).getTime() -
-          new Date(a.createdAt || a.updatedAt || Date.now()).getTime()
+          timeOrEpoch(b.createdAt || b.updatedAt) -
+          timeOrEpoch(a.createdAt || a.updatedAt)
         )
     }
   })
@@ -288,11 +288,7 @@ export default function BlogPage() {
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      })
+      return formatDateUTC(dateString)
     } catch {
       return "Recent"
     }
@@ -410,7 +406,7 @@ export default function BlogPage() {
           <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <TrendingUp className="h-4 w-4" />
-              <span>{blogs.length}+ Expert Articles</span>
+              <span>{formatNumber(blogs.length)}+ Expert Articles</span>
             </div>
             <div className="flex items-center gap-1">
               <User className="h-4 w-4" />
@@ -483,7 +479,7 @@ export default function BlogPage() {
                 }`}
               >
                 <div className={`w-2 h-2 rounded-full ${category.color} mr-2`}></div>
-                {category.name} ({category.count})
+                {category.name} ({formatNumber(category.count)})
               </Button>
             ))}
           </div>
@@ -573,7 +569,7 @@ export default function BlogPage() {
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                           <Eye className="h-5 w-5 text-blue-600 mx-auto mb-1" />
                           <p className="text-sm font-semibold text-blue-600">
-                            {(featuredPost.views || 0).toLocaleString()}
+                            {formatNumber(featuredPost.views || 0)}
                           </p>
                           <p className="text-xs text-blue-500">Views</p>
                         </div>
@@ -714,7 +710,7 @@ export default function BlogPage() {
                             <div className="flex items-center gap-4 text-xs text-muted-foreground">
                               <div className="flex items-center gap-1">
                                 <Eye className="h-3 w-3" />
-                                {(post.views || 0).toLocaleString()}
+                                {formatNumber(post.views || 0)}
                               </div>
                               <div className="flex items-center gap-1">
                                 <Heart className="h-3 w-3" />
@@ -787,7 +783,7 @@ export default function BlogPage() {
                     >
                       <div>
                         <p className="font-medium text-foreground">{topic.name}</p>
-                        <p className="text-sm text-muted-foreground">{topic.posts} articles</p>
+                        <p className="text-sm text-muted-foreground">{formatNumber(topic.posts)} articles</p>
                       </div>
                       <Badge variant="outline" className="text-green-600 border-green-600">
                         {topic.trend}
@@ -836,7 +832,7 @@ export default function BlogPage() {
                             <h4 className="font-medium text-sm text-foreground line-clamp-2 mb-1">{post.title}</h4>
                             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               <Eye className="h-3 w-3" />
-                              <span>{(post.views || 0).toLocaleString()} views</span>
+                              <span>{formatNumber(post.views || 0)} views</span>
                               <span>•</span>
                               <span>{post.readTime || "5 min"}</span>
                             </div>

@@ -371,7 +371,7 @@ export default function CheckoutPage() {
                           </p>
                         </div>
                         <p className="font-medium text-sm" style={{ color: "#007BFF" }}>
-                          ${(item.price * item.quantity).toFixed(2)}
+                          {(item.price * item.quantity).toFixed(2)} EGP
                         </p>
                       </div>
                     ))}

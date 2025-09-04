@@ -37,6 +37,7 @@ import {
   Package,
 } from "lucide-react";
 import { API_CONFIG } from "@/config/api";
+import { formatDateUTC } from "@/utils/format";
 
 // Define interfaces for data structures
 interface ProfileData {
@@ -395,7 +396,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-sm text-slate-600">Total Orders</p>
                     <p className="text-xl font-semibold text-slate-900">
-                      ${totalOrderValue.toFixed(2)}
+                      {totalOrderValue.toFixed(2)} EGP
                     </p>
                   </div>
                 </div>
@@ -740,7 +741,7 @@ export default function Dashboard() {
                               <div className="flex items-center gap-1 mt-2">
                                 <Clock className="h-3 w-3 text-slate-400" />
                                 <span className="text-xs text-slate-400">
-                                  {new Date(n.created_at).toLocaleDateString()}
+                                  {formatDateUTC(n.created_at)}
                                 </span>
                               </div>
                             )}
@@ -847,18 +848,11 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td className="py-4 px-4 text-slate-600">
-                          {new Date(order.createdAt).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            }
-                          )}
+                          {formatDateUTC(order.createdAt)}
                         </td>
                         <td className="py-4 px-4">
                           <span className="font-semibold text-slate-900">
-                            ${typeof order.totalAmount === "number" ? order.totalAmount.toFixed(2) : "0.00"}
+                            {typeof order.totalAmount === "number" ? order.totalAmount.toFixed(2) : "0.00"} EGP
                           </span>
                         </td>
                         <td className="py-4 px-4">

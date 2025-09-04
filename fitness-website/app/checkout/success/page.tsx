@@ -1,13 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useId } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle, Package, Mail, ArrowRight } from "lucide-react"
 
 export default function CheckoutSuccess() {
-  const [orderNumber] = useState(() => Math.floor(Math.random() * 1000000))
+  const reactId = useId()
+  // Deterministic pseudo-random order number derived from React.useId()
+  const orderNumber = useMemo(() => {
+    let hash = 0
+    for (let i = 0; i < reactId.length; i++) {
+      hash = (hash * 31 + reactId.charCodeAt(i)) >>> 0
+    }
+    // Map to 6-digit range 100000 - 999999
+    const mapped = 100000 + (hash % 900000)
+    return mapped
+  }, [reactId])
 
   useEffect(() => {
     // Clear any remaining cart data
