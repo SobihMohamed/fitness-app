@@ -843,7 +843,7 @@ export default function Dashboard() {
                         <td className="py-4 px-4">
                           <div className="font-medium text-slate-900">
                             {order.orderNumber ||
-                              `#${order._id.substring(0, 8)}`}
+                              (order._id ? `#${order._id.substring(0, 8)}` : "#—")}
                           </div>
                         </td>
                         <td className="py-4 px-4 text-slate-600">
@@ -858,7 +858,7 @@ export default function Dashboard() {
                         </td>
                         <td className="py-4 px-4">
                           <span className="font-semibold text-slate-900">
-                            ${order.totalAmount.toFixed(2)}
+                            ${typeof order.totalAmount === "number" ? order.totalAmount.toFixed(2) : "0.00"}
                           </span>
                         </td>
                         <td className="py-4 px-4">
