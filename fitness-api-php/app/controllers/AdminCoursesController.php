@@ -6,7 +6,7 @@ use App\models\Admin;
 
 class AdminCoursesController extends AbstractController{
   private $courseModel;
-  public function __construct() {
+    public function __construct() {
       parent::__construct();
       $this->courseModel = new Courses();
     }
@@ -138,7 +138,6 @@ class AdminCoursesController extends AbstractController{
             $this->sendError("Failed to update Course");
         }
     }
-
     public function getCourseById($id){
       $this->requireSuperAdmin();
 
@@ -183,6 +182,5 @@ class AdminCoursesController extends AbstractController{
           "message" => "Delete Course Successfully"
       ]);
     }
-
 }
 ?>
