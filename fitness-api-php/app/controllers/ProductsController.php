@@ -3,12 +3,15 @@
 
   use App\Core\AbstractController;
   use App\models\Product;
+  use App\models\Product_sub_images;
   
   class ProductsController extends AbstractController{
     private $productModel;
+    private $product_subImages;
 
     public function __construct(){
       $this->productModel = new Product();
+      $this->product_subImages = new Product_sub_images();
     }
     
     public function getAll(){
@@ -28,10 +31,15 @@
     public function SingleProduct($id){
       $Product = $this->productModel
               ->getProductById($id);
+      $subImages = $this->product_subImages->getByProductId($id);
       if($Product === false){
         $this->sendError("Error During Find Product");
         return;
       }
+      $Product['sub_images'] = array_map(function($img) {
+        return $img['sub_image_url'];
+      }, $subImages ?: []);
+
       return $this->json([
         "status" => "success",
         "Product" => $Product
