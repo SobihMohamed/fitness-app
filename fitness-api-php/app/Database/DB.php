@@ -55,8 +55,7 @@ class DB implements dbContract{
   public function join($S_Table,$C_F_Table,$C_S_Table,$Alias_STable=""){
     if(!empty($Alias_STable)){
       $this->sql .= " JOIN $S_Table AS $Alias_STable ON
-      $this->table.$C_F_Table =
-      $Alias_STable.$C_S_Table
+      $this->table.$C_F_Table = $Alias_STable.$C_S_Table
       ";
     }else{
         $this->sql .= " JOIN $S_Table ON
@@ -66,6 +65,12 @@ class DB implements dbContract{
     }
     return $this;
   } 
+  public function anotherJoin($Second_Table,$Third_table,$C_Second_Table,$C_Third_Table,$Alias_SecondTable,$Alias_ThirdTable){
+      $this->sql .= " JOIN $Third_table AS $Alias_ThirdTable ON
+      $Alias_ThirdTable.$C_Third_Table = $Alias_SecondTable.$C_Second_Table
+      ";
+    return $this;
+  }
   public function orderBy($col_in_firstTable){
     $this->sql .= " ORDER BY 
                   $this->table.$col_in_firstTable

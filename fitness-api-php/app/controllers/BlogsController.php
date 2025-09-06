@@ -3,12 +3,15 @@
 
   use App\Core\AbstractController;
   use App\models\Blogs;
+  use App\models\Blogs_Category;
   
   class BlogsController extends AbstractController{
     private $blogModel;
+    private $blogCategoryModel;
 
     public function __construct(){
       $this->blogModel = new Blogs();
+      $this->blogCategoryModel = new Blogs_Category();
     }
     public function getAll(){
       $Blogs = $this->blogModel->getAll();
@@ -37,6 +40,9 @@
       }
         // نشيل admin_id من كل blog
         unset($Blog['admin_id']);
+        $category = $this->blogCategoryModel->singleCategory($Blog['category_id']);
+
+        $Blog['category_name'] = $category['name']??null;
 
       return $this->json([
         "status" => "success",

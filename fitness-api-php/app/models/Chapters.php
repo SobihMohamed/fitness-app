@@ -28,6 +28,18 @@ class Chapters{
       return false;
     }
   }
+
+  public function getChaptersByModId($id){
+    try{
+      return $this->db
+                  ->select()
+                  ->where("module_id" , "=",$id)
+                  ->fetchAll();
+    }catch(Exception $e){
+      return false;
+    }
+  }
+  
   public function searchChapters($keyword){
     try{
       $likeKeyword = "%" . $keyword . "%";
