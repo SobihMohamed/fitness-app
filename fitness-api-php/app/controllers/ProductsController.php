@@ -3,43 +3,55 @@
 
   use App\Core\AbstractController;
   use App\models\Product;
+  use App\models\Category;
   use App\models\Product_sub_images;
   
   class ProductsController extends AbstractController{
     private $productModel;
     private $product_subImages;
+    private $categroyModel;
 
     public function __construct(){
       $this->productModel = new Product();
       $this->product_subImages = new Product_sub_images();
+      $this->categroyModel = new Category();
     }
     
     public function getAll(){
-      $Products = $this->productModel->getAllProducts();
-      if($Products === false){
+      $products = $this->productModel->getAllProducts();
+      if($products === false){
         $this->sendError("Error During Get Products");
-      }elseif(empty($Products)){
+        return;
+      }elseif(empty($products)){
         $this->sendError("No Products Found",404);
+        return;
+      }
+      foreach ($products as &$prod) {
+        $category = $this->categroyModel->getCategoryById($prod['category_id']);
+        $prod['category_name'] = $category['name'] ?? null;
       }
       return $this->json([
         "status" => "success",
         "message" => "All Products Found",
-        "data" => $Products
+        "data" => $products
       ]);
     }
 
     public function SingleProduct($id){
       $Product = $this->productModel
               ->getProductById($id);
-      $subImages = $this->product_subImages->getByProductId($id);
       if($Product === false){
-        $this->sendError("Error During Find Product");
-        return;
+          $this->sendError("Error During Find Product");
+          return;
       }
-      $Product['sub_images'] = array_map(function($img) {
+      $subImages = $this->product_subImages->getByProductId($id);
+      $Product['sub_images'] = array_map(function($img){
         return $img['sub_image_url'];
-      }, $subImages ?: []);
-
+      },$subImages?: []);
+      
+      $category = $this->categroyModel->getCategoryById($Product['category_id']);
+      $Product['category_name'] = $category['name'] ?? null;
+      
       return $this->json([
         "status" => "success",
         "Product" => $Product

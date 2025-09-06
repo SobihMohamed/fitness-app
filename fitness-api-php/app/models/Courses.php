@@ -1,6 +1,7 @@
 <?php
 namespace App\models;
 use App\Database\DB;
+use App\Models\Modules;
 use Exception;
 
 class Courses{
@@ -40,7 +41,7 @@ class Courses{
       return false;
     }
   }
-public function addCourse($data) {
+  public function addCourse($data) {
     try {
       return $this->db
                 ->insert($data)
@@ -72,5 +73,8 @@ public function addCourse($data) {
       return false;
     }
   }
+    public function lastInserted (){
+      return $this->db->getLastInsertedId();
+    }
 }
 ?>

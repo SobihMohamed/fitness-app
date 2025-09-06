@@ -1,17 +1,21 @@
 <?php
 namespace App\Controllers;
 use App\models\Product;
+use App\models\Category;
 use App\models\Product_sub_images;
 use App\models\Admin;
 use App\Core\AbstractController;
 
 class AdminProductsController extends AbstractController{
     private $productModel;
+    private $categroyModel;
     private $productSubImageModel;
     public function __construct() {
       parent::__construct();
       $this->productModel = new Product();
       $this->productSubImageModel = new Product_sub_images();
+      $this->categroyModel = new Category();
+
     }
     private function requireSuperAdmin(){
       $currentUser = $this->getUserFromToken();
@@ -34,10 +38,31 @@ class AdminProductsController extends AbstractController{
         $this->sendError("No Products Found",404);
         return;
       }
+      foreach ($products as &$prod) {
+        $category = $this->categroyModel->getCategoryById($prod['category_id']);
+        $prod['category_name'] = $category['name'] ?? null;
+      }
       return $this->json([
         "status" => "success",
         "message" => "All Products Found",
         "data" => $products
+      ]);
+    }
+    public function searchProduct(){
+      $data = json_decode(file_get_contents("php://input"),true);
+      if(!isset($data["keyword"])){
+        $this->sendError("keyword Require");
+        return;
+      }
+      $result = $this->productModel
+                ->searchProduct($data["keyword"]);
+      if($result === false || empty($result)){
+        $this->sendError("Not Found Products");
+        return;
+      }
+      return $this->json([
+        "status"=>"success",
+        "data" => $result,
       ]);
     }
     public function addProduct()
@@ -131,14 +156,18 @@ class AdminProductsController extends AbstractController{
 
       $Product = $this->productModel
               ->getProductById($id);
-      $subImages = $this->productSubImageModel->getByProductId($id);
       if($Product === false){
-        $this->sendError("Error During Find Product");
-        return;
+          $this->sendError("Error During Find Product");
+          return;
       }
+      $subImages = $this->productSubImageModel->getByProductId($id);
       $Product['sub_images'] = array_map(function($img){
         return $img['sub_image_url'];
       },$subImages?: []);
+      
+      $category = $this->categroyModel->getCategoryById($Product['category_id']);
+      $Product['category_name'] = $category['name'] ?? null;
+      
       return $this->json([
         "status" => "success",
         "Product" => $Product

@@ -28,6 +28,17 @@ class Modules{
       return false;
     }
   }
+
+  public function getModulesByCrsId($id){
+    try{
+      return $this->db
+                  ->select()
+                  ->where("course_id" , "=",$id)
+                  ->fetchAll();
+    }catch(Exception $e){
+      return false;
+    }
+  }
   public function searchModules($keyword){
     try{
       $likeKeyword = "%" . $keyword . "%";
