@@ -131,184 +131,185 @@ class AdminProductsController extends AbstractController{
 
       $Product = $this->productModel
               ->getProductById($id);
+      $subImages = $this->productSubImageModel->getByProductId($id);
       if($Product === false){
         $this->sendError("Error During Find Product");
         return;
       }
+      $Product['sub_images'] = array_map(function($img){
+        return $img['sub_image_url'];
+      },$subImages?: []);
       return $this->json([
         "status" => "success",
         "Product" => $Product
       ]);
     }
-public function updateProduct($id) {
-    $this->requireSuperAdmin();
-    $data = $_POST;
+    public function updateProduct($id) {
+        $this->requireSuperAdmin();
+        $data = $_POST;
 
-    $Product = $this->productModel->getProductById($id);
-    if (!$Product) {
-        $this->sendError("Product Not Found");
-        return;
-    }
-
-    /*** قص الصور الفرعية من $data ***/
-    $subImages = $_FILES['sub_images'] ?? null;
-    unset($data['sub_images']);
-
-    /*** تجهيز فولدر المنتج (استخدام product_id لتفادي تكرار الفولدر) ***/
-    $productId = $Product['product_id'];
-    $uploadBase = __DIR__ . '/../../public/uploads/Products/';
-    $productFolder = $uploadBase . $productId . '/';
-    if (!is_dir($productFolder)) {
-        mkdir($productFolder, 0777, true);
-    }
-    $relativeFolder = '/uploads/Products/' . $productId . '/';
-
-    /*** تحديث الصورة الرئيسية ***/
-    if (!empty($_FILES['main_image_url']['name'])) {
-        $image = $_FILES['main_image_url'];
-        $cleanName = basename($image['name']);
-        $ext = strtolower(pathinfo($cleanName, PATHINFO_EXTENSION));
-        $allowed = ['jpg','jpeg','png','gif','webp'];
-
-        if (!in_array($ext, $allowed)) {
-            $this->sendError("Invalid main image type");
+        $Product = $this->productModel->getProductById($id);
+        if (!$Product) {
+            $this->sendError("Product Not Found");
             return;
         }
 
-        $imageName = time() . '_' . uniqid() . '.' . $ext;
-        $targetPath = $productFolder . $imageName;
-        $main_image_url = $relativeFolder . $imageName;
+        /*** قص الصور الفرعية من $data ***/
+        $subImages = $_FILES['sub_images'] ?? null;
+        unset($data['sub_images']);
 
-        if (move_uploaded_file($image['tmp_name'], $targetPath)) {
-            // حذف القديمة من السيرفر
-            if (!empty($Product['main_image_url'])) {
-                $oldPath = __DIR__ . '/../../public' . $Product['main_image_url'];
-                if (file_exists($oldPath)) unlink($oldPath);
+        /*** تجهيز فولدر المنتج (استخدام product_id لتفادي تكرار الفولدر) ***/
+        $productId = $Product['product_id'];
+        $uploadBase = __DIR__ . '/../../public/uploads/Products/';
+        $productFolder = $uploadBase . $productId . '/';
+        if (!is_dir($productFolder)) {
+            mkdir($productFolder, 0777, true);
+        }
+        $relativeFolder = '/uploads/Products/' . $productId . '/';
+
+        /*** تحديث الصورة الرئيسية ***/
+        if (!empty($_FILES['main_image_url']['name'])) {
+            $image = $_FILES['main_image_url'];
+            $cleanName = basename($image['name']);
+            $ext = strtolower(pathinfo($cleanName, PATHINFO_EXTENSION));
+            $allowed = ['jpg','jpeg','png','gif','webp'];
+
+            if (!in_array($ext, $allowed)) {
+                $this->sendError("Invalid main image type");
+                return;
             }
-            $data['main_image_url'] = $main_image_url;
+
+            $imageName = time() . '_' . uniqid() . '.' . $ext;
+            $targetPath = $productFolder . $imageName;
+            $main_image_url = $relativeFolder . $imageName;
+
+            if (move_uploaded_file($image['tmp_name'], $targetPath)) {
+                // حذف القديمة من السيرفر
+                if (!empty($Product['main_image_url'])) {
+                    $oldPath = __DIR__ . '/../../public' . $Product['main_image_url'];
+                    if (file_exists($oldPath)) unlink($oldPath);
+                }
+                $data['main_image_url'] = $main_image_url;
+            } else {
+                $this->sendError("Failed to upload new main image");
+                return;
+            }
         } else {
-            $this->sendError("Failed to upload new main image");
+            $data['main_image_url'] = $Product['main_image_url'];
+        }
+
+        /*** تحديث بيانات المنتج ***/
+        $updated = $this->productModel->updateProduct($id, $data);
+        if (!$updated) {
+            $this->sendError("Failed to update Product");
             return;
         }
-    } else {
-        $data['main_image_url'] = $Product['main_image_url'];
-    }
 
-    /*** تحديث بيانات المنتج ***/
-    $updated = $this->productModel->updateProduct($id, $data);
-    if (!$updated) {
-        $this->sendError("Failed to update Product");
-        return;
-    }
-
-    /*** تحديث الصور الفرعية ***/
-    if (isset($_FILES['sub_images'])) {
-        if (!empty($_FILES['sub_images']['name'][0])) {
-            // في صور جديدة → امسح القديم (DB + Server)
-            $oldSubImages = $this->productSubImageModel->getByProductId($id);
-            if ($oldSubImages) {
-                foreach ($oldSubImages as $img) {
-                    $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
-                    if (file_exists($oldPath)) unlink($oldPath);
-                }
-                $this->productSubImageModel->deleteByProductId($id);
-            }
-
-            // رفع الصور الجديدة
-            $files = $_FILES['sub_images'];
-            for ($i = 0; $i < count($files['name']); $i++) {
-                $cleanName = basename($files['name'][$i]);
-                $ext = strtolower(pathinfo($cleanName, PATHINFO_EXTENSION));
-                $allowed = ['jpg','jpeg','png','gif','webp'];
-                if (!in_array($ext, $allowed)) {
-                    continue;
+        /*** تحديث الصور الفرعية ***/
+        if (isset($_FILES['sub_images'])) {
+            if (!empty($_FILES['sub_images']['name'][0])) {
+                // في صور جديدة → امسح القديم (DB + Server)
+                $oldSubImages = $this->productSubImageModel->getByProductId($id);
+                if ($oldSubImages) {
+                    foreach ($oldSubImages as $img) {
+                        $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
+                        if (file_exists($oldPath)) unlink($oldPath);
+                    }
+                    $this->productSubImageModel->deleteByProductId($id);
                 }
 
-                $imageName = time() . '_' . uniqid() . '.' . $ext;
-                $targetPath = $productFolder . $imageName;
-                $relativePath = $relativeFolder . $imageName;
+                // رفع الصور الجديدة
+                $files = $_FILES['sub_images'];
+                for ($i = 0; $i < count($files['name']); $i++) {
+                    $cleanName = basename($files['name'][$i]);
+                    $ext = strtolower(pathinfo($cleanName, PATHINFO_EXTENSION));
+                    $allowed = ['jpg','jpeg','png','gif','webp'];
+                    if (!in_array($ext, $allowed)) {
+                        continue;
+                    }
 
-                if (move_uploaded_file($files['tmp_name'][$i], $targetPath)) {
-                    $this->productSubImageModel->addSubImage($id, $relativePath);
+                    $imageName = time() . '_' . uniqid() . '.' . $ext;
+                    $targetPath = $productFolder . $imageName;
+                    $relativePath = $relativeFolder . $imageName;
+
+                    if (move_uploaded_file($files['tmp_name'][$i], $targetPath)) {
+                        $this->productSubImageModel->addSubImage($id, $relativePath);
+                    }
                 }
-            }
-        } else {
-            // الحقل موجود بس فاضي → امسح كل الصور الفرعية (DB + Server)
-            $oldSubImages = $this->productSubImageModel->getByProductId($id);
-            if ($oldSubImages) {
-                foreach ($oldSubImages as $img) {
-                    $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
-                    if (file_exists($oldPath)) unlink($oldPath);
+            } else {
+                // الحقل موجود بس فاضي → امسح كل الصور الفرعية (DB + Server)
+                $oldSubImages = $this->productSubImageModel->getByProductId($id);
+                if ($oldSubImages) {
+                    foreach ($oldSubImages as $img) {
+                        $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
+                        if (file_exists($oldPath)) unlink($oldPath);
+                    }
+                    $this->productSubImageModel->deleteByProductId($id);
                 }
-                $this->productSubImageModel->deleteByProductId($id);
             }
         }
+        // else: الحقل مش موجود → سيب القديم زي ما هو
+
+        return $this->json([
+            "status" => "success",
+            "message" => "Product updated successfully"
+        ]);
     }
-    // else: الحقل مش موجود → سيب القديم زي ما هو
+    public function deleteProduct($productId) {
+        $this->requireSuperAdmin();
 
-    return $this->json([
-        "status" => "success",
-        "message" => "Product updated successfully"
-    ]);
-}
+        // 1. Get the product
+        $product = $this->productModel->getProductById($productId);
+        if (!$product) {
+            $this->sendError("Product Not Found");
+            return;
+        }
 
-  public function deleteProduct($productId) {
-      $this->requireSuperAdmin();
+        // 2. Delete the product from the database
+        $isDeleted = $this->productModel->deleteProduct($productId);
+        if (!$isDeleted) {
+            $this->sendError("Error During Delete Product");
+            return;
+        }
 
-      // 1. Get the product
-      $product = $this->productModel->getProductById($productId);
-      if (!$product) {
-          $this->sendError("Product Not Found");
-          return;
-      }
+        // 3. Delete the main image file if it exists
+        if (!empty($product['main_image_url'])) {
+            $imagePath = __DIR__ . '/../../public' . $product['main_image_url'];
+            if (file_exists($imagePath)) {
+                unlink($imagePath);
+            }
+        }
 
-      // 2. Delete the product from the database
-      $isDeleted = $this->productModel->deleteProduct($productId);
-      if (!$isDeleted) {
-          $this->sendError("Error During Delete Product");
-          return;
-      }
+        // 4. Delete all sub images (DB + server)
+        $this->deleteAllSubImages($productId);
 
-      // 3. Delete the main image file if it exists
-      if (!empty($product['main_image_url'])) {
-          $imagePath = __DIR__ . '/../../public' . $product['main_image_url'];
-          if (file_exists($imagePath)) {
-              unlink($imagePath);
-          }
-      }
+        // 5. Delete the product folder
+        $productFolder = __DIR__ . '/../../public/uploads/Products/' . $productId . '/';
+        if (is_dir($productFolder)) {
+            $files = glob($productFolder . '*');
+            foreach ($files as $file) {
+                if (is_file($file)) unlink($file);
+            }
+            rmdir($productFolder);
+        }
 
-      // 4. Delete all sub images (DB + server)
-      $this->deleteAllSubImages($productId);
-
-      // 5. Delete the product folder
-      $productFolder = __DIR__ . '/../../public/uploads/Products/' . $productId . '/';
-      if (is_dir($productFolder)) {
-          $files = glob($productFolder . '*');
-          foreach ($files as $file) {
-              if (is_file($file)) unlink($file);
-          }
-          rmdir($productFolder);
-      }
-
-      return $this->json([
-          "status" => "success",
-          "message" => "Product deleted successfully"
-      ]);
-  }
-
-  public function deleteAllSubImages($id) {
-      $oldSubImages = $this->productSubImageModel->getByProductId($id);
-      if ($oldSubImages) {
-          foreach ($oldSubImages as $img) {
-              $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
-              if (file_exists($oldPath)) {
-                  unlink($oldPath);
-              }
-          }
-          // مسح من DB
-          $this->productSubImageModel->deleteByProductId($id);
-      }
-  }
-
+        return $this->json([
+            "status" => "success",
+            "message" => "Product deleted successfully"
+        ]);
+    }
+    public function deleteAllSubImages($id) {
+        $oldSubImages = $this->productSubImageModel->getByProductId($id);
+        if ($oldSubImages) {
+            foreach ($oldSubImages as $img) {
+                $oldPath = __DIR__ . '/../../public' . $img['sub_image_url'];
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
+            }
+            // مسح من DB
+            $this->productSubImageModel->deleteByProductId($id);
+        }
+    }
   }
 ?>
