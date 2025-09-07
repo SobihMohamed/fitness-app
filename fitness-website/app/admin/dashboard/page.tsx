@@ -250,6 +250,18 @@ export function AdminDashboard() {
                     title: "Manage Courses",
                     desc: "Add or update courses",
                   },
+                  { href: "/admin/blogs",
+                    color: "from-red-50 to-red-100",
+                    title: "Manage Blogs",
+                    desc: "Add or update blog posts",
+                    icon: <BookOpen className="h-5 w-5 text-red-500 mr-3" />,},
+                    {
+                      href: "/admin/services",
+                      color: "from-teal-50 to-teal-100",
+                      icon: <Zap className="h-5 w-5 text-teal-500 mr-3" />,
+                      title: "Manage Services",
+                      desc: "Add or update services",
+                    }
                 ].map((item, idx) => (
                   <Link
                     key={idx}
