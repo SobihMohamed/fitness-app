@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { API_CONFIG } from "@/config/api"
+import axios from "axios"
 import Link from "next/link"
 import {
   Calendar,
@@ -49,8 +50,17 @@ interface BlogPost {
   updatedAt: string
 }
 
+interface BlogCategory {
+  id: string
+  name: string
+  description?: string
+  color?: string
+  blogCount?: number
+}
+
 export default function BlogPage() {
   const [blogs, setBlogs] = useState<BlogPost[]>([])
+  const [categories, setCategories] = useState<BlogCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState("All")
@@ -58,14 +68,15 @@ export default function BlogPage() {
   const [sortBy, setSortBy] = useState("latest")
   const [searchLoading, setSearchLoading] = useState(false)
 
+  const API = API_CONFIG
+
   // Fetch all blogs
   const fetchBlogs = async () => {
     try {
       setLoading(true)
       setError(null)
-      const response = await fetch(API_CONFIG.USER_BLOG_API.getAll)
-      if (!response.ok) throw new Error("Failed to fetch blogs")
-      const data = await response.json()
+      const response = await axios.get(API.USER_BLOG_API.getAll)
+      const data = response.data
 
       console.log("API Response:", data) // Debug log
 
@@ -95,9 +106,38 @@ export default function BlogPage() {
       }
     } catch (err) {
       console.error("Fetch error:", err)
-      setError(err instanceof Error ? err.message : "Failed to fetch blogs")
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message || "Failed to fetch blogs")
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to fetch blogs")
+      }
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fetch blog categories
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(API.USER_BLOG_CATEGORY_API.getAll)
+      const data = response.data
+
+      console.log("Categories Response:", data) // Debug log
+
+      let categoriesArray: BlogCategory[] = []
+
+      if (Array.isArray(data)) {
+        categoriesArray = data
+      } else if (data && Array.isArray(data.categories)) {
+        categoriesArray = data.categories
+      } else if (data && Array.isArray(data.data)) {
+        categoriesArray = data.data
+      }
+
+      setCategories(categoriesArray)
+    } catch (err) {
+      console.error("Failed to fetch categories:", err)
+      // Don't set error state, categories are optional
     }
   }
 
@@ -110,16 +150,8 @@ export default function BlogPage() {
 
     try {
       setSearchLoading(true)
-      const response = await fetch(API_CONFIG.USER_BLOG_API.search, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ query }),
-      })
-
-      if (!response.ok) throw new Error("Search failed")
-      const data = await response.json()
+      const response = await axios.post(API.USER_BLOG_API.search, { query })
+      const data = response.data
 
       console.log("Search Response:", data) // Debug log
 
@@ -167,8 +199,44 @@ export default function BlogPage() {
     }
   }
 
+  // Fetch blogs by category
+  const fetchBlogsByCategory = async (categoryId: string) => {
+    try {
+      setLoading(true)
+      const response = await axios.get(API.USER_BLOG_CATEGORY_API.getBlogsByCategoryId(categoryId))
+      const data = response.data
+
+      console.log("Category Blogs Response:", data) // Debug log
+
+      let blogsArray: BlogPost[] = []
+
+      if (Array.isArray(data)) {
+        blogsArray = data
+      } else if (data && Array.isArray(data.blogs)) {
+        blogsArray = data.blogs
+      } else if (data && Array.isArray(data.data)) {
+        blogsArray = data.data
+      }
+
+      if (Array.isArray(blogsArray)) {
+        const publishedBlogs = blogsArray.filter((blog: any) => blog && (blog.status === "published" || !blog.status))
+        setBlogs(publishedBlogs)
+      }
+    } catch (err) {
+      console.error("Failed to fetch blogs by category:", err)
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Failed to fetch blogs for this category")
+      } else {
+        setError("Failed to fetch blogs for this category")
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     fetchBlogs()
+    fetchCategories()
   }, [])
 
   useEffect(() => {
@@ -176,34 +244,67 @@ export default function BlogPage() {
       if (searchTerm) {
         searchBlogs(searchTerm)
       } else {
-        fetchBlogs()
+        if (selectedCategory === "All") {
+          fetchBlogs()
+        } else {
+          const category = categories.find((cat) => cat.name === selectedCategory)
+          if (category) {
+            fetchBlogsByCategory(category.id)
+          }
+        }
       }
     }, 500)
 
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
 
-  // Extract unique categories from blogs
-  const getUniqueCategories = () => {
-    const categoryMap = new Map()
+  // Handle category selection
+  const handleCategorySelect = (categoryName: string) => {
+    setSelectedCategory(categoryName)
+    setSearchTerm("") // Clear search when selecting category
 
-    blogs.forEach((blog) => {
-      if (blog.categoryName) {
-        if (categoryMap.has(blog.categoryName)) {
-          categoryMap.set(blog.categoryName, categoryMap.get(blog.categoryName) + 1)
-        } else {
-          categoryMap.set(blog.categoryName, 1)
-        }
+    if (categoryName === "All") {
+      fetchBlogs()
+    } else {
+      const category = categories.find((cat) => cat.name === categoryName)
+      if (category) {
+        fetchBlogsByCategory(category.id)
       }
-    })
+    }
+  }
 
-    const categories = Array.from(categoryMap.entries()).map(([name, count], index) => ({
-      name,
-      count,
-      color: getCategoryColor(index),
-    }))
+  // Extract unique categories from blogs (fallback if API categories fail)
+  const getUniqueCategories = () => {
+    if (categories.length > 0) {
+      // Use API categories
+      const categoryStats = categories.map((category, index) => ({
+        name: category.name,
+        count: blogs.filter((blog) => blog.categoryId === category.id || blog.categoryName === category.name).length,
+        color: category.color || getCategoryColor(index),
+      }))
+      return [{ name: "All", count: blogs.length, color: "bg-blue-500" }, ...categoryStats]
+    } else {
+      // Fallback to extracting from blogs
+      const categoryMap = new Map()
 
-    return [{ name: "All", count: blogs.length, color: "bg-blue-500" }, ...categories]
+      blogs.forEach((blog) => {
+        if (blog.categoryName) {
+          if (categoryMap.has(blog.categoryName)) {
+            categoryMap.set(blog.categoryName, categoryMap.get(blog.categoryName) + 1)
+          } else {
+            categoryMap.set(blog.categoryName, 1)
+          }
+        }
+      })
+
+      const categoryStats = Array.from(categoryMap.entries()).map(([name, count], index) => ({
+        name,
+        count,
+        color: getCategoryColor(index),
+      }))
+
+      return [{ name: "All", count: blogs.length, color: "bg-blue-500" }, ...categoryStats]
+    }
   }
 
   // Generate consistent colors for categories
@@ -260,10 +361,7 @@ export default function BlogPage() {
       case "comments":
         return (b.comments || 0) - (a.comments || 0)
       default:
-        return (
-          timeOrEpoch(b.createdAt || b.updatedAt) -
-          timeOrEpoch(a.createdAt || a.updatedAt)
-        )
+        return timeOrEpoch(b.createdAt || b.updatedAt) - timeOrEpoch(a.createdAt || a.updatedAt)
     }
   })
 
@@ -296,7 +394,7 @@ export default function BlogPage() {
 
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return null
-    return imagePath.startsWith("http") ? imagePath : `${API_CONFIG.BASE_URL}${imagePath}`
+    return imagePath.startsWith("http") ? imagePath : `${API.BASE_URL}${imagePath}`
   }
 
   if (loading) {
@@ -473,7 +571,7 @@ export default function BlogPage() {
               <Button
                 key={category.name}
                 variant={selectedCategory === category.name ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category.name)}
+                onClick={() => handleCategorySelect(category.name)}
                 className={`rounded-full transition-all duration-200 hover:scale-105 ${
                   selectedCategory === category.name ? "shadow-lg" : ""
                 }`}
@@ -568,9 +666,7 @@ export default function BlogPage() {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                           <Eye className="h-5 w-5 text-blue-600 mx-auto mb-1" />
-                          <p className="text-sm font-semibold text-blue-600">
-                            {formatNumber(featuredPost.views || 0)}
-                          </p>
+                          <p className="text-sm font-semibold text-blue-600">{formatNumber(featuredPost.views || 0)}</p>
                           <p className="text-xs text-blue-500">Views</p>
                         </div>
                         <div className="text-center p-3 bg-red-50 rounded-lg">
@@ -849,3 +945,4 @@ export default function BlogPage() {
     </div>
   )
 }
+
