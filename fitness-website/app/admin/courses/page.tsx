@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLoading } from "@/hooks/use-loading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,7 @@ export default function CoursesManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -287,21 +288,29 @@ export default function CoursesManagement() {
     setImagePreview("");
   };
 
-  // Filter courses (simplified - only search now)
-  const filteredCourses = () => {
-    return courses.filter((course) => {
-      const matchesSearch =
-        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        course.description.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
-    });
-  };
+  // Debounce search to reduce work as user types
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearchTerm(searchTerm), 250);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
 
-  const totalPages = Math.ceil(filteredCourses().length / itemsPerPage);
-  const paginatedCourses = filteredCourses().slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Filter courses (memoized)
+  const filteredCourses = useMemo(() => {
+    const st = debouncedSearchTerm.toLowerCase();
+    if (!st) return courses;
+    return courses.filter((course) => {
+      const title = course.title?.toLowerCase() || "";
+      const desc = course.description?.toLowerCase() || "";
+      return title.includes(st) || desc.includes(st);
+    });
+  }, [courses, debouncedSearchTerm]);
+
+  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
+  const paginatedCourses = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = currentPage * itemsPerPage;
+    return filteredCourses.slice(start, end);
+  }, [filteredCourses, currentPage, itemsPerPage]);
 
   const formatPrice = (price: string) => {
     const numPrice = Number.parseFloat(price);
@@ -449,7 +458,7 @@ export default function CoursesManagement() {
             {searchTerm && (
               <div className="mt-4 flex items-center gap-3">
                 <span className="text-sm text-slate-600">
-                  Found {filteredCourses().length} courses
+                  Found {filteredCourses.length} courses
                 </span>
                 <Button
                   variant="outline"
@@ -589,7 +598,7 @@ export default function CoursesManagement() {
               </Table>
 
               {/* No results */}
-              {filteredCourses().length === 0 && (
+              {filteredCourses.length === 0 && (
                 <div className="text-center py-16">
                   <div className="p-4 bg-slate-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
                     <BookOpen className="h-10 w-10 text-slate-400" />
