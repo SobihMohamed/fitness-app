@@ -37,6 +37,23 @@ class AdminCoursesController extends AbstractController{
         "data" => $Courses
       ]);
     }
+    public function searchCourse(){
+      $data = json_decode(file_get_contents("php://input"),true);
+      if(!isset($data["keyword"])){
+        $this->sendError("keyword Require");
+        return;
+      }
+      $result = $this->courseModel
+                ->searchCourses($data["keyword"]);
+      if($result === false || empty($result)){
+        $this->sendError("Not Found Courses");
+        return;
+      }
+      return $this->json([
+        "status"=>"success",
+        "data" => $result,
+      ]);
+    }
     public function addCourse(){
     $this->requireSuperAdmin();
 
@@ -46,11 +63,14 @@ class AdminCoursesController extends AbstractController{
     }
 
     $data = $_POST;
+    $data['image_url'] = null;
 
-    if (empty($data)) {
-        $this->sendError("All Fields Are Required");
-        return;
-    }
+    $this->courseModel->addCourse($data);
+    $courseId = $this->courseModel->lastInserted();
+    if (!$courseId) {
+          $this->sendError("Error During Adding Course");
+          return;
+      }
 
     if (isset($_FILES['image_url'])) {
         $image = $_FILES['image_url'];
@@ -59,27 +79,23 @@ class AdminCoursesController extends AbstractController{
         $cleanName = basename($image['name']);
         $imageName = time() . '_' . $cleanName;
 
-        $uploadDir = '/uploads/Courses/';
-        $targetPath = __DIR__ . '/../../public' . $uploadDir . $imageName;
+        $uploadDir = "/uploads/Courses/$courseId/";
+        $targetDir  = __DIR__ . '/../../public' . $uploadDir;
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+        $targetPath = $targetDir . $imageName;
 
-        if (move_uploaded_file($image['tmp_name'], $targetPath)) {
+        if (move_uploaded_file($image['tmp_name'], $targetPath )) {
             // المسار النسبي فقط لتخزينه في قاعدة البيانات
             $imageUrl = $uploadDir . $imageName;
+            $this->courseModel->updateCourse($courseId, [
+                    'image_url' => $imageUrl
+                ]);
         } else {
             $this->sendError("Failed to Upload Image");
             return;
         }
-    } else {
-        $imageUrl = null;
-    }
-
-    $data['image_url'] = $imageUrl;
-
-    $added = $this->courseModel->addCourse($data);
-
-    if ($added === false) {
-        $this->sendError("Error During Added");
-        return;
     }
 
     return $this->json([
@@ -98,38 +114,49 @@ class AdminCoursesController extends AbstractController{
         }
 
         // حالة لو في صورة جديدة مرفوعة
-        if (!empty($_FILES['image_url']['name'])) {
-            $imageName = time() . '_' . $_FILES['image_url']['name'];
-            $imageTmpName = $_FILES['image_url']['tmp_name'];
-            $uploadPath = __DIR__ . '/../../public/uploads/Courses/' . $imageName;
+    if (!empty($_FILES['image_url']['name'])) {
+        $image = $_FILES['image_url'];
+        $cleanName = basename($image['name']);
+        $imageName = time() . '_' . $cleanName;
 
-            if (move_uploaded_file($imageTmpName, $uploadPath)) {
-                // حذف الصورة القديمة (بعد تنظيف المسار)
-                $oldImageName = basename($Course['image_url']); // هنا بنستخرج اسم الصورة فقط
-                $oldPath = __DIR__ . '/../../public/uploads/Courses/' . $oldImageName;
+        // نفس هيكلة addCourse
+        $uploadDir = "/uploads/Courses/$id/";
+        $targetDir = __DIR__ . '/../../public' . $uploadDir;
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $targetPath = $targetDir . $imageName;
+
+        if (move_uploaded_file($image['tmp_name'], $targetPath)) {
+            // حذف الصورة القديمة لو موجودة
+            if (!empty($Course['image_url'])) {
+                $oldPath = __DIR__ . '/../../public' . $Course['image_url'];
                 if (file_exists($oldPath)) {
                     unlink($oldPath);
                 }
-
-                // تخزين المسار الجديد
-                $data['image_url'] = '/uploads/Courses/' . $imageName;
-            } else {
-                $this->sendError("Failed to upload new image");
-                return;
             }
 
-        } elseif (!empty($data['image_url']) && $data['image_url'] !== $Course['image_url']) {
-            // حذف الصورة القديمة فقط لو الرابط اتغير (نادراً ما يحصل لو بترفع من جديد)
-            $oldImageName = basename($Course['image_url']);
-            $oldPath = __DIR__ . '/../../public/uploads/Courses/' . $oldImageName;
+            // تخزين المسار الجديد
+            $data['image_url'] = $uploadDir . $imageName;
+        } else {
+            $this->sendError("Failed to upload new image");
+            return;
+        }
+    }elseif (isset($_POST['image_url']) && empty($_POST['image_url'])) {
+        // المستخدم مسح الصورة من الـ input
+        if (!empty($Course['image_url'])) {
+            $oldPath = __DIR__ . '/../../public' . $Course['image_url'];
             if (file_exists($oldPath)) {
                 unlink($oldPath);
             }
-        } else {
-            // مفيش تغيير في الصورة
-            $data['image_url'] = $Course['image_url'];
         }
+        $data['image_url'] = null; // امسحها من الداتابيز
 
+    } else {
+        // مفيش صورة جديدة → خلي القديمة زي ما هي
+        $data['image_url'] = $Course['image_url'];
+    }
         $updated = $this->courseModel->updateCourse($id, $data);
 
         if ($updated) {
@@ -169,17 +196,59 @@ class AdminCoursesController extends AbstractController{
           return;
       }
 
-      // 3. Delete the image file if it exists
-      if (!empty($course['image_url'])) {
-          $imagePath = __DIR__ . '/../../public' . $course['image_url'];
-          if (file_exists($imagePath)) {
-              unlink($imagePath);
-          }
+      // 3. Delete the whole folder of the course (if exists)
+      $courseFolder = __DIR__ . "/../../public/uploads/Courses/$courseId/";
+      if (is_dir($courseFolder)) {
+          $this->deleteDirectory($courseFolder);
       }
 
       $this->json([
           "status" => "success",
           "message" => "Delete Course Successfully"
+      ]);
+    }
+    private function deleteDirectory($dir) {
+      if (!file_exists($dir)) {
+          return true;
+      }
+      if (!is_dir($dir)) {
+          return unlink($dir);
+      }
+      foreach (scandir($dir) as $item) {
+          if ($item == '.' || $item == '..') {
+              continue;
+          }
+          if (!$this->deleteDirectory($dir . DIRECTORY_SEPARATOR . $item)) {
+              return false;
+          }
+      }
+      return rmdir($dir);
+    }
+    public function deleteCourseImage($courseId) {
+      $this->requireSuperAdmin();
+
+      $Course = $this->courseModel->getCourseById($courseId);
+      if (!$Course) {
+          $this->sendError("Course Not Found");
+          return;
+      }
+
+      if (!empty($Course['image_url'])) {
+          $oldPath = __DIR__ . '/../../public' . $Course['image_url'];
+          if (file_exists($oldPath)) {
+              unlink($oldPath);
+              $courseFolder = __DIR__ . "/../../public/uploads/Courses/$courseId/";
+              if (is_dir($courseFolder)) {
+                $this->deleteDirectory($courseFolder);
+            }
+          }
+      }
+
+      $this->courseModel->updateCourse($courseId, ['image_url' => null]);
+
+      $this->json([
+          "status" => "success",
+          "message" => "Course image deleted successfully"
       ]);
     }
 }

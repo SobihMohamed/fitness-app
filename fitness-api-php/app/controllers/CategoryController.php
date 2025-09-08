@@ -24,7 +24,7 @@
         "data" => $categories
       ]);
     }
-
+    
       public function showProductsByCategory($cat_id){
       if (!is_numeric($cat_id) || $cat_id <= 0) {
         $this->sendError("Invalid category ID", 400);

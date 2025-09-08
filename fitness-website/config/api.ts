@@ -83,11 +83,17 @@ export const API_CONFIG = {
     getById: (id: string) => `http://localhost:8000/Services/getServiceById/${id}`,
     search: "http://localhost:8000/Services/searchService",
   },
-  USER_BLOG_API:{
-    getAll: "http://localhost:8000/Blogs/getAll",
-    getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
-    search: "http://localhost:8000/Blogs/searchBlog",
-  },
+    USER_BLOG_API:{
+      getAll: "http://localhost:8000/Blogs/getAll",
+      getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
+      search: "http://localhost:8000/Blogs/searchBlog",
+    },
+  USER_BLOG_CATEGORY_API : {
+  getAll: "http://localhost:8000/BlogsCategory/getAll",
+  getBlogsByCategoryId: (id: string) =>
+    `http://localhost:8000/BlogsCategory/showBlogsByCategory/${id}`,
+},
+
 
   // ADMIN FUNCTIONS
   ADMIN_FUNCTIONS: {

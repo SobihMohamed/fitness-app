@@ -11,8 +11,7 @@ class AdminBlogsController extends AbstractController{
     parent::__construct();
     $this->blogsModel = new Blogs();
   }
-
-  private function requireSuperAdmin(){
+    private function requireSuperAdmin(){
       $currentUser = $this->getUserFromToken();
       $adminModel = new Admin();
       $admin = $adminModel->getAdminById($currentUser["id"]);
@@ -21,8 +20,8 @@ class AdminBlogsController extends AbstractController{
       $this->sendError("Not Authorized");
       exit;
     }
-  }
-public function getAll(){
+    }
+    public function getAll(){
       $this->requireSuperAdmin();
 
       $Blogs = $this->blogsModel->getAll();
@@ -141,7 +140,6 @@ public function getAll(){
             $this->sendError("Failed to update Blog");
         }
     }
-
     public function getBlogById($id){
       $this->requireSuperAdmin();
 
@@ -154,6 +152,23 @@ public function getAll(){
       return $this->json([
         "status" => "success",
         "Blog" => $Blog
+      ]);
+    }
+    public function searchBlog(){
+      $data = json_decode(file_get_contents("php://input"),true);
+      if(!isset($data["keyword"])){
+        $this->sendError("keyword Require");
+        return;
+      }
+      $result = $this->blogsModel
+                ->searchBlog($data["keyword"]);
+      if($result === false || empty($result)){
+        $this->sendError("Not Found Blogs");
+        return;
+      }
+      return $this->json([
+        "status"=>"success",
+        "data" => $result,
       ]);
     }
     public function deleteBlog($BlogId) {
@@ -186,5 +201,4 @@ public function getAll(){
           "message" => "Delete Blog Successfully"
       ]);
     }
-
 }

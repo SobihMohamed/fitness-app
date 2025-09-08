@@ -18,6 +18,22 @@ class Blogs_Category{
       return false;
     }
   }
+    public function getAllBlogsByCatId($categId){
+    if (!is_numeric($categId) || $categId <= 0) {
+      return false;
+    }
+    
+    $blogsDB = new DB("blogs");
+    try{
+      $result = $blogsDB
+              ->select()
+              ->where("category_id" , "=" , $categId)
+              ->fetchAll();
+      return $result !== false ? $result : [];
+    }catch(Exception $e){
+      return false;
+    }
+  }
   public function singleCategory($id){
     try{
       return $this->db
