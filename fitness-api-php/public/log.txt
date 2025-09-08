@@ -1,1 +1,1 @@
-URL Detected: AdminProducts/getProductById/11
+URL Detected: AdminTrainingRequests/getExpirationSoon
