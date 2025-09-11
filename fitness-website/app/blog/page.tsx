@@ -70,6 +70,31 @@ export default function BlogPage() {
 
   const API = API_CONFIG
 
+  // Normalize raw API blog object into our BlogPost shape
+  const normalizeBlog = (raw: any): BlogPost => ({
+    id: String(raw?.blog_id ?? raw?.id ?? raw?._id ?? ""),
+    title: raw?.title ?? "Untitled",
+    content: raw?.content ?? raw?.body ?? "",
+    excerpt: raw?.excerpt ?? raw?.summary ?? "",
+    featuredImage: raw?.main_image ?? raw?.featuredImage ?? raw?.image ?? raw?.thumbnail,
+    author: raw?.author ?? raw?.authorName ?? "Unknown Author",
+    authorRole: raw?.authorRole ?? raw?.role,
+    categoryId: String(raw?.categoryId ?? raw?.category_id ?? raw?.catId ?? ""),
+    categoryName: raw?.categoryName ?? raw?.category_name ?? raw?.category ?? raw?.categoryTitle,
+    tags: Array.isArray(raw?.tags) ? raw.tags : [],
+    status: raw?.status ?? "published",
+    views: Number(raw?.views ?? 0),
+    likes: Number(raw?.likes ?? 0),
+    comments: Number(raw?.comments ?? 0),
+    readTime: raw?.readTime ?? raw?.read_time ?? "5 min",
+    difficulty: raw?.difficulty ?? raw?.level,
+    featured: Boolean(raw?.featured ?? false),
+    rating: raw?.rating != null ? Number(raw.rating) : undefined,
+    estimatedCalories: raw?.estimatedCalories ?? raw?.calories,
+    createdAt: raw?.createdAt ?? raw?.created_at ?? raw?.publishedAt ?? new Date().toISOString(),
+    updatedAt: raw?.updatedAt ?? raw?.updated_at ?? new Date().toISOString(),
+  })
+
   // Fetch all blogs
   const fetchBlogs = async () => {
     try {
@@ -77,8 +102,6 @@ export default function BlogPage() {
       setError(null)
       const response = await axios.get(API.USER_BLOG_API.getAll)
       const data = response.data
-
-      console.log("API Response:", data) // Debug log
 
       // Handle different API response formats
       let blogsArray: BlogPost[] = []
@@ -100,7 +123,8 @@ export default function BlogPage() {
       // Ensure we have an array and filter only published blogs
       if (Array.isArray(blogsArray)) {
         const publishedBlogs = blogsArray.filter((blog: any) => blog && (blog.status === "published" || !blog.status))
-        setBlogs(publishedBlogs)
+        const normalized = publishedBlogs.map(normalizeBlog).filter((b) => b.id)
+        setBlogs(normalized)
       } else {
         throw new Error("Invalid data format received from API")
       }
@@ -121,8 +145,6 @@ export default function BlogPage() {
     try {
       const response = await axios.get(API.USER_BLOG_CATEGORY_API.getAll)
       const data = response.data
-
-      console.log("Categories Response:", data) // Debug log
 
       let categoriesArray: BlogCategory[] = []
 
@@ -150,10 +172,8 @@ export default function BlogPage() {
 
     try {
       setSearchLoading(true)
-      const response = await axios.post(API.USER_BLOG_API.search, { query })
+      const response = await axios.post(API.USER_BLOG_API.search, { keyword: query })
       const data = response.data
-
-      console.log("Search Response:", data) // Debug log
 
       // Handle different API response formats for search
       let blogsArray: BlogPost[] = []
@@ -173,7 +193,8 @@ export default function BlogPage() {
 
       if (Array.isArray(blogsArray)) {
         const publishedBlogs = blogsArray.filter((blog: any) => blog && (blog.status === "published" || !blog.status))
-        setBlogs(publishedBlogs)
+        const normalized = publishedBlogs.map(normalizeBlog).filter((b) => b.id)
+        setBlogs(normalized)
       } else {
         // Fallback to client-side search if API search fails
         const filtered = blogs.filter(
@@ -206,8 +227,6 @@ export default function BlogPage() {
       const response = await axios.get(API.USER_BLOG_CATEGORY_API.getBlogsByCategoryId(categoryId))
       const data = response.data
 
-      console.log("Category Blogs Response:", data) // Debug log
-
       let blogsArray: BlogPost[] = []
 
       if (Array.isArray(data)) {
@@ -220,7 +239,8 @@ export default function BlogPage() {
 
       if (Array.isArray(blogsArray)) {
         const publishedBlogs = blogsArray.filter((blog: any) => blog && (blog.status === "published" || !blog.status))
-        setBlogs(publishedBlogs)
+        const normalized = publishedBlogs.map(normalizeBlog).filter((b) => b.id)
+        setBlogs(normalized)
       }
     } catch (err) {
       console.error("Failed to fetch blogs by category:", err)
@@ -394,7 +414,12 @@ export default function BlogPage() {
 
   const getImageUrl = (imagePath?: string) => {
     if (!imagePath) return null
-    return imagePath.startsWith("http") ? imagePath : `${API.BASE_URL}${imagePath}`
+    let p = String(imagePath).replace(/\\/g, "/")
+    p = p.replace(/^\/?public\//i, "/")
+    if (/^https?:\/\//i.test(p)) return p
+    const path = p.startsWith("/") ? p : `/${p}`
+    const base = API.BASE_URL.replace(/\/$/, "")
+    return `${base}${path}`
   }
 
   if (loading) {

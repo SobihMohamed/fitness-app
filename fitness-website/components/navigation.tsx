@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import dynamic from "next/dynamic";
 
-import { LoginModal } from "@/components/auth/login-modal";
-import { UserMenu } from "@/components/auth/user-menu";
-import { CartDrawer } from "@/components/cart/cart-drawer";
+// Dynamically import client-only heavy components to reduce initial bundle size
+const CartDrawer = dynamic(() => import("@/components/cart/cart-drawer").then(m => m.CartDrawer), {
+  ssr: false,
+  loading: () => null,
+});
+const UserMenu = dynamic(() => import("@/components/auth/user-menu").then(m => m.UserMenu), {
+  ssr: false,
+  loading: () => null,
+});
+const LoginModal = dynamic(() => import("@/components/auth/login-modal").then(m => m.LoginModal), {
+  ssr: false,
+  loading: () => null,
+});
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
 
-const navigation = [
+const staticNavigation = Object.freeze([
   { name: "Home", href: "/" },
   { name: "About", href: "/about" },
   { name: "Services", href: "/services" },
@@ -20,14 +31,17 @@ const navigation = [
   { name: "Courses", href: "/courses" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
-];
+]);
 
-export function Navigation() {
+function NavigationInner() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
 
   const { user } = useAuth();
+
+  // memoize to avoid re-creating array every render
+  const navigation = useMemo(() => staticNavigation, []);
 
   // Navbar should be hidden on all admin pages
   if (pathname.startsWith("/admin")) return null;
@@ -136,3 +150,7 @@ export function Navigation() {
     </>
   );
 }
+
+export const Navigation = memo(NavigationInner);
+
+export default Navigation;

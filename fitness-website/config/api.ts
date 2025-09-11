@@ -1,6 +1,7 @@
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:8000",
-  TARGET_URL: "http://localhost:8000",
+  // Prefer environment variables; fall back to localhost for development
+  BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
+  TARGET_URL: process.env.NEXT_PUBLIC_API_TARGET_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000",
 
   // USER FUNCTIONS
   USER_FUNCTIONS: {
@@ -12,6 +13,7 @@ export const API_CONFIG = {
       verifyOtp: "http://localhost:8000/auth/verifyOtpAndUpdatePassword",
       refreshToken: "http://localhost:8000/auth/refreshToken",
     },
+    
     user: {
       profile: "http://localhost:8000/user/getProfile",
       updateProfile: "http://localhost:8000/user/updateProfile",
@@ -31,7 +33,7 @@ export const API_CONFIG = {
       getAll: "http://localhost:8000/Courses/getAll",
       searchCourse: "http://localhost:8000/Courses/searchCourse",
       ViewSingleCourse: (id: string) =>
-        `http://localhost:8000/Courses/singleCourse/${id}`,
+        `http://localhost:8000/Courses/CoursePage/${id}`,
     },
     RequestForTraining: {
       createRequestToAdmin: "http://localhost:8000/TrainingRequests/create",
@@ -65,7 +67,7 @@ export const API_CONFIG = {
   USER_COURSES_API: {
     getAll: "http://localhost:8000/Courses/getAll",
     getFeatured: "http://localhost:8000/Courses/getAll", 
-    getById: (id: string) => `http://localhost:8000/Courses/singleCourse/${id}`,
+    getById: (id: string) => `http://localhost:8000/Courses/CoursePage/${id}`,
     search: "http://localhost:8000/Courses/searchCourse",
     enroll: "http://localhost:8000/CoursesRequests/create",
   },
@@ -200,15 +202,42 @@ export const API_CONFIG = {
       delete: (id: string) =>
         `http://localhost:8000/AdminServices/deleteService/${id}`,
     },
+    AdminModulesOfCourses: {
+      getAllModules: "http://localhost:8000/AdminCourseModules/getAll",
+      getSingleModule: (id: string) =>
+        `http://localhost:8000/AdminCourseModules/getSingleModule/${id}`,
+      SearchModule: "http://localhost:8000/AdminCourseModules/searchModule",
+      add: "http://localhost:8000/AdminCourseModules/addModule",
+      update: (id: string) =>
+        `http://localhost:8000/AdminCourseModules/updateModule/${id}`,
+      delete: (id: string) =>
+        `http://localhost:8000/AdminCourseModules/deleteModule/${id}`,
+    },
+    AdminChaptersOfModules: {
+      getAllChapters: "http://localhost:8000/AdminCourseChapters/getAll",
+      getSingleChapter: (id: string) =>
+        `http://localhost:8000/AdminCourseChapters/getSingleChapter/${id}`,
+      SearchChapter: "http://localhost:8000/AdminCourseChapters/searchChapter",
+      add: "http://localhost:8000/AdminCourseChapters/addChapter",
+      update: (id: string) =>
+        `http://localhost:8000/AdminCourseChapters/updateChapter/${id}`,
+      delete: (id: string) =>
+        `http://localhost:8000/AdminCourseChapters/deleteChapter/${id}`,
+    },
     AdminBlogs: {
       getAllBlogs: "http://localhost:8000/AdminBlogs/getAll",
-      getSingleBlog: (id: string) =>
-        `http://localhost:8000/AdminBlogs/getBlogById/${id}`,
+      getById: (id: string) => `http://localhost:8000/AdminBlogs/getBlogById/${id}`,
+      search: "http://localhost:8000/AdminBlogs/searchBlog",
       add: "http://localhost:8000/AdminBlogs/addBlog",
-      update: (id: string) =>
-        `http://localhost:8000/AdminBlogs/updateBlog/${id}`,
-      delete: (id: string) =>
-        `http://localhost:8000/AdminBlogs/deleteBlog/${id}`,
+      update: (id: string) => `http://localhost:8000/AdminBlogs/updateBlog/${id}`,
+      delete: (id: string) => `http://localhost:8000/AdminBlogs/deleteBlog/${id}`,
+    },
+    AdminBlogsCategory: {
+      getAll: "http://localhost:8000/AdminBlogsCategory/getAll",
+      search: "http://localhost:8000/AdminBlogsCategory/searchCategory",
+      add: "http://localhost:8000/AdminBlogsCategory/addCategory",
+      update: (id: string) => `http://localhost:8000/AdminBlogsCategory/updateCategory/${id}`,
+      delete: (id: string) => `http://localhost:8000/AdminBlogsCategory/deleteCategory/${id}`,
     },
   },
 };

@@ -104,7 +104,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (password: string) => password.length >= 6;
+  const validatePassword = (password: string) => password.length >= 8;
 
   const handleClose = useCallback(() => {
     setMessage(null);

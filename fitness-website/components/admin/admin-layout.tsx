@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/admin/shared/notification-dropdown";
-import { LoadingSpinner } from "@/components/admin/shared/loading-spinner";
 import { API_CONFIG } from "@/config/api";
+import { LoadingScreen } from "@/components/common/loading-screen";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
@@ -44,7 +44,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     orders: 0,
     expiringRequests: 0,
   });
-  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -153,18 +152,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, [router]);
 
-  const totalNotifications = notifications.trainingRequests + notifications.courseRequests + notifications.orders + notifications.expiringRequests;
   const totalRequests = notifications.trainingRequests + notifications.courseRequests + notifications.orders;
-  if (!isAuthenticated) return null;
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <LoadingSpinner fullScreen message="Loading admin interface..." />
-      </div>
-    );
-  }
+  // Always render the layout shell so the segment-wide loader can be shown
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 relative flex flex-col">
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -231,9 +222,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content */}
-      <div className="w-full">
+      <div className="w-full flex flex-col flex-1">
         {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b px-6 py-4 fixed top-0 left-0 right-0 z-30">
+        <header className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-50">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
@@ -270,8 +261,21 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="pt-20 p-6 pb-20">{children}</main>
+        <main className="p-6 flex-1">{children}</main>
+
+        {/* Footer */}
+        <footer className="mt-auto bg-white border-t px-6 py-3 text-sm text-gray-600 flex items-center justify-between">
+          <span>© {new Date().getFullYear()} FitPro Admin</span>
+          <span className="hidden sm:inline">All rights reserved.</span>
+        </footer>
       </div>
+
+      {/* Global Loading Overlay (auth/validation/boot) */}
+      {isLoading && (
+        <div className="absolute inset-0 z-[60] bg-white/70  flex items-center justify-center">
+          <LoadingScreen message="Preparing admin panel…" className="min-h-0" />
+        </div>
+      )}
     </div>
   );
 }
