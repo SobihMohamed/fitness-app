@@ -11,9 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea"
 import { AdminLayout } from "@/components/admin/admin-layout"
 import { API_CONFIG } from "@/config/api"
-import Loading from "@/app/loading"
-import { useLoading } from "@/hooks/use-loading"
 import { useAdminApi } from "@/hooks/admin/use-admin-api"
+import { getHttpClient } from "@/lib/http"
 import { formatNumber, formatDateUTC } from "@/utils/format"
 
 type Service = {
@@ -48,8 +47,8 @@ export default function AdminServicesPage() {
   const [form, setForm] = useState<FormState>({ title: "", details: "", duration: "", price: "", picture: null })
   const [initialLoading, setInitialLoading] = useState(true)
 
-  const { isAnyLoading, withLoading } = useLoading()
   const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi()
+  const http = getHttpClient()
 
   useEffect(() => {
     load()
@@ -63,38 +62,17 @@ export default function AdminServicesPage() {
 
   async function load() {
     try {
-      await withLoading("services", async () => {
-        // Try admin endpoint first
-        const adminRes = await fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminServices.getAllServices, {
-          headers: getAuthHeaders(),
-          cache: 'no-store',
-        })
-        if (adminRes.status === 404) {
-          setServices([])
-          return
-        }
-        if (adminRes.ok) {
-          const result = await parseResponse(adminRes)
-          const arr = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : []
-          setServices(
-            arr.map((s: any) => ({
-              service_id: String(s.service_id),
-              title: s.title ?? s.name ?? "",
-              details: s.details ?? s.description ?? "",
-              duration: s.duration ?? "",
-              price: s.price ?? "",
-              picture: s.picture ?? s.image_url ?? null,
-              created_at: s.created_at,
-            })),
-          )
-          return
-        }
-        // Fallback to public endpoint
-        const res = await fetch(API_CONFIG.USER_SERVICES_API.getAll, { cache: 'no-store' })
-        if (res.status === 404) { setServices([]); return }
-        const result = await parseResponse(res)
-        if (!res.ok) throw new Error(result?.message || "Failed to load services")
-        const arr = Array.isArray(result) ? result : Array.isArray(result?.data) ? result.data : []
+      // Try admin endpoint first
+      try {
+        const { data: adminData } = await http.get(
+          API_CONFIG.ADMIN_FUNCTIONS.AdminServices.getAllServices,
+          { headers: getAuthHeaders(), params: { _: Date.now() } }
+        )
+        const arr = Array.isArray(adminData)
+          ? adminData
+          : Array.isArray(adminData?.data)
+          ? adminData.data
+          : []
         setServices(
           arr.map((s: any) => ({
             service_id: String(s.service_id),
@@ -104,9 +82,34 @@ export default function AdminServicesPage() {
             price: s.price ?? "",
             picture: s.picture ?? s.image_url ?? null,
             created_at: s.created_at,
-          })),
+          }))
         )
-      })
+        return
+      } catch (err: any) {
+        if (err?.status === 404) { setServices([]); return }
+        // fall through to public endpoint
+      }
+      // Fallback to public endpoint
+      try {
+        const { data } = await http.get(API_CONFIG.USER_SERVICES_API.getAll, {
+          params: { _: Date.now() },
+        })
+        const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
+        setServices(
+          arr.map((s: any) => ({
+            service_id: String(s.service_id),
+            title: s.title ?? s.name ?? "",
+            details: s.details ?? s.description ?? "",
+            duration: s.duration ?? "",
+            price: s.price ?? "",
+            picture: s.picture ?? s.image_url ?? null,
+            created_at: s.created_at,
+          }))
+        )
+      } catch (err2: any) {
+        if (err2?.status === 404) { setServices([]); return }
+        throw err2
+      }
     } catch (e: any) {
       showErrorToast(e.message || "Failed to load services")
     }
@@ -156,13 +159,7 @@ export default function AdminServicesPage() {
       const url = isEdit
         ? `${API_CONFIG.ADMIN_FUNCTIONS.AdminServices.update}/${editing!.service_id}`
         : API_CONFIG.ADMIN_FUNCTIONS.AdminServices.add
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { Authorization: authHeaders().Authorization! },
-        body: fd,
-      })
-      const data = await parseResponse(res)
-      if (!res.ok) throw new Error(data?.message || (isEdit ? "Update failed" : "Create failed"))
+      await getHttpClient().post(url, fd, { headers: { Authorization: authHeaders().Authorization! } })
       showSuccessToast(isEdit ? "Service updated successfully!" : "Service created successfully!")
       // Optimistically update local list on edit for immediate UI feedback
       if (isEdit && editing) {
@@ -210,12 +207,9 @@ export default function AdminServicesPage() {
         return
       }
       setDeleting(true)
-      const res = await fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminServices.delete(deleteTarget.id), {
-        method: "DELETE",
+      await http.delete(API_CONFIG.ADMIN_FUNCTIONS.AdminServices.delete(deleteTarget.id), {
         headers: authHeaders(),
       })
-      const data = await parseResponse(res)
-      if (!res.ok) throw new Error(data?.message || "Delete failed")
       showSuccessToast("Service deleted successfully!")
       await load()
     } catch (e: any) {
@@ -253,13 +247,10 @@ export default function AdminServicesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  if (isAnyLoading() || initialLoading) {
-    return (
-      <AdminLayout>
-        <Loading variant="admin" size="lg" message="Loading services..." icon="loader" className="h-[80vh]" />
-      </AdminLayout>
-    )
-  }
+  // Initial full-screen spinner during first load
+  // initialLoading handled by AdminLayout overlay only
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  initialLoading;
 
   return (
     <AdminLayout>

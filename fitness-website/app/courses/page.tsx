@@ -31,6 +31,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { API_CONFIG } from "@/config/api";
 import axios from "axios";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getFullImageUrl } from "@/lib/images";
 
 // Interface for course data
 interface Course {
@@ -83,56 +94,176 @@ export default function CoursesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>([]);
+  const [enrollOpen, setEnrollOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    gender: "" as "male" | "female" | "",
+    email: "",
+    job: "",
+    age: "",
+  });
 
-  const { TARGET_URL: API_TARGET, USER_COURSES_API } = API_CONFIG;
+  const { USER_COURSES_API } = API_CONFIG;
 
-  const getFullImageUrl = useCallback(
-    (imagePath: string) => {
-      if (!imagePath) return "/outdoor-fitness-course.png";
-      if (imagePath.startsWith("http")) return imagePath;
-      return `${API_TARGET}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
-    },
-    [API_TARGET]
-  );
+  const openEnrollForm = useCallback((courseId: number) => {
+    // Prevent duplicate enrolls: check current course status locally first
+    const current = courses.find((c) => c.id === courseId);
+    if (current?.enrollmentStatus === "pending") {
+      toast.info("Your enrollment request is pending approval.");
+      return;
+    }
+    if (current?.enrollmentStatus === "enrolled") {
+      toast.success("You are already enrolled in this course.");
+      return;
+    }
 
-  const handleEnrollCourse = useCallback(async (courseId: number) => {
+    setSelectedCourseId(courseId);
+    setEnrollOpen(true);
+  }, [courses]);
+
+  const submitEnrollment = useCallback(async () => {
+    if (!selectedCourseId) return;
+    const token = sessionStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to enroll in courses");
+      return;
+    }
+
+    // Basic validation
+    if (!form.gender || !form.email || !form.job || !form.age) {
+      toast.error("Please fill in all fields.");
+      return;
+    }
+    const ageNum = Number.parseInt(form.age as string, 10);
+    if (Number.isNaN(ageNum) || ageNum <= 0) {
+      toast.error("Please provide a valid age.");
+      return;
+    }
+
+    // Ensure selected course exists and prevent duplicate requests while pending
+    const current = courses.find((c) => c.id === selectedCourseId);
+    if (!current) {
+      toast.error("Selected course not found in the current list. Please refresh and try again.");
+      return;
+    }
+    if (current?.enrollmentStatus === "pending") {
+      toast.info("Your enrollment request is already pending approval.");
+      return;
+    }
+
+    // Hoist serverCourseId so it can be referenced in both try and catch blocks
+    let serverCourseId: number | null = null;
+
+    setSubmitting(true);
     try {
-      const token = sessionStorage.getItem("token");
-      if (!token) {
-        toast.error("Please login to enroll in courses");
-        return;
+      // Double-check with backend to see if there is an existing request
+      try {
+        const preCheck = await axios.post(
+          API_CONFIG.USER_FUNCTIONS.RequestForCourses.getAllMyRequests,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const existing = preCheck.data?.data?.find(
+          (req: any) => Number.parseInt(req.course_id, 10) === selectedCourseId
+        );
+        if (existing && (existing.status === "pending" || existing.status === "approved")) {
+          toast.info(
+            existing.status === "pending"
+              ? "Your enrollment request is already pending approval."
+              : "You are already enrolled in this course."
+          );
+          // Sync local state
+          setCourses((prev) =>
+            prev.map((c) =>
+              c.id === selectedCourseId
+                ? { ...c, enrollmentStatus: existing.status === "pending" ? "pending" : "enrolled" }
+                : c
+            )
+          );
+          setEnrollOpen(false);
+          return;
+        }
+      } catch (e) {
+        // ignore pre-check error
       }
+
+      // Verify course exists on server before creating request (compatibility with backend)
+      try {
+        console.debug("Verifying course exists before enrollment", { selectedCourseId });
+        const checkCourse = await axios.get(
+          API_CONFIG.USER_COURSES_API.getById(String(selectedCourseId))
+        );
+        if (!(checkCourse.status === 200 || checkCourse.data?.status === "success")) {
+          toast.error("Course not found on server. Please refresh and try again.");
+          return;
+        }
+        // Try to read normalized id from server response
+        const serverCourse = checkCourse.data?.Course || checkCourse.data?.data || checkCourse.data;
+        const possibleId = serverCourse?.course_id ?? serverCourse?.id ?? null;
+        if (possibleId != null) serverCourseId = Number(possibleId);
+      } catch (e: any) {
+        if (e?.response?.status === 404) {
+          toast.error("Course not found on server. Please refresh and try again.");
+          return;
+        }
+        // if other error (e.g., network), continue to let submit attempt and handle normally
+      }
+
+      const payload: any = {
+        // Prefer the exact id returned by server pre-check if available
+        course_id: String(serverCourseId ?? selectedCourseId),
+        gender: form.gender,
+        email: form.email,
+        job: form.job,
+        age: ageNum,
+      };
 
       const response = await axios.post(
         API_CONFIG.USER_COURSES_API.enroll,
-        { courseId },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
-      if (response.data.status === "success") {
-        toast.success("Successfully enrolled in the course!");
+      if (response.data?.status === "success" || response.status === 200) {
+        toast.success("Enrollment request submitted! Pending admin approval.");
         setCourses((prevCourses) =>
           prevCourses.map((course) =>
-            course.id === courseId
-              ? { ...course, enrollmentStatus: "enrolled" }
+            course.id === selectedCourseId
+              ? { ...course, enrollmentStatus: "pending" }
               : course
           )
         );
+        setEnrollOpen(false);
       } else {
-        toast.error(response.data.message || "Failed to enroll in the course");
+        toast.error(response.data?.message || "Failed to enroll in the course");
       }
     } catch (error: any) {
-      console.error("Error enrolling in course:", error);
+      console.error("Error enrolling in course:", {
+        message: error?.message,
+        status: error?.response?.status,
+        server: error?.response?.data,
+        payloadSent: {
+          course_id: String(serverCourseId ?? selectedCourseId),
+          gender: form.gender,
+          email: form.email,
+          job: form.job,
+          age: Number.parseInt(form.age as string, 10),
+        },
+      });
       toast.error(
         error.response?.data?.message ||
           "Failed to enroll in the course. Please try again."
       );
+    } finally {
+      setSubmitting(false);
     }
-  }, []);
+  }, [selectedCourseId, form, courses]);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -147,7 +278,8 @@ export default function CoursesPage() {
           (Array.isArray(result) ? result : []);
 
         const normalizedCourses: Course[] = rawData.map((item: any) => ({
-          id: Number.parseInt(item.id || item.course_id, 10),
+          // Prefer backend's course_id to ensure enroll submits matching ID
+          id: Number.parseInt(item.course_id || item.id, 10),
           title: item.title || item.name || "Untitled Course",
           instructor:
             item.instructor || item.instructor_name || "Unknown Instructor",
@@ -193,8 +325,9 @@ export default function CoursesPage() {
         const token = sessionStorage.getItem("token");
         if (!token) return;
 
-        const response = await axios.get(
+        const response = await axios.post(
           API_CONFIG.USER_FUNCTIONS.RequestForCourses.getAllMyRequests,
+          {},
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -203,16 +336,20 @@ export default function CoursesPage() {
         );
 
         if (response.data.status === "success" && response.data.data) {
-          const enrolledCourseIds = response.data.data.map((course: any) =>
-            Number.parseInt(course.id || course.course_id, 10)
-          );
+          const statusByCourse = new Map<number, string>();
+          response.data.data.forEach((req: any) => {
+            const cid = Number.parseInt(req.course_id, 10);
+            const status = (req.status || "").toLowerCase();
+            if (!cid) return;
+            if (status === "approved") statusByCourse.set(cid, "enrolled");
+            else if (status === "pending") statusByCourse.set(cid, "pending");
+          });
 
           setCourses((prevCourses) =>
-            prevCourses.map((course) =>
-              enrolledCourseIds.includes(course.id)
-                ? { ...course, enrollmentStatus: "enrolled" }
-                : course
-            )
+            prevCourses.map((course) => {
+              const st = statusByCourse.get(course.id);
+              return st ? { ...course, enrollmentStatus: st } : course;
+            })
           );
         }
       } catch (error) {
@@ -223,10 +360,8 @@ export default function CoursesPage() {
     fetchCourses();
     fetchEnrolledCourses();
   }, [
-    API_TARGET,
     USER_COURSES_API.getAll,
     API_CONFIG.USER_FUNCTIONS.RequestForCourses.getAllMyRequests,
-    getFullImageUrl,
   ]);
 
   const categories = useMemo(() => {
@@ -350,10 +485,28 @@ export default function CoursesPage() {
                       <ChevronRight className="h-5 w-5 ml-2" />
                     </Button>
                   </Link>
+                ) : course.enrollmentStatus === "pending" ? (
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      disabled
+                      className="w-full bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-400 hover:to-gray-500 shadow-lg transition-all duration-300 h-12 text-base font-semibold cursor-not-allowed"
+                    >
+                      <Clock className="h-5 w-5 mr-2" />
+                      Pending Approval
+                    </Button>
+                    <Link href={`/courses/${course.id}`} passHref>
+                      <Button
+                        variant="outline"
+                        className="w-full border-2 border-blue-600 text-blue-600 hover:bg-blue-50 hover:border-blue-700 h-10 font-medium bg-transparent"
+                      >
+                        View Details
+                      </Button>
+                    </Link>
+                  </div>
                 ) : (
                   <div className="flex flex-col gap-3">
                     <Button
-                      onClick={() => handleEnrollCourse(course.id)}
+                      onClick={() => openEnrollForm(course.id)}
                       className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 h-12 text-base font-semibold"
                     >
                       <Play className="h-5 w-5 mr-2" />
@@ -374,7 +527,7 @@ export default function CoursesPage() {
             </Card>
           </motion.div>
         ),
-    [handleEnrollCourse]
+    [openEnrollForm]
   );
 
   return (
@@ -650,6 +803,91 @@ export default function CoursesPage() {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Enrollment Dialog */}
+      <Dialog open={enrollOpen} onOpenChange={setEnrollOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Course Enrollment</DialogTitle>
+            <DialogDescription>
+              Please fill in the following details to submit your enrollment request.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="gender" className="text-right col-span-1">
+                Gender
+              </Label>
+              <div className="col-span-3">
+                <Select
+                  value={form.gender}
+                  onValueChange={(v) => setForm((f) => ({ ...f, gender: v as any }))}
+                >
+                  <SelectTrigger id="gender" className="w-full">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right col-span-1">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                className="col-span-3"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="job" className="text-right col-span-1">
+                Job
+              </Label>
+              <Input
+                id="job"
+                placeholder="Your job title"
+                className="col-span-3"
+                value={form.job}
+                onChange={(e) => setForm((f) => ({ ...f, job: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="age" className="text-right col-span-1">
+                Age
+              </Label>
+              <Input
+                id="age"
+                type="number"
+                min={1}
+                placeholder="Age"
+                className="col-span-3"
+                value={form.age}
+                onChange={(e) => setForm((f) => ({ ...f, age: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEnrollOpen(false)} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button onClick={submitEnrollment} disabled={submitting}>
+              {submitting ? "Submitting..." : "Submit Request"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <section className="bg-gradient-to-r from-blue-600 via-indigo-700 to-purple-800 text-white py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/fitness-motivation-pattern.png')] opacity-10"></div>

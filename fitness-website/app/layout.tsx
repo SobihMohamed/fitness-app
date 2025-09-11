@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     siteName: "FitPro",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/placeholder.jpg",
         width: 1200,
         height: 630,
         alt: "FitPro - Your Ultimate Fitness Destination",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     title: "FitPro - Your Ultimate Fitness Destination",
     description:
       "Transform your fitness journey with FitPro's comprehensive courses, expert guidance, and premium equipment.",
-    images: ["/og-image.jpg"],
+    images: ["/placeholder.jpg"],
     creator: "@fitpro",
   },
   robots: {

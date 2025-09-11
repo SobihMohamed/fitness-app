@@ -51,6 +51,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { LoginModal } from "@/components/auth/login-modal";
 import { ProtectedAction } from "@/components/auth/Protected-Route";
 import { API_CONFIG } from "@/config/api";
+import { getFullImageUrl } from "@/lib/images";
 import { toast } from "sonner";
 import axios from "axios";
 import { formatNumber } from "@/utils/format";
@@ -319,25 +320,31 @@ export default function CourseDetailPage() {
   const [userEnrolled, setUserEnrolled] = useState(false);
   const [enrollmentPending, setEnrollmentPending] = useState(false);
 
-  const {
-    TARGET_URL: API_TARGET,
-    USER_COURSES_API,
-    USER_FUNCTIONS,
-  } = API_CONFIG;
+  const { USER_COURSES_API, USER_FUNCTIONS } = API_CONFIG;
 
-  // <CHANGE> Memoized helper functions for better performance
-  const getFullImageUrl = useCallback(
-    (imagePath: string) => {
-      if (!imagePath) return "/placeholder.svg?height=400&width=600";
-      if (imagePath.startsWith("http")) return imagePath;
-      if (imagePath.startsWith("/")) return `${API_TARGET}${imagePath}`;
-      return `${API_TARGET}/${imagePath}`;
-    },
-    [API_TARGET]
-  );
+  // use shared getFullImageUrl from lib/images
 
   const normalizeCourse = useCallback(
     (rawData: any): Course => {
+      // Map backend modules/chapters to frontend modules/lessons shape
+      const mappedModules: Module[] = (rawData.modules || []).map((mod: any, idx: number) => {
+        const lessons = (mod.chapters || mod.lessons || []).map((ch: any, cidx: number) => ({
+          id: parseInt(ch.chapter_id || ch.id || `${idx + 1}${cidx + 1}`, 10),
+          title: ch.title || ch.name || `Lesson ${cidx + 1}`,
+          duration: ch.duration || ch.length || "10m",
+          type: (ch.type || "video").toLowerCase(),
+          preview: cidx === 0,
+        } as Lesson));
+
+        return {
+          id: parseInt(mod.module_id || mod.id || `${idx + 1}`, 10),
+          title: mod.title || mod.name || `Module ${idx + 1}`,
+          description: mod.description || "",
+          lessons,
+          duration: mod.duration || `${lessons.length * 10}m`,
+        } as Module;
+      });
+
       return {
         id: parseInt(rawData.id || rawData.course_id, 10),
         title: rawData.title || rawData.name || "",
@@ -385,27 +392,15 @@ export default function CourseDetailPage() {
           "Access to basic equipment",
           "Willingness to learn and practice",
         ],
-        modules: rawData.modules || [
+        modules: mappedModules.length > 0 ? mappedModules : [
           {
             id: 1,
             title: "Introduction",
             description: "Getting started with the course",
             duration: "1 week",
             lessons: [
-              {
-                id: 1,
-                title: "Course Overview",
-                duration: "10:00",
-                type: "video",
-                preview: true,
-              },
-              {
-                id: 2,
-                title: "Getting Started",
-                duration: "15:00",
-                type: "video",
-                preview: true,
-              },
+              { id: 1, title: "Course Overview", duration: "10m", type: "video", preview: true },
+              { id: 2, title: "Getting Started", duration: "15m", type: "video", preview: true },
             ],
           },
         ],
@@ -476,8 +471,12 @@ export default function CourseDetailPage() {
           axios.get(USER_COURSES_API.getAll),
         ]);
 
-        if (allCoursesRes.data && Array.isArray(allCoursesRes.data)) {
-          const normalizedCourses = allCoursesRes.data.map(normalizeCourse);
+        // Handle both array and wrapped data
+        const allCoursesPayload = Array.isArray(allCoursesRes.data)
+          ? allCoursesRes.data
+          : (allCoursesRes.data?.data || allCoursesRes.data?.courses || []);
+        if (Array.isArray(allCoursesPayload)) {
+          const normalizedCourses = allCoursesPayload.map(normalizeCourse);
           setCourses(normalizedCourses);
         }
 

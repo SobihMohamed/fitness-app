@@ -26,6 +26,7 @@ export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [markingIds, setMarkingIds] = useState<Record<string, boolean>>({});
   const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({});
+  // Removed local loading; layout handles global overlays
 
   // Local overlay to persist read IDs for UI, in case backend doesn't update immediately
   const LOCAL_READ_KEY = "adminNotificationReadIds";
@@ -288,9 +289,9 @@ export function NotificationDropdown() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {notifications.length > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-600 rounded-full">
-              {notifications.length}
+              {unreadCount}
             </span>
           )}
         </Button>
@@ -304,15 +305,13 @@ export function NotificationDropdown() {
           <div className="flex items-center justify-between">
             <h3 className="font-semibold">Notifications</h3>
             <span className="text-sm text-muted-foreground">
-              {notifications.length} total
+              {unreadCount} unread • {notifications.length} total
             </span>
           </div>
         </div>
         
         {notifications.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            No notifications
-          </div>
+          <div className="p-8 text-center text-muted-foreground">No notifications</div>
         ) : (
           <ScrollArea className="h-96">
             <div className="p-2">

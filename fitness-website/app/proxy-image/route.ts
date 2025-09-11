@@ -1,12 +1,19 @@
 import { NextRequest } from "next/server";
 import { API_CONFIG } from "@/config/api";
 
+export const runtime = 'edge';
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const targetUrl = searchParams.get("url");
   if (!targetUrl) {
     return new Response("Missing url", { status: 400 });
   }
+  
+  // Get image optimization parameters
+  const width = parseInt(searchParams.get("width") || "0", 10) || undefined;
+  const height = parseInt(searchParams.get("height") || "0", 10) || undefined;
+  const quality = parseInt(searchParams.get("quality") || "0", 10) || undefined;
 
   try {
     // Validate the URL and restrict proxying to your backend origins only
@@ -17,22 +24,40 @@ export async function GET(req: NextRequest) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    const upstream = await fetch(parsed.toString());
+    // Add caching headers to the request
+    const fetchOptions: RequestInit = {
+      headers: {
+        'Accept': 'image/*',
+      },
+      next: {
+        revalidate: 3600 // Cache for 1 hour
+      }
+    };
+
+    const upstream = await fetch(parsed.toString(), fetchOptions);
     if (!upstream.ok || !upstream.body) {
       return new Response("Upstream fetch failed", { status: upstream.status || 502 });
     }
 
-    // Pass through content type and length if available
-    const headers = new Headers();
+    // Get the image data
+    const imageData = await upstream.arrayBuffer();
     const contentType = upstream.headers.get("content-type") || "application/octet-stream";
-    const contentLength = upstream.headers.get("content-length");
+    
+    // Set response headers
+    const headers = new Headers();
     headers.set("content-type", contentType);
-    if (contentLength) headers.set("content-length", contentLength);
-
-    // Allow same-origin usage freely
-    headers.set("Cache-Control", "private, max-age=60");
-
-    return new Response(upstream.body, {
+    
+    // Improve caching for better performance
+    headers.set("Cache-Control", "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=31536000");
+    headers.set("CDN-Cache-Control", "public, max-age=31536000");
+    
+    // Add image optimization headers
+    if (width) headers.set("x-image-width", width.toString());
+    if (height) headers.set("x-image-height", height.toString());
+    if (quality) headers.set("x-image-quality", quality.toString());
+    
+    // Return the optimized image
+    return new Response(imageData, {
       status: 200,
       headers,
     });

@@ -44,6 +44,19 @@ export function formatDateTimeUTC(dateInput: string | number | Date | null | und
   return dateTimeFormatter.format(d)
 }
 
+// Format as DD/MM/YYYY HH:mm (UTC) to meet admin tables acceptance criteria
+export function formatDateTimeDDMMYYYYHHmm(dateInput: string | number | Date | null | undefined): string {
+  if (!dateInput) return "N/A"
+  const d = new Date(dateInput)
+  if (Number.isNaN(d.getTime())) return "N/A"
+  const dd = String(d.getUTCDate()).padStart(2, '0')
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const yyyy = d.getUTCFullYear()
+  const hh = String(d.getUTCHours()).padStart(2, '0')
+  const mi = String(d.getUTCMinutes()).padStart(2, '0')
+  return `${dd}/${mm}/${yyyy} ${hh}:${mi}`
+}
+
 // Deterministic hash from a string -> 32-bit int
 export function hashString(str: string): number {
   let hash = 0

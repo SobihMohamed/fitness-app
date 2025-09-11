@@ -119,14 +119,14 @@ export function CartDrawer() {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium text-foreground">Total:</span>
-                <span className="text-xl font-bold text-primary">${total.toFixed(2)}</span>
+                <span className="text-xl font-bold text-primary">{total.toFixed(2)} EGP</span>
               </div>
               <div className="space-y-2">
                 <Button  className="w-full bg-primary" onClick={closeCart}>
                   <Link href="/checkout">Proceed to Checkout</Link>
                 </Button>
                 <Button  variant="outline" className="w-full bg-transparent" onClick={closeCart}>
-                  <Link href="/cart">View Cart</Link>
+                  <Link href="/checkout">Review Order</Link>
                 </Button>
               </div>
             </div>
