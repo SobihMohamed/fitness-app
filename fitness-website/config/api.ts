@@ -83,11 +83,17 @@ export const API_CONFIG = {
     getById: (id: string) => `http://localhost:8000/Services/getServiceById/${id}`,
     search: "http://localhost:8000/Services/searchService",
   },
-  USER_BLOG_API:{
-    getAll: "http://localhost:8000/Blogs/getAll",
-    getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
-    search: "http://localhost:8000/Blogs/searchBlog",
-  },
+    USER_BLOG_API:{
+      getAll: "http://localhost:8000/Blogs/getAll",
+      getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
+      search: "http://localhost:8000/Blogs/searchBlog",
+    },
+  USER_BLOG_CATEGORY_API : {
+  getAll: "http://localhost:8000/BlogsCategory/getAll",
+  getBlogsByCategoryId: (id: string) =>
+    `http://localhost:8000/BlogsCategory/showBlogsByCategory/${id}`,
+},
+
 
   // ADMIN FUNCTIONS
   ADMIN_FUNCTIONS: {
@@ -124,9 +130,11 @@ export const API_CONFIG = {
       getAllProducts: "http://localhost:8000/AdminProducts/getAll",
       getSingleProduct: (id: string) =>
         `http://localhost:8000/AdminProducts/getProductById/${id}`,
-      add: "http://localhost:8000/AdminProducts/addCategory",
-      update: "http://localhost:8000/AdminProducts/updateCategory",
-      delete: "http://localhost:8000/AdminProducts/deleteCategory",
+      add: "http://localhost:8000/AdminProducts/addProduct",
+      update: (id: string) =>
+        `http://localhost:8000/AdminProducts/updateProduct/${id}`,
+      delete: (id: string) =>
+        `http://localhost:8000/AdminProducts/deleteProduct/${id}`,
     },
     AdminCourse: {
       getAllCourses: "http://localhost:8000/AdminCourses/getAll",

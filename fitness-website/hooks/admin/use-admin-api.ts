@@ -68,10 +68,28 @@ export function useAdminApi() {
     });
   };
 
+  const showInfoToast = (message: string) => {
+    toast.info(message, {
+      duration: 3000,
+      position: "top-right",
+      style: {
+        background: "#3B82F6",
+        color: "#fff",
+        fontWeight: "600",
+        borderRadius: "12px",
+        padding: "14px 18px",
+        boxShadow: "0 4px 15px rgba(59, 130, 246, 0.35)",
+        fontSize: "15px",
+        letterSpacing: "0.3px",
+      },
+    });
+  };
+
   return {
     getAuthHeaders,
     parseResponse,
     showSuccessToast,
     showErrorToast,
+    showInfoToast,
   };
 }
