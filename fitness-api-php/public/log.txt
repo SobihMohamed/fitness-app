@@ -1,1 +1,1 @@
-URL Detected: CoursesRequests/create
+URL Detected: AdminTrainingRequests/getExpirationSoon
