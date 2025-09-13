@@ -1,1 +1,1 @@
-URL Detected: Courses/CoursePage/12
+URL Detected: CoursesRequests/create
