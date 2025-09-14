@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -75,6 +74,14 @@ import {
 } from "lucide-react";
 import { API_CONFIG } from "@/config/api";
 import { formatDateUTC } from "@/utils/format";
+ 
+
+// Types
+type Category = {
+  category_id: string;
+  title: string;
+  description?: string;
+};
 
 type Blog = {
   blog_id: string;
@@ -83,21 +90,47 @@ type Blog = {
   main_image: string | null;
   content: string;
   created_at: string;
-  status: string;
-  admin_id: string | number;
-  category_id?: string | number | null;
+  status: 'draft' | 'published';
+  admin_id: string;
+  category_id: string | null;
+};
+
+type BlogFormData = {
+  title: string;
+  content: string;
+  status: 'draft' | 'published';
+  video_link: string;
+  category_id: string;
+  main_image: File | string | null;
+};
+
+// API Response Types
+type ApiResponse<T> = {
+  data?: T;
+  message?: string;
+  error?: string;
+};
+
+type BlogApiResponse = ApiResponse<Blog | Blog[]> & {
+  blogs?: Blog[];
+};
+
+type CategoryApiResponse = ApiResponse<Category | Category[]> & {
+  categories?: Category[];
 };
 
 export default function BlogsManagement() {
+  // State
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  // local loading flags
-  const [loadingBlogs, setLoadingBlogs] = useState(false);
-  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [categories, setCategories] = useState<
-    Array<{ category_id: string; title: string; description?: string }>
-  >([]);
+  const [loading, setLoading] = useState({
+    initial: true,
+    blogs: false,
+    categories: false,
+    form: false,
+    initialLoading: true
+  });
   const [catSearch, setCatSearch] = useState("");
 
   useEffect(() => {
@@ -105,27 +138,27 @@ export default function BlogsManagement() {
       try {
         await Promise.all([fetchBlogs(), fetchCategories()]);
       } finally {
-        setInitialLoading(false);
+        setLoading(prev => ({ ...prev, initialLoading: false }));
       }
     };
     initializeData();
   }, []);
 
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState<"all" | "draft" | "published">("all");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortByDate, setSortByDate] = useState<"desc" | "asc">("desc");
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
-  const [formData, setFormData] = useState({
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [formData, setFormData] = useState<BlogFormData>({
     title: "",
     content: "",
-    status: "draft",
+    status: "draft" as const,
     video_link: "",
     category_id: "",
-    main_image: null as string | File | null,
+    main_image: null,
   });
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Categories management dialog state
   const [isCatDialogOpen, setIsCatDialogOpen] = useState(false);
@@ -162,34 +195,42 @@ export default function BlogsManagement() {
 
   const fetchCategories = async () => {
     try {
-      setLoadingCategories(true);
-      try {
-        const { data: result } = await http.get(
-          API_CONFIG.ADMIN_FUNCTIONS.AdminBlogsCategory.getAll,
-          { headers: getAuthHeaders() }
-        );
-        const data = result.data || result.categories || result || [];
-        const mapped = (data as any[])
-          .map((c) => ({
-            category_id: String(
-              c.category_id ?? c.category_Id ?? c.id ?? c.ID ?? ""
-            ),
-            title: String(c.title ?? c.name ?? ""),
-            description: c.description ?? "",
-          }))
-          .filter((c) => c.category_id);
-        setCategories(mapped);
-      } catch (err: any) {
-        if (err?.status === 404) {
-          setCategories([]);
-          return;
-        }
-        throw err;
-      }
+      setLoading(prev => ({ ...prev, categories: true }));
+      
+      const response = await http.get<CategoryApiResponse>(
+        API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.getAll,
+        { headers: getAuthHeaders() }
+      );
+
+      const data = response.data;
+      const categoriesData = Array.isArray(data?.data) 
+        ? data.data 
+        : Array.isArray(data?.categories) 
+          ? data.categories 
+          : Array.isArray(data) ? data : [];
+
+      const mapped = categoriesData
+        .filter((c): c is Record<string, unknown> => !!c)
+        .map((c) => {
+          const category: Category = {
+            category_id: String(c.category_id ?? c.category_Id ?? c.id ?? c.ID ?? ''),
+            title: String(c.title ?? c.name ?? '')
+          };
+          if (c.description) {
+            category.description = String(c.description);
+          }
+          return category;
+        })
+        .filter((c) => !!c.category_id);
+
+      setCategories(mapped);
+      return mapped;
     } catch (err: any) {
-      showErrorToast(err.message || "Failed to load categories");
+      const errorMessage = err?.response?.data?.message || err.message || 'Failed to load categories';
+      showErrorToast(errorMessage);
+      return [];
     } finally {
-      setLoadingCategories(false);
+      setLoading(prev => ({ ...prev, categories: false }));
     }
   };
 
@@ -203,15 +244,16 @@ export default function BlogsManagement() {
     try {
       setIsCatSubmitting(true);
       await http.post(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminBlogsCategory.add,
+        API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.add,
         { title, description: "" },
-        { headers: { Authorization: getAuthHeaders().Authorization } }
+        { headers: getAuthHeaders() }
       );
       showSuccessToast("Category added successfully");
       setQuickCatTitle("");
       await fetchCategories();
     } catch (err: any) {
-      showErrorToast(err.message || "Network error while adding category");
+      const errorMessage = err?.response?.data?.message || err.message || "Network error while adding category";
+      showErrorToast(errorMessage);
     } finally {
       setIsCatSubmitting(false);
     }
@@ -243,10 +285,10 @@ export default function BlogsManagement() {
     try {
       setIsCatSubmitting(true);
       const endpoint = editingCategory
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminBlogsCategory.update(
+        ? API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.update(
             String(editingCategory.category_id)
           )
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminBlogsCategory.add;
+        : API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.add;
 
       await http.post(
         endpoint,
@@ -281,7 +323,7 @@ export default function BlogsManagement() {
     try {
       setIsCatSubmitting(true);
       await http.delete(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminBlogsCategory.delete(
+        API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.delete(
           String(catDeleteTarget.id)
         ),
         { headers: getAuthHeaders() }
@@ -299,38 +341,51 @@ export default function BlogsManagement() {
 
   const fetchBlogs = async () => {
     try {
-      setLoadingBlogs(true);
-      try {
-        const { data: result } = await http.get(
-          API_CONFIG.ADMIN_FUNCTIONS.AdminBlogs.getAllBlogs,
-          { headers: getAuthHeaders() }
-        );
-        const data = result.data || result.blogs || result || [];
-        const formattedData = data.map((blog: any) => ({
-          blog_id: String(blog.blog_id),
-          title: blog.title,
-          video_link: blog.video_link ?? null,
-          main_image: (blog.main_image ?? blog.image_url ?? blog.image ?? null) as string | null,
-          content: blog.content,
-          created_at: blog.created_at,
-          status:
-            blog.status === 1 ||
-            blog.status === "1" ||
-            String(blog.status).toLowerCase() === "published"
-              ? "published"
-              : "draft",
-          admin_id: blog.admin_id,
-          category_id: blog.category_id ?? blog.category_Id ?? null,
-        }));
-        setBlogs(formattedData);
-      } catch (err: any) {
-        if (err?.status === 404) { setBlogs([]); return; }
-        throw err;
-      }
+      setLoading(prev => ({ ...prev, blogs: true }));
+      
+      const response = await http.get<BlogApiResponse>(
+        API_CONFIG.ADMIN_FUNCTIONS.blogs.getAll,
+        { headers: getAuthHeaders() }
+      );
+
+      const data = response.data;
+      const blogsData = Array.isArray(data?.data) 
+        ? data.data 
+        : Array.isArray(data?.blogs) 
+          ? data.blogs 
+          : Array.isArray(data) ? data : [];
+
+      const formattedData = blogsData
+        .filter((blog): blog is Record<string, any> => !!blog)
+        .map((blog): Blog => {
+          const status = blog.status;
+          let blogStatus: 'draft' | 'published' = 'draft';
+          
+          if (status === 1 || status === '1' || String(status).toLowerCase() === 'published') {
+            blogStatus = 'published';
+          }
+          
+          return {
+            blog_id: String(blog.blog_id || blog.id || ''),
+            title: String(blog.title || 'Untitled Blog'),
+            video_link: blog.video_link ? String(blog.video_link) : null,
+            main_image: (blog.main_image || blog.image_url || blog.image) ? String(blog.main_image || blog.image_url || blog.image) : null,
+            content: String(blog.content || ''),
+            created_at: blog.created_at ? new Date(blog.created_at).toISOString() : new Date().toISOString(),
+            status: blogStatus,
+            admin_id: String(blog.admin_id || ''),
+            category_id: blog.category_id || blog.category_Id ? String(blog.category_id || blog.category_Id) : null,
+          };
+        });
+
+      setBlogs(formattedData);
+      return formattedData;
     } catch (err: any) {
-      showErrorToast(err.message || "Network error while loading blogs");
+      const errorMessage = err?.response?.data?.message || err.message || 'Failed to load blogs';
+      showErrorToast(errorMessage);
+      return [];
     } finally {
-      setLoadingBlogs(false);
+      setLoading(prev => ({ ...prev, blogs: false, initial: false }));
     }
   };
 
@@ -353,8 +408,8 @@ export default function BlogsManagement() {
     try {
       setIsSubmitting(true);
       const endpoint = editingBlog
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminBlogs.update(String(editingBlog.blog_id))
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminBlogs.add;
+        ? API_CONFIG.ADMIN_FUNCTIONS.blogs.update(editingBlog.blog_id)
+        : API_CONFIG.ADMIN_FUNCTIONS.blogs.add;
 
       await http.post(endpoint, formDataToSend, {
         headers: { Authorization: getAuthHeaders().Authorization },
@@ -409,15 +464,20 @@ export default function BlogsManagement() {
   const deleteBlog = async () => {
     if (!deleteTarget) return;
     try {
-      setIsSubmitting(true);
-      await http.delete(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminBlogs.delete(deleteTarget.id),
-        { headers: getAuthHeaders() }
-      );
-      showSuccessToast(`Blog deleted successfully!`);
-      await fetchBlogs();
-    } catch (err: any) {
-      showErrorToast(err.message || "Network error while deleting blog");
+      const handleDeleteBlog = async (id: string) => {
+        try {
+          await http.delete(
+            API_CONFIG.ADMIN_FUNCTIONS.blogs.delete(id),
+            { headers: getAuthHeaders() }
+          );
+          showSuccessToast("Blog deleted successfully");
+          await fetchBlogs();
+        } catch (err: any) {
+          const errorMessage = err?.response?.data?.message || err.message || "Error deleting blog";
+          showErrorToast(errorMessage);
+        }
+      };
+      handleDeleteBlog(deleteTarget.id);
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -553,10 +613,15 @@ export default function BlogsManagement() {
     [sortedBlogs, currentPage, itemsPerPage]
   );
 
-  // Initial full-screen spinner during first load
-  // initialLoading is handled by AdminLayout overlay only
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  initialLoading;
+  // Loading state for initial data fetch
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Update loading state when data is loaded
+  useEffect(() => {
+    if (blogs && categories) {
+      setIsLoading(false);
+    }
+  }, [blogs, categories]);
 
   return (
     <AdminLayout>
@@ -806,16 +871,22 @@ export default function BlogsManagement() {
                 <div className="relative">
                   <Select
                     value={selectedStatus}
-                    onValueChange={(val) => setSelectedStatus(val)}
+                    onValueChange={(val: "all" | "draft" | "published") => setSelectedStatus(val)}
                   >
                     <SelectTrigger
                       id="status-filter"
                       className="w-full h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg shadow-sm"
                     >
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-slate-400" />
-                        <SelectValue placeholder="Filter by status" />
-                      </div>
+                      {loading.initialLoading ? (
+                        <div className="flex items-center justify-center h-64">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-slate-400" />
+                          <SelectValue placeholder="Filter by status" />
+                        </div>
+                      )}
                     </SelectTrigger>
                     <SelectContent className="rounded-lg">
                       <SelectItem value="all">All Status</SelectItem>
@@ -1269,7 +1340,7 @@ export default function BlogsManagement() {
                     </label>
                     <Select
                       value={formData.status}
-                      onValueChange={(val) =>
+                      onValueChange={(val: 'draft' | 'published') =>
                         setFormData({ ...formData, status: val })
                       }
                       disabled={isSubmitting}

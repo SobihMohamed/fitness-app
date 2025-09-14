@@ -2,6 +2,7 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\CoursesRequest;
+use App\models\Courses;
 use App\Helpers\NotifyHelper;
 class CoursesRequestsController extends AbstractController {
   protected $reqModel;
@@ -24,8 +25,9 @@ class CoursesRequestsController extends AbstractController {
     if (empty($data['course_id']))
         return $this->sendError("Course ID is required", 400);
 
-    // احضر اسم الكورس
-    $course = $this->reqModel->getSpecificRequestById($data['course_id']);
+    // احضر بيانات الكورس من جدول الكورسات للتأكد من وجوده
+    $courseModel = new Courses();
+    $course = $courseModel->getCourseById($data['course_id']);
     if (!$course)
         return $this->sendError("Course not found", 404);
 
@@ -36,7 +38,7 @@ class CoursesRequestsController extends AbstractController {
     // إشعار لكل الأدمنات
     NotifyHelper::pushToAllAdmins(
         "طلب اشتراك في كورس جديد",
-        "قام المستخدم {$user['email']} بطلب الاشتراك في الكورس: {$course['name']} (ID: {$data['course_id']})"
+        "قام المستخدم {$user['email']} بطلب الاشتراك في الكورس: {$course['title']} (ID: {$data['course_id']})"
     );
 
     // إشعار للمستخدم
@@ -59,4 +61,4 @@ class CoursesRequestsController extends AbstractController {
       return $this->json(["status"=>"success","data"=>$requests]);
   }
 }
-?>
+?>

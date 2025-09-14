@@ -101,7 +101,7 @@ export default function CourseDetailsPage() {
 
   async function loadCourse() {
     const { data } = await http.get(
-      API_CONFIG.ADMIN_FUNCTIONS.AdminCourse.getSingleCourse(courseId),
+      API_CONFIG.ADMIN_FUNCTIONS.courses.getById(courseId),
       { headers: getAuthHeaders(), params: { _: Date.now() } }
     )
     const c = (data as any)?.Course || (Array.isArray((data as any)?.data) ? (data as any).data?.[0] : (data as any).data) || data
@@ -118,7 +118,7 @@ export default function CourseDetailsPage() {
   async function loadModulesAndChapters() {
     // Load all modules then filter by course
     const { data: modData } = await http.get(
-      API_CONFIG.ADMIN_FUNCTIONS.AdminModulesOfCourses.getAllModules,
+      API_CONFIG.ADMIN_FUNCTIONS.courses.modules.getAll,
       { headers: getAuthHeaders(), params: { _: Date.now() } }
     )
     const allMods = Array.isArray(modData) ? modData : Array.isArray((modData as any)?.data) ? (modData as any).data : []
@@ -136,7 +136,7 @@ export default function CourseDetailsPage() {
 
     // Load all chapters and group by module
     const { data: chapData } = await http.get(
-      API_CONFIG.ADMIN_FUNCTIONS.AdminChaptersOfModules.getAllChapters,
+      API_CONFIG.ADMIN_FUNCTIONS.courses.chapters.getAll,
       { headers: getAuthHeaders(), params: { _: Date.now() } }
     )
     const allChaps = Array.isArray(chapData) ? chapData : Array.isArray((chapData as any)?.data) ? (chapData as any).data : []
@@ -183,8 +183,8 @@ export default function CourseDetailsPage() {
       setSaving(true)
       const isEdit = Boolean(editingModule)
       const url = isEdit
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminModulesOfCourses.update(editingModule!.module_id)
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminModulesOfCourses.add
+        ? API_CONFIG.ADMIN_FUNCTIONS.courses.modules.update(editingModule!.module_id)
+        : API_CONFIG.ADMIN_FUNCTIONS.courses.modules.add
       await http.post(url, payload, { headers: getAuthHeaders(true) })
       showSuccessToast(isEdit ? "Module updated" : "Module created")
       setModOpen(false)
@@ -232,8 +232,8 @@ export default function CourseDetailsPage() {
       setSaving(true)
       const isEdit = Boolean(editingChapter)
       const url = isEdit
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminChaptersOfModules.update(editingChapter!.chapter_id)
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminChaptersOfModules.add
+        ? API_CONFIG.ADMIN_FUNCTIONS.courses.chapters.update(editingChapter!.chapter_id)
+        : API_CONFIG.ADMIN_FUNCTIONS.courses.chapters.add
       await http.post(url, payload, { headers: getAuthHeaders(true) })
       showSuccessToast(isEdit ? "Chapter updated" : "Chapter created")
       // Optimistic update for immediate UI feedback
@@ -271,7 +271,7 @@ export default function CourseDetailsPage() {
       setChapOpen(false)
       // Prefer a lighter refresh of just chapters after add/edit
       const { data: chapData } = await http.get(
-        API_CONFIG.ADMIN_FUNCTIONS.AdminChaptersOfModules.getAllChapters,
+        API_CONFIG.ADMIN_FUNCTIONS.courses.chapters.getAll,
         { headers: getAuthHeaders(), params: { _: Date.now() } }
       )
       const allChaps = Array.isArray(chapData) ? chapData : Array.isArray((chapData as any)?.data) ? (chapData as any).data : []
@@ -309,8 +309,8 @@ export default function CourseDetailsPage() {
       setDeleting(true)
       const url =
         deleteTarget.kind === "module"
-          ? API_CONFIG.ADMIN_FUNCTIONS.AdminModulesOfCourses.delete(deleteTarget.id)
-          : API_CONFIG.ADMIN_FUNCTIONS.AdminChaptersOfModules.delete(deleteTarget.id)
+          ? API_CONFIG.ADMIN_FUNCTIONS.courses.modules.delete(deleteTarget.id)
+          : API_CONFIG.ADMIN_FUNCTIONS.courses.chapters.delete(deleteTarget.id)
       await http.delete(url, { headers: getAuthHeaders() })
       showSuccessToast("Deleted successfully")
       await loadModulesAndChapters()
@@ -323,9 +323,7 @@ export default function CourseDetailsPage() {
     }
   }
 
-  // initialLoading handled by AdminLayout overlay only
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  initialLoading;
+  // Loading state is managed by the component's state
 
   return (
     <AdminLayout>

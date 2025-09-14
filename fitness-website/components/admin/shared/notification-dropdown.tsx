@@ -26,7 +26,6 @@ export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [markingIds, setMarkingIds] = useState<Record<string, boolean>>({});
   const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({});
-  // Removed local loading; layout handles global overlays
 
   // Local overlay to persist read IDs for UI, in case backend doesn't update immediately
   const LOCAL_READ_KEY = "adminNotificationReadIds";

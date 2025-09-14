@@ -50,9 +50,7 @@ export default function AdminServicesPage() {
   const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi()
   const http = getHttpClient()
 
-  useEffect(() => {
-    load()
-  }, [])
+  // Removed duplicate eager load; initialize below with page-level loading overlay
 
   // Debounce search to reduce filter work on each keystroke
   useEffect(() => {
@@ -65,7 +63,7 @@ export default function AdminServicesPage() {
       // Try admin endpoint first
       try {
         const { data: adminData } = await http.get(
-          API_CONFIG.ADMIN_FUNCTIONS.AdminServices.getAllServices,
+          API_CONFIG.ADMIN_FUNCTIONS.services.getAll,
           { headers: getAuthHeaders(), params: { _: Date.now() } }
         )
         const arr = Array.isArray(adminData)
@@ -91,10 +89,11 @@ export default function AdminServicesPage() {
       }
       // Fallback to public endpoint
       try {
-        const { data } = await http.get(API_CONFIG.USER_SERVICES_API.getAll, {
+        const { data: fallbackData } = await http.get(
+          API_CONFIG.USER_FUNCTIONS.services.getAll, {
           params: { _: Date.now() },
         })
-        const arr = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : []
+        const arr = Array.isArray(fallbackData) ? fallbackData : Array.isArray(fallbackData?.data) ? fallbackData.data : []
         setServices(
           arr.map((s: any) => ({
             service_id: String(s.service_id),
@@ -157,8 +156,8 @@ export default function AdminServicesPage() {
       setSaving(true)
       const isEdit = Boolean(editing)
       const url = isEdit
-        ? `${API_CONFIG.ADMIN_FUNCTIONS.AdminServices.update}/${editing!.service_id}`
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminServices.add
+        ? `${API_CONFIG.ADMIN_FUNCTIONS.services.update}/${editing!.service_id}`
+        : API_CONFIG.ADMIN_FUNCTIONS.services.add
       await getHttpClient().post(url, fd, { headers: { Authorization: authHeaders().Authorization! } })
       showSuccessToast(isEdit ? "Service updated successfully!" : "Service created successfully!")
       // Optimistically update local list on edit for immediate UI feedback
@@ -207,7 +206,7 @@ export default function AdminServicesPage() {
         return
       }
       setDeleting(true)
-      await http.delete(API_CONFIG.ADMIN_FUNCTIONS.AdminServices.delete(deleteTarget.id), {
+      await http.delete(API_CONFIG.ADMIN_FUNCTIONS.services.delete(deleteTarget.id), {
         headers: authHeaders(),
       })
       showSuccessToast("Service deleted successfully!")
