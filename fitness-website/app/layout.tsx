@@ -94,7 +94,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <Navigation />
-          <main>{children}</main>
+            <main>{children}</main>
           <Footer />
         </Providers>
       </body>

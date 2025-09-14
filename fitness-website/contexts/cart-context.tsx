@@ -37,10 +37,12 @@ const initialState: CartState = {
   isOpen: false,
 }
 
+const norm = (v: string) => String(v)
+
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
-      const existingItemIndex = state.items.findIndex((item) => item.id === action.payload.id)
+      const existingItemIndex = state.items.findIndex((item) => norm(item.id) === norm(action.payload.id))
       const item = action.payload
       
       // Check stock if available
@@ -73,7 +75,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case "REMOVE_ITEM": {
-      const updatedItems = state.items.filter((item) => item.id !== action.payload)
+      const updatedItems = state.items.filter((item) => norm(item.id) !== norm(action.payload))
       const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
       
       return {
@@ -87,7 +89,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       const { id, quantity } = action.payload
       
       // Find the item to check stock if needed
-      const itemToUpdate = state.items.find(item => item.id === id)
+      const itemToUpdate = state.items.find(item => norm(item.id) === norm(id))
       
       if (itemToUpdate && itemToUpdate.stock !== undefined && quantity > itemToUpdate.stock) {
         toast.error(`Sorry, only ${itemToUpdate.stock} items available in stock`)
@@ -95,7 +97,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }
       
       const updatedItems = state.items
-        .map((item) => item.id === id ? { ...item, quantity } : item)
+        .map((item) => norm(item.id) === norm(id) ? { ...item, quantity } : item)
         .filter((item) => item.quantity > 0)
       
       const total = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)

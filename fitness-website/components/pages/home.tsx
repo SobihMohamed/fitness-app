@@ -88,34 +88,34 @@ const features = [
 ]
 
 interface HomePageProps {
-  initialFeaturedProducts?: Product[];
-  initialFeaturedCourses?: Course[];
+  initialFeaturedProducts?: Product[]
+  initialFeaturedCourses?: Course[]
 }
 
-export function HomePage({ initialFeaturedProducts = [], initialFeaturedCourses = [] }: HomePageProps) {
+export function HomePage({ 
+  initialFeaturedProducts = [], 
+  initialFeaturedCourses = [] 
+}: HomePageProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>(initialFeaturedProducts)
   const [featuredCourses, setFeaturedCourses] = useState<Course[]>(initialFeaturedCourses)
-  const [isLoadingProducts, setIsLoadingProducts] = useState(!initialFeaturedProducts.length)
-  const [isLoadingCourses, setIsLoadingCourses] = useState(!initialFeaturedCourses.length)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(initialFeaturedProducts.length === 0)
+  const [isLoadingCourses, setIsLoadingCourses] = useState(initialFeaturedCourses.length === 0)
   const { addItem } = useCart()
   
-  // Animation effect
+  // Use centralized deterministic number formatter
+  
   useEffect(() => {
     setIsVisible(true)
   }, [])
   
-  // Only fetch products if not provided via props (fallback for client-side navigation)
+  // Fetch featured products
   useEffect(() => {
-    if (initialFeaturedProducts.length > 0) {
-      return; // Skip fetching if we already have data from SSG/ISR
-    }
-    
     const fetchFeaturedProducts = async () => {
       try {
-        const response = await axios.get(API_CONFIG.USER_PRODUCTS_API.getFeatured)
+        const response = await axios.get(API_CONFIG.USER_FUNCTIONS.products.getAll)
         if (response.data.status === "success") {
-          setFeaturedProducts(response.data.data || [])
+          setFeaturedProducts(response.data.data || response.data.products || [])
         }
       } catch (error) {
         console.error("Error fetching featured products:", error)
@@ -126,19 +126,15 @@ export function HomePage({ initialFeaturedProducts = [], initialFeaturedCourses 
     }
 
     fetchFeaturedProducts()
-  }, [initialFeaturedProducts.length])
+  }, [])
 
-  // Only fetch courses if not provided via props (fallback for client-side navigation)
+  // Fetch featured courses
   useEffect(() => {
-    if (initialFeaturedCourses.length > 0) {
-      return; // Skip fetching if we already have data from SSG/ISR
-    }
-    
     const fetchFeaturedCourses = async () => {
       try {
-        const response = await axios.get(API_CONFIG.USER_COURSES_API.getFeatured)
+        const response = await axios.get(API_CONFIG.USER_FUNCTIONS.courses.getAll)
         if (response.data.status === "success") {
-          setFeaturedCourses(response.data.data || [])
+          setFeaturedCourses(response.data.data || response.data.courses || [])
         }
       } catch (error) {
         console.error("Error fetching featured courses:", error)
@@ -149,7 +145,7 @@ export function HomePage({ initialFeaturedProducts = [], initialFeaturedCourses 
     }
 
     fetchFeaturedCourses()
-  }, [initialFeaturedCourses.length])
+  }, [])
 
   // Function to handle course enrollment
   // This is a placeholder function. In a real application, you would integrate this with your payment system.
@@ -157,7 +153,7 @@ export function HomePage({ initialFeaturedProducts = [], initialFeaturedCourses 
   const handleCourseEnrollment = async (course: Course) => {
     try {
       const response = await axios.post(
-        API_CONFIG.USER_COURSES_API.enroll, 
+        `${API_CONFIG.BASE_URL}/user/enroll-course`, 
         { course_id: course.id },
         {
           headers: {
@@ -266,15 +262,13 @@ export function HomePage({ initialFeaturedProducts = [], initialFeaturedCourses 
             >
               <div className="relative">
                 <Image
-                  src="/placeholder.jpg"
+                  src="/images/home-hero-fitness.jpg"
                   alt="Fitness Hero"
                   width={500}
                   height={600}
                   className="rounded-2xl shadow-2xl"
-                  loading="eager"
                   priority
-                  // Maintain aspect ratio if CSS modifies width
-                  style={{ width: "auto", height: "auto" }}
+                  unoptimized
                 />
                 <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
                   <div className="flex items-center space-x-3">

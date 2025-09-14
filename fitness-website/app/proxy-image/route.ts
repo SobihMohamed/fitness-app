@@ -9,11 +9,6 @@ export async function GET(req: NextRequest) {
   if (!targetUrl) {
     return new Response("Missing url", { status: 400 });
   }
-  
-  // Get image optimization parameters
-  const width = parseInt(searchParams.get("width") || "0", 10) || undefined;
-  const height = parseInt(searchParams.get("height") || "0", 10) || undefined;
-  const quality = parseInt(searchParams.get("quality") || "0", 10) || undefined;
 
   try {
     // Validate the URL and restrict proxying to your backend origins only
@@ -39,25 +34,18 @@ export async function GET(req: NextRequest) {
       return new Response("Upstream fetch failed", { status: upstream.status || 502 });
     }
 
-    // Get the image data
-    const imageData = await upstream.arrayBuffer();
-    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
-    
-    // Set response headers
+    // Pass through content type and length if available
     const headers = new Headers();
+    const contentType = upstream.headers.get("content-type") || "application/octet-stream";
+    const contentLength = upstream.headers.get("content-length");
     headers.set("content-type", contentType);
-    
+    if (contentLength) headers.set("content-length", contentLength);
+
     // Improve caching for better performance
     headers.set("Cache-Control", "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=31536000");
     headers.set("CDN-Cache-Control", "public, max-age=31536000");
-    
-    // Add image optimization headers
-    if (width) headers.set("x-image-width", width.toString());
-    if (height) headers.set("x-image-height", height.toString());
-    if (quality) headers.set("x-image-quality", quality.toString());
-    
-    // Return the optimized image
-    return new Response(imageData, {
+
+    return new Response(upstream.body, {
       status: 200,
       headers,
     });

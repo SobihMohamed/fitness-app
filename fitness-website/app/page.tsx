@@ -15,8 +15,8 @@ async function safeJson(res: Response): Promise<Json | null> {
 
 export default async function Home() {
   const [productsRes, coursesRes] = await Promise.all([
-    fetch(API_CONFIG.USER_PRODUCTS_API.getFeatured, { next: { revalidate } }),
-    fetch(API_CONFIG.USER_COURSES_API.getFeatured, { next: { revalidate } }),
+    fetch(API_CONFIG.USER_FUNCTIONS.products.getAll, { next: { revalidate } }),
+    fetch(API_CONFIG.USER_FUNCTIONS.courses.getAll, { next: { revalidate } }),
   ])
 
   const [productsJson, coursesJson] = await Promise.all([

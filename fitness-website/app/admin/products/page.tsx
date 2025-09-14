@@ -18,6 +18,7 @@ import { Plus, Search, Edit3, Trash2, Save, X, Package, Tag, Upload, UploadCloud
   ChevronRight, DollarSign, PlusCircle, FolderTree, Filter, FileText, BarChart2, 
   Settings, ShoppingBag, Eye, RefreshCcw } from "lucide-react";
 import { API_CONFIG } from "@/config/api";
+ 
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -121,7 +122,7 @@ export default function ProductsManagement() {
           (async () => {
             try {
               const { data } = await http.get(
-                `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`
+                `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`
               );
               setCategories(data.data || []);
             } catch (err) {
@@ -140,7 +141,7 @@ export default function ProductsManagement() {
   const fetchProducts = async () => {
     try {
       const { data: result } = await http.get(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getAllProducts}`
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.getAll}`
       );
       const data = result.data || [];
       const formattedData: Product[] = data.map((product: any) => ({
@@ -169,7 +170,7 @@ export default function ProductsManagement() {
       if (product.sub_images && product.sub_images.length > 0) return product;
       try {
         const { data: subJson } = await http.get(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(product.product_id)}`
+          `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(product.product_id)}`
         );
         const subImages: string[] = subJson?.Product?.sub_images || [];
         const updated = { ...product, sub_images: subImages } as Product;
@@ -317,7 +318,7 @@ export default function ProductsManagement() {
       if (!fullProduct.sub_images || fullProduct.sub_images.length === 0) {
         try {
           const res = await fetch(
-            `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(product.product_id)}`,
+            `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(product.product_id)}`,
             { headers: getAuthHeaders() }
           );
           if (res.ok) {
@@ -392,7 +393,7 @@ export default function ProductsManagement() {
       filesToUpload.forEach((f) => formData.append("sub_images[]", f));
 
       const response = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.update(fullProduct.product_id)}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.update(fullProduct.product_id)}`,
         {
           method: "POST",
           headers: { Authorization: getAuthHeaders().Authorization },
@@ -446,7 +447,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.add}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.add}`,
         {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -458,7 +459,7 @@ export default function ProductsManagement() {
         showSuccessToast(`Category "${newCategoryName}" added successfully!`);
         setNewCategoryName("");
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -486,7 +487,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.update}/${editingCategoryId}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.update}/${editingCategoryId}`,
         {
           method: "POST",
           headers: getAuthHeaders(),
@@ -499,7 +500,7 @@ export default function ProductsManagement() {
         setEditingCategoryId(null);
         setEditingCategoryName("");
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -537,7 +538,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.delete}/${deleteTarget.id}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.delete}/${deleteTarget.id}`,
         {
           method: "DELETE",
           headers: getAuthHeaders(),
@@ -582,7 +583,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.add}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.add}`,
         {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -593,7 +594,7 @@ export default function ProductsManagement() {
       if (res.ok) {
         showSuccessToast(`Category "${categoryName}" added successfully!`);
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -644,7 +645,7 @@ export default function ProductsManagement() {
         if (!subImages || subImages.length === 0) {
           try {
             const res = await fetch(
-              `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(editingProduct.product_id)}`,
+              `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(editingProduct.product_id)}`,
               { headers: getAuthHeaders() }
             );
             if (res.ok) {
@@ -684,10 +685,10 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const url = editingProduct
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.update(
+        ? API_CONFIG.ADMIN_FUNCTIONS.products.update(
             editingProduct.product_id
           )
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.add;
+        : API_CONFIG.ADMIN_FUNCTIONS.products.add;
       const res = await fetch(url, {
         method: "POST",
         headers: { Authorization: getAuthHeaders().Authorization },
@@ -733,7 +734,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       await http.delete(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.delete(deleteTarget.id)}`
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.delete(deleteTarget.id)}`
       );
       showSuccessToast("Product deleted successfully!");
       setProducts((prev) =>

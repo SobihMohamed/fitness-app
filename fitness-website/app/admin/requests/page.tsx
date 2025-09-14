@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { getHttpClient } from "@/lib/http";
+ 
 
 const { ADMIN_FUNCTIONS, USER_FUNCTIONS } = API_CONFIG;
 
@@ -111,7 +112,7 @@ function useUser(userId: string | null) {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        const { data } = await http.get(ADMIN_FUNCTIONS.adminUsers.getById(userId), {
+        const { data } = await http.get(ADMIN_FUNCTIONS.users.getById(userId), {
           headers: getAuthHeaders(),
         });
         setUser(data.user || data.data || null);
@@ -252,11 +253,13 @@ function RequestsTable({
   // Use the correct API endpoint for orders
   const apiUrl =
     section === "training"
-      ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests
+      ? ADMIN_FUNCTIONS.requests.training.getAll
       : section === "courses"
-      ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests
-      : ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders;
+      ? ADMIN_FUNCTIONS.requests.courses.getAll
+      : ADMIN_FUNCTIONS.orders.getAll;
   const { data, loading, error, setData } = useApiGet(apiUrl);
+
+  // page-level overlay removed; rely on common loader in layout only
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -338,10 +341,10 @@ function RequestsTable({
       if (!token)
         throw new Error("Missing adminAuth token. Please log in as admin.");
       const url = section === "training"
-        ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.showSpecificInformationAboutRequestAndUser(id)
+        ? ADMIN_FUNCTIONS.requests.training.getDetails(id)
         : section === "courses"
-        ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.showSpecificInformationAboutRequestAndUser(id)
-        : ADMIN_FUNCTIONS.AdminManagesOrders.getSingleOrder(id);
+        ? ADMIN_FUNCTIONS.requests.courses.getDetails(id)
+        : ADMIN_FUNCTIONS.orders.getById(id);
       const { data: raw } = await http.get(url, { headers: getAuthHeaders() });
       const d = raw?.data ?? raw;
       let normalized: any = d;
@@ -387,24 +390,24 @@ function RequestsTable({
       if (type === "cancel") {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.cancelRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.cancel(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.cancelRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.cancelOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.cancel(id)
+            : ADMIN_FUNCTIONS.orders.cancel(id);
       } else if (type === "approve") {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.approveRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.approve(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.approveRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.approveOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.approve(id)
+            : ADMIN_FUNCTIONS.orders.approve(id);
       } else {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.deleteRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.delete(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.deleteRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.deleteOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.delete(id)
+            : ADMIN_FUNCTIONS.orders.delete(id);
       }
 
       // Use HTTP methods per backend routes:

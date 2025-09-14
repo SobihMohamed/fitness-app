@@ -73,8 +73,12 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { login, register, forgetPassword, verifyOtp } = useAuth();
   const [activeTab, setActiveTab] = useState("login"); // ✅ الحالة الابتدائية الصحيحة
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // Separate visibility toggles to avoid cross-tab coupling
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+  const [showResetNewPassword, setShowResetNewPassword] = useState(false);
+  const [showResetConfirmNewPassword, setShowResetConfirmNewPassword] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -116,6 +120,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setOtp("");
     setNewPassword("");
     setConfirmNewPassword("");
+    // reset visibility toggles to default
+    setShowLoginPassword(false);
+    setShowRegisterPassword(false);
+    setShowRegisterConfirmPassword(false);
+    setShowResetNewPassword(false);
+    setShowResetConfirmNewPassword(false);
     onClose();
   }, [onClose, initialRegisterData]);
 
@@ -123,11 +133,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setMessage(null);
-      if (!validateEmail(loginData.email)) {
+      const email = loginData.email.trim();
+      const password = loginData.password;
+      if (!validateEmail(email)) {
         setMessage({ type: "error", text: "Please enter a valid email." });
         return;
       }
-      if (!validatePassword(loginData.password)) {
+      if (!validatePassword(password)) {
         setMessage({
           type: "error",
           text: "Password must be at least 8 characters.",
@@ -136,7 +148,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       }
       setLoginLoading(true);
       try {
-        const result = await login(loginData.email, loginData.password);
+        const result = await login(email, password);
         if (result.success) {
           setMessage({ type: "success", text: result.message });
           setTimeout(() => handleClose(), 1500);
@@ -156,27 +168,51 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setMessage(null);
-      if (registerData.password !== registerData.confirmPassword) {
+      const name = registerData.name.trim();
+      const email = registerData.email.trim();
+      const password = registerData.password;
+      const confirm = registerData.confirmPassword;
+      const phone = registerData.phone.trim();
+      const address = registerData.address.trim();
+      const country = registerData.country.trim();
+      const userType = (registerData.user_type || "").toLowerCase();
+
+      if (!name) {
+        setMessage({ type: "error", text: "Please enter your name." });
+        return;
+      }
+      if (!validateEmail(email)) {
+        setMessage({ type: "error", text: "Please enter a valid email." });
+        return;
+      }
+      if (!validatePassword(password)) {
+        setMessage({ type: "error", text: "Password must be at least 8 characters." });
+        return;
+      }
+      if (password !== confirm) {
         setMessage({ type: "error", text: "Passwords do not match." });
+        return;
+      }
+      if (!userType) {
+        setMessage({ type: "error", text: "Please select a user type." });
         return;
       }
       setRegisterLoading(true);
       try {
         const response = await register(
-          registerData.name,
-          registerData.email,
-          registerData.password,
-          registerData.phone,
-          registerData.address,
-          registerData.country,
-          registerData.user_type
+          name,
+          email,
+          password,
+          phone,
+          address,
+          country,
+          userType
         );
         if (response.success) {
-          setMessage({
-            type: "success",
-            text: "Account created successfully! Redirecting...",
-          });
-          setTimeout(() => handleClose(), 1500);
+          // Improve flow: switch to login, prefill email
+          setMessage({ type: "success", text: "Account created successfully! Please sign in." });
+          setActiveTab("login");
+          setLoginData({ email, password: "" });
         } else {
           setMessage({ type: "error", text: response.message });
         }
@@ -221,13 +257,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     async (e: React.FormEvent) => {
       e.preventDefault();
       setMessage(null);
-      if (!validateEmail(resetEmail)) {
+      const email = resetEmail.trim();
+      if (!validateEmail(email)) {
         setMessage({ type: "error", text: "Please enter a valid email." });
         return;
       }
       setForgetPasswordLoading(true);
       try {
-        const result = await forgetPassword(resetEmail);
+        const result = await forgetPassword(email);
         if (result.success) {
           setMessage({ type: "success", text: result.message });
           setResetStep("otp");
@@ -264,7 +301,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       }
       setVerifyOtpLoading(true);
       try {
-        const result = await verifyOtp(resetEmail, otp, newPassword);
+        const email = resetEmail.trim();
+        const code = otp.trim();
+        const result = await verifyOtp(email, code, newPassword);
         if (result.success) {
           setMessage({ type: "success", text: result.message });
           setTimeout(() => {
@@ -283,11 +322,28 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     [otp, newPassword, confirmNewPassword, resetEmail, verifyOtp, handleClose]
   );
 
+  // Derived validity states for disabling buttons and showing inline validation hints
+  const isLoginValid = validateEmail(loginData.email.trim()) && validatePassword(loginData.password);
+  const isRegisterStep1Valid =
+    !!registerData.name.trim() &&
+    validateEmail(registerData.email.trim()) &&
+    validatePassword(registerData.password) &&
+    registerData.password === registerData.confirmPassword &&
+    !!registerData.user_type;
+  const isResetEmailValid = validateEmail(resetEmail.trim());
+  const isOtpValid = otp.trim().length >= 6 && validatePassword(newPassword) && newPassword === confirmNewPassword;
+
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
     setMessage(null);
     setRegisterStep(1);
     setResetStep("email");
+    // also reset visibility toggles when switching tabs
+    setShowLoginPassword(false);
+    setShowRegisterPassword(false);
+    setShowRegisterConfirmPassword(false);
+    setShowResetNewPassword(false);
+    setShowResetConfirmNewPassword(false);
   }, []);
 
   return (
@@ -382,6 +438,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       required
                     />
                   </div>
+                  {loginData.email && !validateEmail(loginData.email.trim()) && (
+                    <p className="text-sm text-red-600">Please enter a valid email.</p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="login-password">Password</Label>
@@ -389,7 +448,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                     <Input
                       id="login-password"
-                      type={showPassword ? "text" : "password"}
+                      type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={loginData.password}
                       onChange={(e) =>
@@ -400,21 +459,24 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 focus:outline-none"
                     >
-                      {showPassword ? (
+                      {showLoginPassword ? (
                         <EyeOff className="h-5 w-5 text-gray-400" />
                       ) : (
                         <Eye className="h-5 w-5 text-gray-400" />
                       )}
                     </button>
                   </div>
+                  {loginData.password && !validatePassword(loginData.password) && (
+                    <p className="text-sm text-red-600">Password must be at least 8 characters.</p>
+                  )}
                 </div>
                 <Button
                   type="submit"
                   className="w-full h-11 text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
-                  disabled={loginLoading}
+                  disabled={loginLoading || !isLoginValid}
                 >
                   {loginLoading ? (
                     <>
@@ -460,6 +522,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           required
                         />
                       </div>
+                      {registerData.name !== "" && registerData.name.trim() === "" && (
+                        <p className="text-sm text-red-600">Please enter your name.</p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="register-email">Email</Label>
@@ -480,6 +545,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           required
                         />
                       </div>
+                      {registerData.email && !validateEmail(registerData.email.trim()) && (
+                        <p className="text-sm text-red-600">Please enter a valid email.</p>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
@@ -488,7 +556,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                           <Input
                             id="register-password"
-                            type={showPassword ? "text" : "password"}
+                            type={showRegisterPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={registerData.password}
                             onChange={(e) =>
@@ -502,12 +570,19 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           />
                           <button
                             type="button"
-                            onClick={() => setShowPassword(!showPassword)}
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
                             className="absolute right-3 top-1/2 -translate-y-1/2"
                           >
-                            <Eye className="h-5 w-5 text-gray-400" />
+                            {showRegisterPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
                           </button>
                         </div>
+                        {registerData.password && !validatePassword(registerData.password) && (
+                          <p className="text-sm text-red-600">Password must be at least 8 characters.</p>
+                        )}
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="register-confirm-password">
@@ -517,7 +592,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                           <Input
                             id="register-confirm-password"
-                            type={showConfirmPassword ? "text" : "password"}
+                            type={showRegisterConfirmPassword ? "text" : "password"}
                             placeholder="••••••••"
                             value={registerData.confirmPassword}
                             onChange={(e) =>
@@ -532,13 +607,20 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           <button
                             type="button"
                             onClick={() =>
-                              setShowConfirmPassword(!showConfirmPassword)
+                              setShowRegisterConfirmPassword(!showRegisterConfirmPassword)
                             }
                             className="absolute right-3 top-1/2 -translate-y-1/2"
                           >
-                            <Eye className="h-5 w-5 text-gray-400" />
+                            {showRegisterConfirmPassword ? (
+                              <EyeOff className="h-5 w-5 text-gray-400" />
+                            ) : (
+                              <Eye className="h-5 w-5 text-gray-400" />
+                            )}
                           </button>
                         </div>
+                        {registerData.confirmPassword && registerData.password !== registerData.confirmPassword && (
+                          <p className="text-sm text-red-600">Passwords do not match.</p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -561,6 +643,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         <option value="Coach">Coach</option>
                         <option value="Trainee">Trainee</option>
                       </select>
+                      {registerData.user_type === "" && (
+                        <p className="text-sm text-red-600">Please select a user type.</p>
+                      )}
                     </div>
                     <Button
                       type="button"
@@ -647,7 +732,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       <Button
                         type="submit"
                         className="w-full h-11 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
-                        disabled={registerLoading}
+                        disabled={registerLoading || !isRegisterStep1Valid}
                       >
                         {registerLoading ? (
                           <>
@@ -681,11 +766,14 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         required
                       />
                     </div>
+                    {resetEmail && !isResetEmailValid && (
+                      <p className="text-sm text-red-600">Please enter a valid email.</p>
+                    )}
                   </div>
                   <Button
                     type="submit"
                     className="w-full h-11 text-base font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
-                    disabled={forgetPasswordLoading}
+                    disabled={forgetPasswordLoading || !isResetEmailValid}
                   >
                     {forgetPasswordLoading ? (
                       <>
@@ -711,6 +799,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       className="h-11 tracking-widest text-center"
                       required
                     />
+                    {otp && otp.trim().length < 6 && (
+                      <p className="text-sm text-red-600">OTP must be 6 characters.</p>
+                    )}
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="new-password">New Password</Label>
@@ -718,13 +809,27 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <Input
                         id="new-password"
-                        type={showPassword ? "text" : "password"}
+                        type={showResetNewPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         className="pl-10 h-11"
                         required
                       />
+                      {!validatePassword(newPassword) && newPassword !== "" && (
+                        <p className="text-sm text-red-600 mt-2">New password must be at least 8 characters.</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {showResetNewPassword ? (
+                          <EyeOff className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <Eye className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -735,19 +840,33 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <Input
                         id="confirm-new-password"
-                        type={showConfirmPassword ? "text" : "password"}
+                        type={showResetConfirmNewPassword ? "text" : "password"}
                         placeholder="••••••••"
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
                         className="pl-10 h-11"
                         required
                       />
+                      {confirmNewPassword && newPassword !== confirmNewPassword && (
+                        <p className="text-sm text-red-600 mt-2">New passwords do not match.</p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowResetConfirmNewPassword(!showResetConfirmNewPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
+                      >
+                        {showResetConfirmNewPassword ? (
+                          <EyeOff className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <Eye className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
                     </div>
                   </div>
                   <Button
                     type="submit"
                     className="w-full h-11 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white"
-                    disabled={verifyOtpLoading}
+                    disabled={verifyOtpLoading || !isOtpValid}
                   >
                     {verifyOtpLoading ? (
                       <>
