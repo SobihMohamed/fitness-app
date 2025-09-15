@@ -15,11 +15,6 @@ import {
   User,
   Search,
   ArrowRight,
-  Eye,
-  Heart,
-  MessageCircle,
-  Share2,
-  TrendingUp,
   Star,
   BookOpen,
   AlertCircle,
@@ -29,7 +24,7 @@ import {
   DollarSign,
   GraduationCap,
 } from "lucide-react"
-import { formatNumber, formatDateUTC, timeOrEpoch, hashPercent } from "@/utils/format"
+import { formatNumber, formatDateUTC, timeOrEpoch } from "@/utils/format"
 import { Course } from "@/types/course"
 
 interface CourseCategory {
@@ -41,14 +36,16 @@ interface CourseCategory {
 }
 
 export default function CoursesPage() {
+  const [mounted, setMounted] = useState(false)
   const [courses, setCourses] = useState<Course[]>([])
-  const [categories, setCategories] = useState<CourseCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState("All")
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState("latest")
   const [searchLoading, setSearchLoading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize, setPageSize] = useState(6)
 
   const API = API_CONFIG
 
@@ -58,7 +55,7 @@ export default function CoursesPage() {
     id: String(raw?.course_id ?? raw?.id ?? raw?._id ?? ""),
     title: raw?.title ?? "Untitled Course",
     description: raw?.description ?? raw?.body ?? "",
-    excerpt: raw?.excerpt ?? raw?.summary  ?? "",
+    excerpt: raw?.excerpt ?? raw?.summary ?? "",
     price: raw?.price ?? "0",
     image_url: raw?.image_url ?? raw?.featuredImage ?? raw?.image ?? raw?.thumbnail ?? "",
     featuredImage: raw?.image_url ?? raw?.featuredImage ?? raw?.image ?? raw?.thumbnail,
@@ -93,7 +90,6 @@ export default function CoursesPage() {
       const response = await axios.get(API.USER_FUNCTIONS.courses.getAll)
       const data = response.data
 
-      // Handle different API response formats
       let coursesArray: Course[] = []
 
       if (Array.isArray(data)) {
@@ -103,14 +99,12 @@ export default function CoursesPage() {
       } else if (data && Array.isArray(data.data)) {
         coursesArray = data.data
       } else if (data && typeof data === "object") {
-        // If it's an object, try to find an array property
         const possibleArrays = Object.values(data).filter(Array.isArray)
         if (possibleArrays.length > 0) {
           coursesArray = possibleArrays[0] as Course[]
         }
       }
 
-      // Ensure we have an array and filter only published courses
       if (Array.isArray(coursesArray)) {
         const publishedCourses = coursesArray.filter((course: any) => course && (course.status === "published" || !course.status))
         const normalized = publishedCourses.map(normalizeCourse).filter((c) => c.course_id)
@@ -142,7 +136,6 @@ export default function CoursesPage() {
       const response = await axios.post(API.USER_FUNCTIONS.courses.search, { keyword: query })
       const data = response.data
 
-      // Handle different API response formats for search
       let coursesArray: Course[] = []
 
       if (Array.isArray(data)) {
@@ -163,7 +156,6 @@ export default function CoursesPage() {
         const normalized = publishedCourses.map(normalizeCourse).filter((c) => c.course_id)
         setCourses(normalized)
       } else {
-        // Fallback to client-side search if API search fails
         const filtered = courses.filter(
           (course) =>
             course.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -174,7 +166,6 @@ export default function CoursesPage() {
       }
     } catch (err) {
       console.error("Search failed:", err)
-      // Fallback to client-side search
       const filtered = courses.filter(
         (course) =>
           course.title.toLowerCase().includes(query.toLowerCase()) ||
@@ -230,7 +221,8 @@ export default function CoursesPage() {
   // Handle category selection
   const handleCategorySelect = (categoryName: string) => {
     setSelectedCategory(categoryName)
-    setSearchTerm("") // Clear search when selecting category
+    setSearchTerm("")
+    setCurrentPage(1)
 
     if (categoryName === "All") {
       fetchCourses()
@@ -238,6 +230,7 @@ export default function CoursesPage() {
   }
 
   useEffect(() => {
+    setMounted(true)
     fetchCourses()
   }, [])
 
@@ -254,6 +247,10 @@ export default function CoursesPage() {
 
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, sortBy])
 
   // Filter and sort courses
   const filteredCourses = courses.filter((course) => {
@@ -279,38 +276,39 @@ export default function CoursesPage() {
   const featuredCourse = sortedCourses.find((course) => course.featured)
   const regularCourses = sortedCourses.filter((course) => !course.featured)
 
+  // Pagination
+  const totalItems = regularCourses.length
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const startIndex = (safeCurrentPage - 1) * pageSize
+  const endIndex = startIndex + pageSize
+  const paginatedCourses = regularCourses.slice(startIndex, endIndex)
+
   const categoryStats = getUniqueCategories()
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return null
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-        {/* Hero Skeleton */}
-        <section className="relative py-24 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <Skeleton className="h-8 w-64 mx-auto mb-6" />
-            <Skeleton className="h-16 w-96 mx-auto mb-6" />
-            <Skeleton className="h-6 w-full max-w-3xl mx-auto mb-8" />
-          </div>
-        </section>
-
-        {/* Content Skeleton */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3 space-y-6">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="border-0 shadow-lg">
-                  <div className="md:flex">
-                    <Skeleton className="md:w-1/3 h-64" />
-                    <div className="md:w-2/3 p-6 space-y-4">
-                      <Skeleton className="h-6 w-3/4" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                    </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 py-12">
+          <Skeleton className="h-8 w-64 mb-6" />
+          <div className="grid gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Card key={i} className="shadow-sm">
+                <div className="md:flex">
+                  <Skeleton className="md:w-1/3 h-64" />
+                  <div className="md:w-2/3 p-6 space-y-4">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
                   </div>
-                </Card>
-              ))}
-            </div>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -319,15 +317,13 @@ export default function CoursesPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-        <Card className="border-0 shadow-lg max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="max-w-md mx-auto">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Error Loading Courses</h2>
-            <p className="text-muted-foreground mb-6">{error}</p>
-            <Button onClick={fetchCourses} className="bg-primary hover:bg-primary/90">
-              Try Again
-            </Button>
+            <h2 className="text-2xl font-bold mb-2">Error Loading Courses</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <Button onClick={fetchCourses}>Try Again</Button>
           </CardContent>
         </Card>
       </div>
@@ -335,79 +331,63 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-      {/* Dynamic Hero Section */}
-      <section className="relative py-24 bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/5 overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 mb-6">
-            <GraduationCap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">Fitness Education Hub</span>
-          </div>
-          <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-foreground">
-            Master Your
-            <span className="text-primary block lg:inline"> Fitness Journey</span>
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-            Transform your body and mind with our comprehensive fitness courses designed by certified professionals
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="py-16 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold mb-4">Fitness Courses</h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Transform your body and mind with our expert-designed fitness courses
           </p>
-          <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+          <div className="flex justify-center gap-6 text-sm text-gray-500">
             <div className="flex items-center gap-1">
-              <TrendingUp className="h-4 w-4" />
-              <span>{formatNumber(courses.length)}+ Expert Courses</span>
+              <BookOpen className="h-4 w-4" />
+              <span>{formatNumber(courses.length)}+ Courses</span>
             </div>
             <div className="flex items-center gap-1">
               <User className="h-4 w-4" />
-              <span>Certified Instructors</span>
+              <span>Expert Instructors</span>
             </div>
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4" />
-              <span>4.9 Average Rating</span>
+              <span>4.9 Rating</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Advanced Search and Filters */}
-      <section className="py-8 bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Search and Filters */}
+      <section className="py-6 bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4">
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Search */}
             <div className="flex-1">
               <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <Input
-                  placeholder="Search courses, instructors, or topics..."
+                  placeholder="Search courses..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 h-12 text-base border-2 focus:border-primary"
+                  className="pl-10"
                   disabled={searchLoading}
                 />
-                {searchLoading && (
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Sort Options */}
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-muted-foreground">Sort by:</span>
+              <span className="text-sm font-medium text-gray-600">Sort by:</span>
               <div className="flex gap-2">
                 {[
                   { value: "latest", label: "Latest" },
                   { value: "popular", label: "Popular" },
                   { value: "rating", label: "Top Rated" },
-                  { value: "price-low", label: "Price: Low to High" },
-                  { value: "price-high", label: "Price: High to Low" },
+                  { value: "price-low", label: "Price: Low" },
+                  { value: "price-high", label: "Price: High" },
                 ].map((option) => (
                   <Button
                     key={option.value}
                     variant={sortBy === option.value ? "default" : "outline"}
                     size="sm"
                     onClick={() => setSortBy(option.value)}
-                    className="rounded-full"
                   >
                     {option.label}
                   </Button>
@@ -423,9 +403,7 @@ export default function CoursesPage() {
                 key={category.name}
                 variant={selectedCategory === category.name ? "default" : "outline"}
                 onClick={() => handleCategorySelect(category.name)}
-                className={`rounded-full transition-all duration-200 hover:scale-105 ${
-                  selectedCategory === category.name ? "shadow-lg" : ""
-                }`}
+                className="rounded-full"
               >
                 <div className={`w-2 h-2 rounded-full ${category.color} mr-2`}></div>
                 {category.name} ({formatNumber(category.count)})
@@ -435,122 +413,69 @@ export default function CoursesPage() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* Featured Course - Highly Detailed */}
+            {/* Featured Course */}
             {featuredCourse && selectedCategory === "All" && (
               <div className="mb-12">
                 <div className="flex items-center gap-2 mb-6">
                   <Star className="h-5 w-5 text-yellow-500 fill-current" />
-                  <span className="text-lg font-semibold text-foreground">Featured Course</span>
+                  <span className="text-lg font-semibold">Featured Course</span>
                 </div>
-                <Card className="border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 overflow-hidden group">
+                <Card className="shadow-xl overflow-hidden">
                   <div className="relative">
-                    <div className="h-80 bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 flex items-center justify-center relative overflow-hidden">
+                    <div className="h-80 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
                       {featuredCourse.image_url || featuredCourse.featuredImage ? (
                         <img
                           src={featuredCourse.image_url || featuredCourse.featuredImage || ""}
                           alt={featuredCourse.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement
+                            target.onerror = null
+                            target.src = "/placeholder.jpg"
+                          }}
                         />
                       ) : (
-                        <GraduationCap className="h-20 w-20 text-primary/60 group-hover:scale-110 transition-transform duration-300" />
+                        <GraduationCap className="h-20 w-20 text-blue-400" />
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                       <Badge className="absolute top-4 left-4 bg-red-500 text-white">Featured</Badge>
-                      {featuredCourse.difficulty && (
-                        <Badge className={`absolute top-4 right-4 ${
-                          featuredCourse.difficulty === "Beginner" ? "bg-green-100 text-green-800" :
-                          featuredCourse.difficulty === "Intermediate" ? "bg-yellow-100 text-yellow-800" :
-                          "bg-red-100 text-red-800"
-                        }`}>
-                          {featuredCourse.difficulty}
-                        </Badge>
-                      )}
                     </div>
                     <CardContent className="p-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Badge variant="outline" className="text-sm px-3 py-1">
-                          {featuredCourse.categoryName || "Fitness"}
-                        </Badge>
-                        {featuredCourse.rating && (
-                          <div className="flex items-center gap-1 text-yellow-500">
-                            <Star className="h-4 w-4 fill-current" />
-                            <span className="text-sm font-medium">{featuredCourse.rating}</span>
-                          </div>
-                        )}
-                        <Badge className="bg-primary text-white">
-                          <DollarSign className="h-3 w-3 mr-1" />
-                          {featuredCourse.price}
-                        </Badge>
-                      </div>
-
-                      <h2 className="text-3xl font-bold mb-4 text-foreground group-hover:text-primary transition-colors">
-                        {featuredCourse.title}
-                      </h2>
-
-                      <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-                        {featuredCourse.excerpt || featuredCourse.description}
-                      </p>
-
-                      {/* Instructor Info */}
-                      <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                        <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">{featuredCourse.instructor}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {featuredCourse.instructorRole || "Certified Trainer"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Stats and Meta */}
+                      <h2 className="text-3xl font-bold mb-4">{featuredCourse.title}</h2>
+                      <p className="text-gray-600 mb-6">{featuredCourse.excerpt || featuredCourse.description}</p>
+                      
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="text-center p-3 bg-blue-50 rounded-lg">
                           <Clock className="h-5 w-5 text-blue-600 mx-auto mb-1" />
                           <p className="text-sm font-semibold text-blue-600">{featuredCourse.duration || "4 weeks"}</p>
-                          <p className="text-xs text-blue-500">Duration</p>
                         </div>
                         <div className="text-center p-3 bg-green-50 rounded-lg">
                           <Play className="h-5 w-5 text-green-600 mx-auto mb-1" />
                           <p className="text-sm font-semibold text-green-600">{featuredCourse.totalLessons || 12}</p>
-                          <p className="text-xs text-green-500">Lessons</p>
                         </div>
                         <div className="text-center p-3 bg-purple-50 rounded-lg">
                           <Users className="h-5 w-5 text-purple-600 mx-auto mb-1" />
                           <p className="text-sm font-semibold text-purple-600">{formatNumber(featuredCourse.views || 0)}</p>
-                          <p className="text-xs text-purple-500">Enrolled</p>
                         </div>
                         <div className="text-center p-3 bg-orange-50 rounded-lg">
                           <Award className="h-5 w-5 text-orange-600 mx-auto mb-1" />
-                          <p className="text-sm font-semibold text-orange-600">Certificate</p>
-                          <p className="text-xs text-orange-500">Included</p>
+                          <p className="text-sm font-semibold text-orange-600">${featuredCourse.price}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {formatDateUTC(featuredCourse.created_at)}
-                          </div>
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                          {formatDateUTC(featuredCourse.created_at)}
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Share2 className="h-4 w-4 mr-2" />
-                            Share
+                        <Link href={`/courses/${featuredCourse.course_id}`}>
+                          <Button size="lg">
+                            Enroll Now
+                            <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
-                          <Link href={`/courses/${featuredCourse.course_id}`}>
-                            <Button size="lg" className="bg-primary hover:bg-primary/90 group">
-                              Enroll Now
-                              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                          </Link>
-                        </div>
+                        </Link>
                       </div>
                     </CardContent>
                   </div>
@@ -560,100 +485,109 @@ export default function CoursesPage() {
 
             <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-foreground">
+                <h2 className="text-2xl font-bold">
                   {selectedCategory === "All" ? "All Courses" : `${selectedCategory} Courses`}
                 </h2>
-                <span className="text-muted-foreground">
+                <span className="text-gray-500">
                   {regularCourses.length} course{regularCourses.length !== 1 ? "s" : ""} found
                 </span>
               </div>
 
+              {/* Page size selector */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span>Per page:</span>
+                  <select
+                    className="border rounded px-2 py-1"
+                    value={pageSize}
+                    onChange={(e) => {
+                      setPageSize(parseInt(e.target.value))
+                      setCurrentPage(1)
+                    }}
+                  >
+                    {[6, 9, 12, 24].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Page {safeCurrentPage} of {totalPages}
+                </div>
+              </div>
+
               <div className="grid gap-6">
-                {regularCourses.map((course) => (
+                {paginatedCourses.map((course) => (
                   <Link key={course.course_id} href={`/courses/${course.course_id}`}>
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white cursor-pointer">
+                    <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                       <div className="md:flex">
                         <div className="md:w-1/3">
-                          <div className="h-64 md:h-full bg-gradient-to-br from-primary/20 via-secondary/20 to-primary/10 flex items-center justify-center relative">
+                          <div className="h-64 md:h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center relative">
                             {course.image_url || course.featuredImage ? (
                               <img
                                 src={course.image_url || course.featuredImage || ""}
                                 alt={course.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement
+                                  target.onerror = null
+                                  target.src = "/placeholder.jpg"
+                                }}
                               />
                             ) : (
-                              <GraduationCap className="h-12 w-12 text-primary/60 group-hover:scale-110 transition-transform duration-300" />
+                              <GraduationCap className="h-12 w-12 text-blue-400" />
                             )}
                             {course.difficulty && (
-                              <Badge className={`absolute top-3 left-3 ${
-                                course.difficulty === "Beginner" ? "bg-green-100 text-green-800" :
-                                course.difficulty === "Intermediate" ? "bg-yellow-100 text-yellow-800" :
-                                "bg-red-100 text-red-800"
-                              }`}>
+                              <Badge className="absolute top-3 left-3 bg-green-100 text-green-800">
                                 {course.difficulty}
                               </Badge>
-                            )}
-                            {course.rating && (
-                              <div className="absolute top-3 right-3 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
-                                <Star className="h-3 w-3 text-yellow-500 fill-current" />
-                                <span className="text-xs font-medium">{course.rating}</span>
-                              </div>
                             )}
                           </div>
                         </div>
                         <div className="md:w-2/3 p-6">
                           <div className="flex items-center gap-2 mb-3">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               {course.categoryName || "Fitness"}
                             </Badge>
-                            <span className="text-xs text-muted-foreground">•</span>
-                            <span className="text-xs text-primary font-medium">${course.price}</span>
+                            <span className="text-sm text-blue-600 font-medium">${course.price}</span>
                           </div>
 
-                          <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">
-                            {course.title}
-                          </h3>
-
-                          <p className="text-muted-foreground mb-4 line-clamp-2">
+                          <h3 className="text-xl font-bold mb-3">{course.title}</h3>
+                          <p className="text-gray-600 mb-4 line-clamp-2">
                             {course.excerpt || course.description}
                           </p>
 
-                          {/* Course Stats */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
                               <Clock className="h-4 w-4" />
                               <span>{course.duration || "4 weeks"}</span>
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
                               <Play className="h-4 w-4" />
                               <span>{course.totalLessons || 12} lessons</span>
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
                               <Users className="h-4 w-4" />
                               <span>{formatNumber(course.views || 0)} enrolled</span>
                             </div>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
                               <Award className="h-4 w-4" />
                               <span>Certificate</span>
                             </div>
                           </div>
 
-                          {/* Instructor Info */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+                              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                                 <User className="h-4 w-4 text-white" />
                               </div>
                               <div>
-                                <p className="text-sm font-medium text-foreground">{course.instructor}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {course.instructorRole || "Certified Trainer"}
-                                </p>
+                                <p className="text-sm font-medium">{course.instructor}</p>
+                                <p className="text-xs text-gray-500">{course.instructorRole || "Certified Trainer"}</p>
                               </div>
                             </div>
-                            <Button size="sm" className="bg-primary hover:bg-primary/90 group">
+                            <Button size="sm">
                               Enroll Now
-                              <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                              <ArrowRight className="ml-1 h-3 w-3" />
                             </Button>
                           </div>
                         </div>
@@ -662,15 +596,37 @@ export default function CoursesPage() {
                   </Link>
                 ))}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-8">
+                  <Button
+                    variant="outline"
+                    disabled={safeCurrentPage <= 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <div className="text-sm text-gray-500">
+                    Showing {Math.min(totalItems, startIndex + 1)}–{Math.min(totalItems, endIndex)} of {totalItems}
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={safeCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Quick Stats */}
-            <Card className="border-0 shadow-lg">
+            <Card>
               <CardHeader>
-                <h3 className="text-lg font-semibold text-foreground">Course Stats</h3>
+                <h3 className="text-lg font-semibold">Course Stats</h3>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">

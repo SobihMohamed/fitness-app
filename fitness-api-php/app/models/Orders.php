@@ -13,10 +13,9 @@ class Orders {
 
   public function create($data) {
     try {
-      $data['purchase_date'] = date('Y-m-d');
       return $this->db->insert($data)->excute();
     } catch (Exception $e) {
-      return false;
+      var_dump($e->getMessage());
     }
   }
 
