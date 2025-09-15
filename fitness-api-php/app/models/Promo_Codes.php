@@ -19,6 +19,17 @@ class Promo_Codes{
       return false;
     }
   }
+
+  public function getPromoByPromo($promo){
+    try{
+      return $this->db
+                  ->select()
+                  ->where("promo_code","=",$promo)
+                  ->getRow();
+    }catch(Exception $e){
+      return false;
+    }
+  }
   public function getPromoCodeById($promoId){  
     try{
       return $this->db
