@@ -1,214 +1,266 @@
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+const TARGET_URL = process.env.NEXT_PUBLIC_API_TARGET_URL || BASE_URL;
+
 export const API_CONFIG = {
-  BASE_URL: "http://localhost:8000",
-  TARGET_URL: "http://localhost:8000",
+  BASE_URL,
+  TARGET_URL,
 
   // USER FUNCTIONS
   USER_FUNCTIONS: {
     auth: {
-      register: "http://localhost:8000/auth/register",
-      login: "http://localhost:8000/auth/login",
-      logout: "http://localhost:8000/auth/logout",
-      forgetPassword: "http://localhost:8000/auth/forgetPassword",
-      verifyOtp: "http://localhost:8000/auth/verifyOtpAndUpdatePassword",
-      refreshToken: "http://localhost:8000/auth/refreshToken",
+      register: `${BASE_URL}/auth/register`,
+      login: `${BASE_URL}/auth/login`,
+      logout: `${BASE_URL}/auth/logout`,
+      forgetPassword: `${BASE_URL}/auth/forgetPassword`,
+      verifyOtp: `${BASE_URL}/auth/verifyOtpAndUpdatePassword`,
+      refreshToken: `${BASE_URL}/auth/refreshToken`,
     },
+    
     user: {
-      profile: "http://localhost:8000/user/getProfile",
-      updateProfile: "http://localhost:8000/user/updateProfile",
+      profile: `${BASE_URL}/user/getProfile`,
+      updateProfile: `${BASE_URL}/user/updateProfile`,
     },
-    UserCategory: {
-      getAllCategory: "http://localhost:8000/Category/getAll",
-      getproductsByCategoryId: (id: string) =>
-        `http://localhost:8000/Category/showProductsByCategory/${id}`,
+    
+    categories: {
+      getAll: `${BASE_URL}/Category/getAll`,
+      getProductsByCategory: (id: string) =>
+        `${BASE_URL}/Category/showProductsByCategory/${id}`,
     },
-    Product: {
-      getAllProducts: "http://localhost:8000/Products/getAll",
-      getSingleProduct: (id: string) =>
-        `http://localhost:8000/Products/SingleProduct/${id}`,
-      searchProductsByDescriptionOrName: "http://localhost:8000/Products/searchProduct",
+    
+    products: {
+      getAll: `${BASE_URL}/Products/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/Products/SingleProduct/${id}`,
+      search: `${BASE_URL}/Products/searchProduct`,
     },
-    Courses: {
-      getAll: "http://localhost:8000/Courses/getAll",
-      searchCourse: "http://localhost:8000/Courses/searchCourse",
-      ViewSingleCourse: (id: string) =>
-        `http://localhost:8000/Courses/singleCourse/${id}`,
+    
+    courses: {
+      getAll: `${BASE_URL}/Courses/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/Courses/CoursePage/${id}`,
+      search: `${BASE_URL}/Courses/searchCourse`,
+      modules: {
+        getAll: `${BASE_URL}/AdminCourseModules/getAll`,
+        getById: (id: string) => `${BASE_URL}/AdminCourseModules/getSingleModule/${id}`,
+        search: `${BASE_URL}/AdminCourseModules/searchModule`
+      },
+      chapters: {
+        getAll: `${BASE_URL}/AdminCourseChapters/getAll`,
+        getById: (id: string) => `${BASE_URL}/AdminCourseChapters/getSingleChapter/${id}`,
+        search: `${BASE_URL}/AdminCourseChapters/searchChapter`
+      }
     },
-    RequestForTraining: {
-      createRequestToAdmin: "http://localhost:8000/TrainingRequests/create",
-      getAllMyRequests: "http://localhost:8000/TrainingRequests/getMyRequests",
+    
+    services: {
+      getAll: `${BASE_URL}/Services/getAll`,
+      getById: (id: string) => `${BASE_URL}/Services/singleService/${id}`,
+      search: `${BASE_URL}/Services/searchService`,
     },
-    RequestForCourses: {
-      createRequestToAdmin: "http://localhost:8000/CoursesRequests/create",
-      getAllMyRequests: "http://localhost:8000/CoursesRequests/getMyRequests",
-      cancelRequest: (id: string) =>
-        `http://localhost:8000/CoursesRequests/cancelRequest/${id}`,
-      showDetails: (id: string) =>
-        `http://localhost:8000/CoursesRequests/showDetails/${id}`,
+    
+    blogs: {
+      getAll: `${BASE_URL}/Blogs/getAll`,
+      getById: (id: string) => `${BASE_URL}/Blogs/singleBlog/${id}`,
+      search: `${BASE_URL}/Blogs/searchBlog`,
+      categories: {
+        getAll: `${BASE_URL}/BlogsCategory/getAll`,
+        getBlogsByCategory: (id: string) =>
+          `${BASE_URL}/BlogsCategory/showBlogsByCategory/${id}`,
+      }
     },
-    RequestOreders: {
-      CreateOrder: "http://localhost:8000/orders/create",
-      showAllUserOrders: "http://localhost:8000/orders/myOrders",
-      showSingleOrder: (id: string) =>
-        `http://localhost:8000/orders/showMyOrder/${id}`,
+    
+    requests: {
+      training: {
+        create: `${BASE_URL}/TrainingRequests/create`,
+        getMyRequests: `${BASE_URL}/TrainingRequests/getMyRequests`,
+      },
+      courses: {
+        create: `${BASE_URL}/CoursesRequests/create`,
+        getMyRequests: `${BASE_URL}/CoursesRequests/getMyRequests`,
+      }
     },
-    Notifications: {
-      getAllNotificationForThisUser:
-        "http://localhost:8000/Notifications/getNotificationForUser",
-      MarkAsRead: (id: string) =>
-        `http://localhost:8000/Notifications/readNotification/${id}`,
-      DeleteNotification: (id: string) =>
-        `http://localhost:8000/Notifications/delete/${id}`,
+    
+    orders: {
+      create: `${BASE_URL}/orders/create`,
+      getMyOrders: `${BASE_URL}/orders/myOrders`,
+      getById: (id: string) =>
+        `${BASE_URL}/orders/showMyOrder/${id}`,
+    },
+    
+    notifications: {
+      getAll: `${BASE_URL}/Notifications/getNotificationForUser`,
+      markAsRead: (id: string) =>
+        `${BASE_URL}/Notifications/readNotification/${id}`,
+      delete: (id: string) =>
+        `${BASE_URL}/Notifications/delete/${id}`,
     },
   },
-
-  // USER COURSES API
-  USER_COURSES_API: {
-    getAll: "http://localhost:8000/Courses/getAll",
-    getFeatured: "http://localhost:8000/Courses/getAll", 
-    getById: (id: string) => `http://localhost:8000/Courses/singleCourse/${id}`,
-    search: "http://localhost:8000/Courses/searchCourse",
-    enroll: "http://localhost:8000/CoursesRequests/create",
-  },
-
-  // USER PRODUCTS API
-  USER_PRODUCTS_API: {
-    getAll: "http://localhost:8000/Products/getAll",
-    getFeatured: "http://localhost:8000/Products/getAll", 
-    getById: (id: string) => `http://localhost:8000/Products/SingleProduct/${id}`,
-    search: "http://localhost:8000/Products/searchProduct",
-  },
-
-  USER_SERVICES_API: {
-    getAll: "http://localhost:8000/Services/getAll",
-    getById: (id: string) => `http://localhost:8000/Services/getServiceById/${id}`,
-    search: "http://localhost:8000/Services/searchService",
-  },
-    USER_BLOG_API:{
-      getAll: "http://localhost:8000/Blogs/getAll",
-      getById: (id: string) => `http://localhost:8000/Blogs/singleBlog/${id}`,
-      search: "http://localhost:8000/Blogs/searchBlog",
-    },
-  USER_BLOG_CATEGORY_API : {
-  getAll: "http://localhost:8000/BlogsCategory/getAll",
-  getBlogsByCategoryId: (id: string) =>
-    `http://localhost:8000/BlogsCategory/showBlogsByCategory/${id}`,
-},
 
 
   // ADMIN FUNCTIONS
   ADMIN_FUNCTIONS: {
-    adminUsers: {
-      getAll: "http://localhost:8000/ManageUsers/getAllUsers",
+    users: {
+      getAll: `${BASE_URL}/ManageUsers/getAllUsers`,
       getById: (id: string) =>
-        `http://localhost:8000/ManageUsers/getUserById/${id}`,
-      search: "http://localhost:8000/ManageUsers/searchUser",
-      FilterByType: "http://localhost:8000/ManageUsers/filterByType",
+        `${BASE_URL}/ManageUsers/getUserById/${id}`,
+      search: `${BASE_URL}/ManageUsers/searchUser`,
+      filterByType: `${BASE_URL}/ManageUsers/filterByType`,
+      add: `${BASE_URL}/ManageUsers/addUser`,
       update: (id: string) =>
-        `http://localhost:8000/ManageUsers/updateUser/${id}`,
+        `${BASE_URL}/ManageUsers/updateUser/${id}`,
       delete: (id: string) =>
-        `http://localhost:8000/ManageUsers/deleteUser/${id}`,
+        `${BASE_URL}/ManageUsers/deleteUser/${id}`,
     },
-    superAdminControlleAdmins: {
-      login: "http://localhost:8000/admin/login",
-      getAll: "http://localhost:8000/ManageAdmins/getAllAdmins",
+    
+    admins: {
+      login: `${BASE_URL}/admin/login`,
+      getAll: `${BASE_URL}/ManageAdmins/getAllAdmins`,
       getById: (id: string) =>
-        `http://localhost:8000/admin/getAdminById/${id}`,
-      search: "http://localhost:8000/ManageAdmins/searchAdmin",
-      add: "http://localhost:8000/ManageAdmins/addAdmin",
+        `${BASE_URL}/admin/getAdminById/${id}`,
+      search: `${BASE_URL}/ManageAdmins/searchAdmin`,
+      add: `${BASE_URL}/ManageAdmins/addAdmin`,
       update: (id: string) =>
-        `http://localhost:8000/ManageAdmins/updateAdmin/${id}`,
+        `${BASE_URL}/ManageAdmins/updateAdmin/${id}`,
       delete: (id: string) =>
-        `http://localhost:8000/ManageAdmins/deleteAdmin/${id}`,
+        `${BASE_URL}/ManageAdmins/deleteAdmin/${id}`,
     },
-    AdminCategory: {
-      getAllCategory: "http://localhost:8000/AdminCategories/getAll",
-      add: "http://localhost:8000/AdminCategories/addCategory",
-      update: "http://localhost:8000/AdminCategories/updateCategory",
-      delete: "http://localhost:8000/AdminCategories/deleteCategory",
+    
+    categories: {
+      getAll: `${BASE_URL}/AdminCategories/getAll`,
+      add: `${BASE_URL}/AdminCategories/addCategory`,
+      update: `${BASE_URL}/AdminCategories/updateCategory`,
+      delete: `${BASE_URL}/AdminCategories/deleteCategory`,
     },
-    AdminProduct: {
-      getAllProducts: "http://localhost:8000/AdminProducts/getAll",
-      getSingleProduct: (id: string) =>
-        `http://localhost:8000/AdminProducts/getProductById/${id}`,
-      add: "http://localhost:8000/AdminProducts/addProduct",
+    
+    products: {
+      getAll: `${BASE_URL}/AdminProducts/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/AdminProducts/getProductById/${id}`,
+      search: `${BASE_URL}/AdminProducts/searchProduct`,
+      add: `${BASE_URL}/AdminProducts/addProduct`,
       update: (id: string) =>
-        `http://localhost:8000/AdminProducts/updateProduct/${id}`,
+        `${BASE_URL}/AdminProducts/updateProduct/${id}`,
       delete: (id: string) =>
-        `http://localhost:8000/AdminProducts/deleteProduct/${id}`,
+        `${BASE_URL}/AdminProducts/deleteProduct/${id}`,
     },
-    AdminCourse: {
-      getAllCourses: "http://localhost:8000/AdminCourses/getAll",
-      getSingleCourse: (id: string) =>
-        `http://localhost:8000/AdminCourses/getCourseById/${id}`,
-      add: "http://localhost:8000/AdminCourses/addCourse",
-      update: "http://localhost:8000/AdminCourses/updateCourse",
-      delete: "http://localhost:8000/AdminCourses/deleteCourse",
+    
+    courses: {
+      getAll: `${BASE_URL}/AdminCourses/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/AdminCourses/getCourseById/${id}`,
+      search: `${BASE_URL}/AdminCourses/searchCourse`,
+      add: `${BASE_URL}/AdminCourses/addCourse`,
+      update: (id: string) =>
+        `${BASE_URL}/AdminCourses/updateCourse/${id}`,
+      delete: (id: string) =>
+        `${BASE_URL}/AdminCourses/deleteCourse/${id}`,
+      modules: {
+        getAll: `${BASE_URL}/AdminCourseModules/getAll`,
+        getById: (id: string) =>
+          `${BASE_URL}/AdminCourseModules/getSingleModule/${id}`,
+        search: `${BASE_URL}/AdminCourseModules/searchModule`,
+        add: `${BASE_URL}/AdminCourseModules/addModule`,
+        update: (id: string) =>
+          `${BASE_URL}/AdminCourseModules/updateModule/${id}`,
+        delete: (id: string) =>
+          `${BASE_URL}/AdminCourseModules/deleteModule/${id}`,
+      },
+      chapters: {
+        getAll: `${BASE_URL}/AdminCourseChapters/getAll`,
+        getById: (id: string) =>
+          `${BASE_URL}/AdminCourseChapters/getSingleChapter/${id}`,
+        search: `${BASE_URL}/AdminCourseChapters/searchChapter`,
+        add: `${BASE_URL}/AdminCourseChapters/addChapter`,
+        update: (id: string) =>
+          `${BASE_URL}/AdminCourseChapters/updateChapter/${id}`,
+        delete: (id: string) =>
+          `${BASE_URL}/AdminCourseChapters/deleteChapter/${id}`,
+      },
     },
-    AdminManageTrainingRequests: {
-      getAllRequests: "http://localhost:8000/AdminTrainingRequests/getAll",
-      showSpecificInformationAboutRequestAndUser: (id: string) =>
-        `http://localhost:8000/AdminTrainingRequests/showDetails/${id}`,
-      approveRequest: (id: string) =>
-        `http://localhost:8000/AdminTrainingRequests/approve/${id}`,
-      cancelRequest: (id: string) =>
-        `http://localhost:8000/AdminTrainingRequests/canecl/${id}`,
-      deleteRequest: (id: string) =>
-        `http://localhost:8000/AdminTrainingRequests/delete/${id}`,
-      getTheTranieesWhoseTrainingRequestEndSoon:
-        "http://localhost:8000/AdminTrainingRequests/getExpirationSoon",
+    
+    blogs: {
+      getAll: `${BASE_URL}/AdminBlogs/getAll`,
+      getById: (id: string) => `${BASE_URL}/AdminBlogs/getBlogById/${id}`,
+      search: `${BASE_URL}/AdminBlogs/searchBlog`,
+      add: `${BASE_URL}/AdminBlogs/addBlog`,
+      update: (id: string) => `${BASE_URL}/AdminBlogs/updateBlog/${id}`,
+      delete: (id: string) => `${BASE_URL}/AdminBlogs/deleteBlog/${id}`,
+      categories: {
+        getAll: `${BASE_URL}/AdminBlogsCategory/getAll`,
+        search: `${BASE_URL}/AdminBlogsCategory/searchCategory`,
+        add: `${BASE_URL}/AdminBlogsCategory/addCategory`,
+        update: (id: string) => `${BASE_URL}/AdminBlogsCategory/updateCategory/${id}`,
+        delete: (id: string) => `${BASE_URL}/AdminBlogsCategory/deleteCategory/${id}`,
+        showBlogsByCategory: (id: string) => `${BASE_URL}/AdminBlogsCategory/showBlogsByCategory/${id}`,
+      }
     },
-    AdminManageCoursesRequests: {
-      getAllRequests: "http://localhost:8000/AdminCoursesRequests/getAll",
-      showSpecificInformationAboutRequestAndUser: (id: string) =>
-        `http://localhost:8000/AdminCoursesRequests/showDetails/${id}`,
-      approveRequest: (id: string) =>
-        `http://localhost:8000/AdminCoursesRequests/approve/${id}`,
-      cancelRequest: (id: string) =>
-        `http://localhost:8000/AdminCoursesRequests/canecl/${id}`,
-      deleteRequest: (id: string) =>
-        `http://localhost:8000/AdminCoursesRequests/delete/${id}`,
+    
+    services: {
+      getAll: `${BASE_URL}/AdminServices/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/AdminServices/getServiceById/${id}`,
+      add: `${BASE_URL}/AdminServices/addService`,
+      update: `${BASE_URL}/AdminServices/updateService`,
+      delete: (id: string) =>
+        `${BASE_URL}/AdminServices/deleteService/${id}`,
     },
-    AdminManagesOrders: {
-      getAllOrders: "http://localhost:8000/AdminOrders/getAll",
-      getSingleOrder: (id: string) =>
-        `http://localhost:8000/AdminOrders/showOrder/${id}`,
-      filterOrdersByStatus: (status: string) =>
-        `http://localhost:8000/AdminOrders/filterByStatus/${encodeURIComponent(
+    
+    requests: {
+      training: {
+        getAll: `${BASE_URL}/AdminTrainingRequests/getAll`,
+        getDetails: (id: string) =>
+          `${BASE_URL}/AdminTrainingRequests/showDetails/${id}`,
+        approve: (id: string) =>
+          `${BASE_URL}/AdminTrainingRequests/approve/${id}`,
+        cancel: (id: string) =>
+          `${BASE_URL}/AdminTrainingRequests/canecl/${id}`,
+        delete: (id: string) =>
+          `${BASE_URL}/AdminTrainingRequests/delete/${id}`,
+        getExpirationSoon:
+          `${BASE_URL}/AdminTrainingRequests/getExpirationSoon`,
+      },
+      courses: {
+        getAll: `${BASE_URL}/AdminCoursesRequests/getAll`,
+        getDetails: (id: string) =>
+          `${BASE_URL}/AdminCoursesRequests/showDetails/${id}`,
+        approve: (id: string) =>
+          `${BASE_URL}/AdminCoursesRequests/approve/${id}`,
+        cancel: (id: string) =>
+          `${BASE_URL}/AdminCoursesRequests/cancel/${id}`,
+        delete: (id: string) =>
+          `${BASE_URL}/AdminCoursesRequests/delete/${id}`,
+      },
+    },
+    
+    orders: {
+      getAll: `${BASE_URL}/AdminOrders/getAll`,
+      getById: (id: string) =>
+        `${BASE_URL}/AdminOrders/showOrder/${id}`,
+      filterByStatus: (status: string) =>
+        `${BASE_URL}/AdminOrders/filterByStatus/${encodeURIComponent(
           status
         )}`,
-      approveOrder: (id: string) =>
-        `http://localhost:8000/AdminOrders/approve/${id}`,
-      cancelOrder: (id: string) =>
-        `http://localhost:8000/AdminOrders/cancel/${id}`,
-      deleteOrder: (id: string) =>
-        `http://localhost:8000/AdminOrders/delete/${id}`,
-    },
-    AdminNotifications: {
-      getAllNotificationForThisAdmin:
-        "http://localhost:8000/AdminNotifications/getAdminNotifications",
-      MarkAsRead: (id: string) =>
-        `http://localhost:8000/AdminNotifications/readNotification/${id}`,
-      DeleteNotification: (id: string) =>
-        `http://localhost:8000/AdminNotifications/delete/${id}`,
-    },
-    AdminServices: {
-      getAllServices: "http://localhost:8000/AdminServices/getAll",
-      getSingleService: (id: string) =>
-        `http://localhost:8000/AdminServices/getServiceById/${id}`,
-      add: "http://localhost:8000/AdminServices/addService",
-      update: "http://localhost:8000/AdminServices/updateService",
+      approve: (id: string) =>
+        `${BASE_URL}/AdminOrders/approve/${id}`,
+      cancel: (id: string) =>
+        `${BASE_URL}/AdminOrders/canecl/${id}`,
       delete: (id: string) =>
-        `http://localhost:8000/AdminServices/deleteService/${id}`,
+        `${BASE_URL}/AdminOrders/delete/${id}`,
     },
-    AdminBlogs: {
-      getAllBlogs: "http://localhost:8000/AdminBlogs/getAll",
-      getSingleBlog: (id: string) =>
-        `http://localhost:8000/AdminBlogs/getBlogById/${id}`,
-      add: "http://localhost:8000/AdminBlogs/addBlog",
-      update: (id: string) =>
-        `http://localhost:8000/AdminBlogs/updateBlog/${id}`,
+    
+    notifications: {
+      getAll: `${BASE_URL}/AdminNotifications/getAdminNotifications`,
+      markAsRead: (id: string) =>
+        `${BASE_URL}/AdminNotifications/readNotification/${id}`,
       delete: (id: string) =>
-        `http://localhost:8000/AdminBlogs/deleteBlog/${id}`,
+        `${BASE_URL}/AdminNotifications/delete/${id}`,
+    },
+    
+    promoCodes: {
+      getAll: `${BASE_URL}/AdminPromoCodes/getAll`,
+      getById: (id: string) => `${BASE_URL}/AdminPromoCodes/getSinglePromoCode/${id}`,
+      add: `${BASE_URL}/AdminPromoCodes/addPromoCode`,
+      update: `${BASE_URL}/AdminPromoCodes/updatePromoCode`,
+      delete: `${BASE_URL}/AdminPromoCodes/deletePromoCode`,
     },
   },
 };

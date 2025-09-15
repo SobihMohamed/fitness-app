@@ -8,9 +8,10 @@ type StatsCardProps = {
   value: string | number;
   icon?: React.ReactNode;
   color?: string;
+  description?: string;
 };
 
-export function StatsCard({ title, value, icon, color = "#6366f1" }: StatsCardProps) {
+export function StatsCard({ title, value, icon, color = "#6366f1", description }: StatsCardProps) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4">
@@ -18,6 +19,9 @@ export function StatsCard({ title, value, icon, color = "#6366f1" }: StatsCardPr
           <div>
             <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
             <p className="text-2xl font-bold text-slate-900">{value}</p>
+            {description ? (
+              <p className="text-xs text-slate-500 mt-1">{description}</p>
+            ) : null}
           </div>
           {icon ? (
             <div className="p-3 rounded-full" style={{ backgroundColor: `${color}22` }}>

@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { API_CONFIG } from "@/config/api";
 
+export const runtime = 'edge';
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const targetUrl = searchParams.get("url");
@@ -17,7 +19,17 @@ export async function GET(req: NextRequest) {
       return new Response("Forbidden", { status: 403 });
     }
 
-    const upstream = await fetch(parsed.toString());
+    // Add caching headers to the request
+    const fetchOptions: RequestInit = {
+      headers: {
+        'Accept': 'image/*',
+      },
+      next: {
+        revalidate: 3600 // Cache for 1 hour
+      }
+    };
+
+    const upstream = await fetch(parsed.toString(), fetchOptions);
     if (!upstream.ok || !upstream.body) {
       return new Response("Upstream fetch failed", { status: upstream.status || 502 });
     }
@@ -29,8 +41,9 @@ export async function GET(req: NextRequest) {
     headers.set("content-type", contentType);
     if (contentLength) headers.set("content-length", contentLength);
 
-    // Allow same-origin usage freely
-    headers.set("Cache-Control", "private, max-age=60");
+    // Improve caching for better performance
+    headers.set("Cache-Control", "public, max-age=86400, s-maxage=31536000, stale-while-revalidate=31536000");
+    headers.set("CDN-Cache-Control", "public, max-age=31536000");
 
     return new Response(upstream.body, {
       status: 200,

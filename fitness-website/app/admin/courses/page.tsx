@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useLoading } from "@/hooks/use-loading";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
+import { getHttpClient } from "@/lib/http";
 import {
   Plus,
   Search,
@@ -47,6 +48,7 @@ import {
 } from "lucide-react";
 
 import { API_CONFIG } from "@/config/api";
+ 
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -61,8 +63,9 @@ type Course = {
 
 export default function CoursesManagement() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const { isAnyLoading, withLoading } = useLoading();
+  // local loading flags only
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,33 +83,26 @@ export default function CoursesManagement() {
     title: "",
     price: "",
     image_url: "",
-    content_link: "",
     description: "",
   });
 
   const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
+  const http = getHttpClient();
 
  
 
   // Fetch courses
   const fetchCourses = async () => {
-    await withLoading("courses", async () => {
-      try {
-        const res = await fetch(`${API_BASE}/AdminCourses/getAll`, {
-          method: "GET",
-          headers: getAuthHeaders(),
-        });
-        const data = await parseResponse(res);
-        if (res.ok && data) {
-          const coursesArray = Array.isArray(data) ? data : data.data || [];
-          setCourses(coursesArray);
-        } else {
-          showErrorToast("Failed to load courses");
-        }
-      } catch (error) {
-        showErrorToast("Network error while loading courses");
-      }
-    });
+    try {
+      const { data } = await http.get(`${API_BASE}/AdminCourses/getAll`, {
+        headers: getAuthHeaders(),
+      });
+      const coursesArray = Array.isArray(data) ? data : data?.data || [];
+      setCourses(coursesArray);
+    } catch (error: any) {
+      if (error?.status === 404) { setCourses([]); return; }
+      showErrorToast(error?.message || "Network error while loading courses");
+    }
   };
 
   // Handle image selection
@@ -141,69 +137,36 @@ export default function CoursesManagement() {
       showErrorToast("Description is required");
       return;
     }
-    if (!formData.content_link.trim()) {
-      showErrorToast("Content is required");
-      return;
-    }
-
     try {
       setIsSubmitting(true);
       const requestFormData = new FormData();
       requestFormData.append("title", formData.title.trim());
       requestFormData.append("price", formData.price.trim());
       requestFormData.append("image_url", formData.image_url.trim());
-      requestFormData.append("content_link", formData.content_link.trim());
       requestFormData.append("description", formData.description.trim());
 
       if (imageFile) {
         requestFormData.append("image_url", imageFile);
       }
 
-      Array.from(requestFormData.entries()).forEach((pair) => {});
+      const endpoint = editingCourse
+        ? `${API_BASE}/AdminCourses/updateCourse/${editingCourse.course_id}`
+        : `${API_BASE}/AdminCourses/addCourse`;
 
-      let endpoint: string;
-      if (editingCourse) {
-        endpoint = `AdminCourses/updateCourse/${editingCourse.course_id}`;
-      } else {
-        endpoint = `AdminCourses/addCourse`;
-      }
-
-      const token = localStorage.getItem("adminAuth");
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const res = await fetch(`${API_BASE}/${endpoint}`, {
-        method: "POST",
-        headers,
-        body: requestFormData,
+      await http.post(endpoint, requestFormData, {
+        headers: { Authorization: getAuthHeaders().Authorization },
       });
-      const data = await parseResponse(res);
-      if (res.ok || res.status === 200) {
-        const successMessage = editingCourse
-          ? "Course updated successfully!"
-          : "Course added successfully!";
 
-        setTimeout(() => showSuccessToast(successMessage), 100);
-        await fetchCourses();
-        setCurrentPage(1);
-        setSearchTerm("");
-        resetForm();
-      } else {
-        const errorMessage =
-          data?.message ||
-          data?.error ||
-          `Failed to save. Server returned ${res.status}`;
-
-        setTimeout(() => showErrorToast(errorMessage), 100);
-      }
-    } catch (err) {
-      showErrorToast(
-        `Network error while saving: ${
-          err instanceof Error ? err.message : "Please check your connection."
-        }`
-      );
+      const successMessage = editingCourse
+        ? "Course updated successfully!"
+        : "Course added successfully!";
+      showSuccessToast(successMessage);
+      await fetchCourses();
+      setCurrentPage(1);
+      setSearchTerm("");
+      resetForm();
+    } catch (err: any) {
+      showErrorToast(err?.message || "Network error while saving");
     } finally {
       setIsSubmitting(false);
     }
@@ -216,7 +179,6 @@ export default function CoursesManagement() {
       title: course.title || "",
       price: course.price || "",
       image_url: course.image_url || "",
-      content_link: course.content_link || "",
       description: course.description || "",
     });
     setImagePreview(course.image_url || "");
@@ -238,34 +200,13 @@ export default function CoursesManagement() {
     if (!deleteTarget) return;
     try {
       setIsSubmitting(true);
-      const token = localStorage.getItem("adminAuth");
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
-
-      const res = await fetch(
-        `${API_BASE}/AdminCourses/deleteCourse/${deleteTarget.id}`,
-        {
-          method: "DELETE",
-          headers,
-        }
-      );
-
-      const data = await parseResponse(res);
-      if (res.ok || res.status === 200) {
-        const successMessage = "Course deleted successfully!";
-        setTimeout(() => showSuccessToast(successMessage), 100);
-        await fetchCourses();
-      } else {
-        const errorMessage =
-          data?.message ||
-          data?.error ||
-          `Failed to delete. Server returned ${res.status}`;
-        setTimeout(() => showErrorToast(errorMessage), 100);
-      }
-    } catch (err) {
-      showErrorToast("Network error while deleting");
+      await http.delete(`${API_BASE}/AdminCourses/deleteCourse/${deleteTarget.id}`, {
+        headers: getAuthHeaders(),
+      });
+      showSuccessToast("Course deleted successfully!");
+      await fetchCourses();
+    } catch (err: any) {
+      showErrorToast(err?.message || "Network error while deleting");
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -279,13 +220,21 @@ export default function CoursesManagement() {
       title: "",
       price: "",
       image_url: "",
-      content_link: "",
       description: "",
     });
     setEditingCourse(null);
     setIsAddDialogOpen(false);
     setImageFile(null);
     setImagePreview("");
+  };
+
+  // Open create course dialog with a clean form (prevents stale edit data)
+  const openCreateCourse = () => {
+    setEditingCourse(null);
+    setFormData({ title: "", price: "", image_url: "", description: "" });
+    setImageFile(null);
+    setImagePreview("");
+    setIsAddDialogOpen(true);
   };
 
   // Debounce search to reduce work as user types
@@ -319,27 +268,28 @@ export default function CoursesManagement() {
 
   // Load courses on mount
   useEffect(() => {
-    const token = localStorage.getItem("adminAuth");
-    if (!token) {
-      showErrorToast("Please login as admin to access this page");
-      window.location.href = "/admin/login";
-      return;
-    }
-    fetchCourses();
+    const init = async () => {
+      try {
+        const token = localStorage.getItem("adminAuth");
+        if (!token) {
+          showErrorToast("Please login as admin to access this page");
+          window.location.href = "/admin/login";
+          return;
+        }
+        await fetchCourses();
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (isAnyLoading()) {
-    return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-[80vh]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
-            <p className="text-slate-600">Loading courses...</p>
-          </div>
-        </div>
-      </AdminLayout>
-    );
-  }
+  // initialLoading handled by AdminLayout overlay only
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  initialLoading;
+
+  
 
   return (
     <AdminLayout>
@@ -358,7 +308,7 @@ export default function CoursesManagement() {
             </p>
           </div>
           <Button
-            onClick={() => setIsAddDialogOpen(true)}
+            onClick={openCreateCourse}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base"
           >
             <Plus className="h-5 w-5" />
@@ -477,28 +427,25 @@ export default function CoursesManagement() {
         <Card className="border-0 shadow-lg">
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table>
+              <Table className="w-full">
                 <TableHeader>
-                  <TableRow className="bg-slate-50 border-b border-slate-200">
-                    <TableHead className="w-16 font-semibold text-slate-700">
-                      #
+              <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="w-16 font-semibold text-slate-700 px-6 py-3">
+                      ID
                     </TableHead>
-                    <TableHead className="w-20 font-semibold text-slate-700">
+                    <TableHead className="w-24 font-semibold text-slate-700 px-6 py-3">
                       Image
                     </TableHead>
-                    <TableHead className="min-w-[200px] font-semibold text-slate-700">
+                    <TableHead className="min-w-[240px] font-semibold text-slate-700 px-6 py-3">
                       Course Title
                     </TableHead>
-                    <TableHead className="w-24 font-semibold text-slate-700">
+                    <TableHead className="w-28 font-semibold text-slate-700 px-6 py-3">
                       Price
                     </TableHead>
-                    <TableHead className="min-w-[300px] font-semibold text-slate-700">
+                    <TableHead className="min-w-[300px] font-semibold text-slate-700 px-6 py-3">
                       Description
                     </TableHead>
-                    <TableHead className="w-20 font-semibold text-slate-700">
-                      Link
-                    </TableHead>
-                    <TableHead className="w-32 text-center font-semibold text-slate-700">
+                    <TableHead className="w-40 text-center font-semibold text-slate-700 px-6 py-3">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -507,12 +454,12 @@ export default function CoursesManagement() {
                   {paginatedCourses.map((course, index) => (
                     <TableRow
                       key={course.course_id}
-                      className="hover:bg-slate-50 transition-colors duration-150 border-b border-slate-100"
+                      className="hover:bg-slate-50 transition-colors duration-150 border-b border-slate-100 align-middle"
                     >
-                      <TableCell className="font-medium text-slate-600">
+                      <TableCell className="font-medium text-slate-600 px-6 py-4">
                         {(currentPage - 1) * itemsPerPage + index + 1}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4">
                         {course.image_url ? (
                           <img
                             src={`${API_BASE}${course.image_url}`}
@@ -525,17 +472,17 @@ export default function CoursesManagement() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4">
                         <div>
                           <p className="font-semibold text-slate-900 mb-1">
-                            {course.title}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            ID: {course.course_id}
+                            <Link href={`/admin/courses/${course.course_id}`} className="text-indigo-700 hover:text-indigo-900 underline-offset-2 hover:underline">
+                              {course.title}
+                            </Link>
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>
+
+                      <TableCell className="px-6 py-4">
                         <Badge
                           variant={
                             Number.parseFloat(course.price) === 0
@@ -551,27 +498,16 @@ export default function CoursesManagement() {
                           {formatPrice(course.price)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="px-6 py-4">
                         <p className="text-sm text-slate-600 max-w-xs truncate">
                           {course.description}
                         </p>
                       </TableCell>
-                      <TableCell>
-                        {course.content_link ? (
-                          <a
-                            href={course.content_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-indigo-600 hover:text-indigo-800 transition-colors"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="px-6 py-4 text-center">
+                        <div className="inline-flex items-center gap-2">
+                          <Link href={`/admin/courses/${course.course_id}`} className="h-9 px-3 inline-flex items-center justify-center rounded-md border text-sm hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-150">
+                            Manage
+                          </Link>
                           <Button
                             variant="outline"
                             size="sm"
@@ -648,7 +584,19 @@ export default function CoursesManagement() {
         </Card>
 
         {/* Add/Edit Dialog */}
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog
+          open={isAddDialogOpen}
+          onOpenChange={(open) => {
+            setIsAddDialogOpen(open);
+            if (!open) {
+              // When dialog closes (via ESC, overlay click, or cancel), clear any editing state and form data
+              setEditingCourse(null);
+              setFormData({ title: "", price: "", image_url: "", description: "" });
+              setImageFile(null);
+              setImagePreview("");
+            }
+          }}
+        >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl">
@@ -702,23 +650,7 @@ export default function CoursesManagement() {
                   />
                 </div>
 
-                {/* Link */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Course Link *
-                  </label>
-                  <Input
-                    type="url"
-                    placeholder="https://example.com/course"
-                    value={formData.content_link}
-                    onChange={(e) =>
-                      setFormData({ ...formData, content_link: e.target.value })
-                    }
-                    required
-                    disabled={isSubmitting}
-                    className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
+                
 
                 {/* Image Upload */}
                 <div className="space-y-2">

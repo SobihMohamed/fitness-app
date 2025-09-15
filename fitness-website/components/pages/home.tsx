@@ -11,14 +11,7 @@ import { ProtectedAction } from "../auth/Protected-Route"
 import { useCart } from "@/contexts/cart-context"
 import axios from "axios"
 import { API_CONFIG } from "@/config/api"
-const { TARGET_URL: API_TARGET } = API_CONFIG;
-  
-  // Helper function to construct full image URL
-  const getFullImageUrl = (imagePath: string) => {
-    if (!imagePath) return "/placeholder.svg";
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${API_TARGET}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
-  };
+import { getFullImageUrl, getProxyImageUrl } from "@/lib/images"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { formatNumber } from "@/utils/format"
@@ -94,12 +87,20 @@ const features = [
   },
 ]
 
-export function HomePage() {
+interface HomePageProps {
+  initialFeaturedProducts?: Product[]
+  initialFeaturedCourses?: Course[]
+}
+
+export function HomePage({ 
+  initialFeaturedProducts = [], 
+  initialFeaturedCourses = [] 
+}: HomePageProps) {
   const [isVisible, setIsVisible] = useState(false)
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
-  const [featuredCourses, setFeaturedCourses] = useState<Course[]>([])
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true)
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true)
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>(initialFeaturedProducts)
+  const [featuredCourses, setFeaturedCourses] = useState<Course[]>(initialFeaturedCourses)
+  const [isLoadingProducts, setIsLoadingProducts] = useState(initialFeaturedProducts.length === 0)
+  const [isLoadingCourses, setIsLoadingCourses] = useState(initialFeaturedCourses.length === 0)
   const { addItem } = useCart()
   
   // Use centralized deterministic number formatter
@@ -112,9 +113,9 @@ export function HomePage() {
   useEffect(() => {
     const fetchFeaturedProducts = async () => {
       try {
-        const response = await axios.get(API_CONFIG.USER_PRODUCTS_API.getFeatured)
+        const response = await axios.get(API_CONFIG.USER_FUNCTIONS.products.getAll)
         if (response.data.status === "success") {
-          setFeaturedProducts(response.data.data || [])
+          setFeaturedProducts(response.data.data || response.data.products || [])
         }
       } catch (error) {
         console.error("Error fetching featured products:", error)
@@ -131,9 +132,9 @@ export function HomePage() {
   useEffect(() => {
     const fetchFeaturedCourses = async () => {
       try {
-        const response = await axios.get(API_CONFIG.USER_COURSES_API.getFeatured)
+        const response = await axios.get(API_CONFIG.USER_FUNCTIONS.courses.getAll)
         if (response.data.status === "success") {
-          setFeaturedCourses(response.data.data || [])
+          setFeaturedCourses(response.data.data || response.data.courses || [])
         }
       } catch (error) {
         console.error("Error fetching featured courses:", error)
@@ -152,7 +153,7 @@ export function HomePage() {
   const handleCourseEnrollment = async (course: Course) => {
     try {
       const response = await axios.post(
-        API_CONFIG.USER_COURSES_API.enroll, 
+        `${API_CONFIG.BASE_URL}/user/enroll-course`, 
         { course_id: course.id },
         {
           headers: {
@@ -214,13 +215,17 @@ export function HomePage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="text-lg px-8" style={{ backgroundColor: "#007BFF" }}>
-                  Start Your Journey
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                <Button asChild size="lg" className="text-lg px-8" style={{ backgroundColor: "#007BFF" }}>
+                  <Link href="/courses" className="inline-flex items-center">
+                    Start Your Journey
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="text-lg px-8 bg-transparent">
-                  <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
+                <Button asChild size="lg" variant="outline" className="text-lg px-8 bg-transparent">
+                  <Link href="/about" className="inline-flex items-center">
+                    <Play className="mr-2 h-5 w-5" />
+                    Watch Demo
+                  </Link>
                 </Button>
               </div>
 
@@ -262,10 +267,8 @@ export function HomePage() {
                   width={500}
                   height={600}
                   className="rounded-2xl shadow-2xl"
-                  loading="eager"
                   priority
-                  // Maintain aspect ratio if CSS modifies width
-                  style={{ width: "auto", height: "auto" }}
+                  unoptimized
                 />
                 <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">
                   <div className="flex items-center space-x-3">
@@ -319,7 +322,7 @@ export function HomePage() {
                 </CardHeader>
                 <CardContent className="text-center">
                   <Button
-                    
+                    asChild
                     variant="outline"
                     className="inline-flex items-center justify-center gap-2 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all duration-300 bg-transparent"
                     style={{ borderColor: "#007BFF", color: "#007BFF" }}
@@ -397,19 +400,28 @@ export function HomePage() {
                   <CardHeader className="p-0">
                     <div className="relative overflow-hidden rounded-t-lg">
                       <Image
-                        src={getFullImageUrl(course.image)}
+                        src={getProxyImageUrl(course.image)}
                         alt={course.title}
                         width={300}
                         height={200}
                         className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => {
+                          // Next/Image forwards to underlying img element
+                          // @ts-ignore
+                          if (e?.currentTarget) {
+                            // @ts-ignore
+                            e.currentTarget.src = "/placeholder.svg";
+                          }
+                          console.error("Course image failed:", getFullImageUrl(course.image));
+                        }}
                       />
                       <div className="absolute top-4 left-4">
                         <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{course.category}</Badge>
                       </div>
                       <div className="absolute top-4 right-4">
                         <Badge variant="outline" className="bg-white">
-                          {course.rating} ★
+                          {course.rating && course.rating > 0 ? `${course.rating} ★` : "New"}
                         </Badge>
                       </div>
                     </div>
@@ -423,7 +435,7 @@ export function HomePage() {
                     </CardDescription>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                        {course.price} EGP
+                        {formatNumber(course.price)} EGP
                       </span>
                     <ProtectedAction onAction={() => handleCourseEnrollment(course)}>
                       <Button style={{ backgroundColor: "#007BFF" }}>
@@ -443,7 +455,7 @@ export function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg" >
+            <Button asChild variant="outline" size="lg" >
               <Link href="/courses" className="inline-flex items-center gap-2">
                 View All Courses
                 <ArrowRight className="h-5 w-5" />
@@ -492,15 +504,25 @@ export function HomePage() {
                   <CardHeader className="p-0">
                     <div className="relative overflow-hidden rounded-t-lg">
                       <Image
-                        src={getFullImageUrl(product.image)}
+                        src={getProxyImageUrl(product.image)}
                         alt={product.name}
                         width={300}
                         height={300}
                         className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => {
+                          // @ts-ignore
+                          if (e?.currentTarget) {
+                            // @ts-ignore
+                            e.currentTarget.src = "/placeholder.svg";
+                          }
+                          console.error("Product image failed:", getFullImageUrl(product.image));
+                        }}
                       />
                       <div className="absolute top-4 right-4">
-                        <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>{product.rating} ★</Badge>
+                        <Badge style={{ backgroundColor: "#32CD32", color: "#FFFFFF" }}>
+                          {product.rating && product.rating > 0 ? `${product.rating} ★` : "New"}
+                        </Badge>
                       </div>
                     </div>
                   </CardHeader>
@@ -513,7 +535,7 @@ export function HomePage() {
                     </CardDescription>
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold" style={{ color: "#007BFF" }}>
-                        {product.price} EGP
+                        {formatNumber(product.price || 0)} EGP
                       </span>
 
                     
@@ -535,7 +557,7 @@ export function HomePage() {
           </div>
 
           <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
+            <Button asChild variant="outline" size="lg">
               <Link href="/products" className="inline-flex items-center gap-2">
                 View All Products
                 <ArrowRight className="h-5 w-5" />
@@ -559,15 +581,18 @@ export function HomePage() {
             fitness programs and expert-led courses.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8 bg-white text-black hover:bg-gray-100">
-              Start Free Trial
+            <Button asChild size="lg" className="text-lg px-8 bg-white text-black hover:bg-gray-100">
+              <Link href="/courses" className="inline-flex items-center">
+                Start Free Trial
+              </Link>
             </Button>
             <Button
+              asChild
               size="lg"
               variant="outline"
               className="text-lg px-8 text-white border-white hover:bg-white hover:text-black bg-transparent"
             >
-              Learn More
+              <Link href="/about">Learn More</Link>
             </Button>
           </div>
         </div>

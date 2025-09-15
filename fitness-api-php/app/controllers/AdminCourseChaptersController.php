@@ -28,7 +28,7 @@
       if($chapters === false){
         $this->sendError("Error During Get Chapters");
         return;
-      }elseif(empty($categories)){
+      }elseif(empty($chapters)){
         $this->sendError("No Chapter Found",404);
         return;
       }

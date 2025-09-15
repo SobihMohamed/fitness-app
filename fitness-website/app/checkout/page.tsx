@@ -111,9 +111,9 @@ export default function CheckoutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Button asChild variant="ghost" className="mb-4">
-            <Link href="/cart">
+            <Link href="/products">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Cart
+              Continue Shopping
             </Link>
           </Button>
           <h1 className="text-3xl font-bold" style={{ color: "#212529" }}>
@@ -380,20 +380,20 @@ export default function CheckoutPage() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Subtotal ({itemCount} items)</span>
-                      <span style={{ color: "#212529" }}>${total.toFixed(2)}</span>
+                      <span style={{ color: "#212529" }}>{total.toFixed(2)} EGP</span>
                     </div>
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Shipping</span>
-                      <span style={{ color: "#212529" }}>{shipping === 0 ? "FREE" : `$${shipping.toFixed(2)}`}</span>
+                      <span style={{ color: "#212529" }}>{shipping === 0 ? "FREE" : `${shipping.toFixed(2)} EGP`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Tax</span>
-                      <span style={{ color: "#212529" }}>${tax.toFixed(2)}</span>
+                      <span style={{ color: "#212529" }}>{tax.toFixed(2)} EGP</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                       <span style={{ color: "#212529" }}>Total</span>
-                      <span style={{ color: "#007BFF" }}>${finalTotal.toFixed(2)}</span>
+                      <span style={{ color: "#007BFF" }}>{finalTotal.toFixed(2)} EGP</span>
                     </div>
                   </div>
                 </CardContent>
@@ -432,7 +432,7 @@ export default function CheckoutPage() {
                 disabled={isProcessing}
                 style={{ backgroundColor: "#007BFF" }}
               >
-                {isProcessing ? "Processing..." : `Complete Order - $${finalTotal.toFixed(2)}`}
+                {isProcessing ? "Processing..." : `Complete Order - ${finalTotal.toFixed(2)} EGP`}
               </Button>
 
               <p className="text-xs text-center" style={{ color: "#6C757D" }}>

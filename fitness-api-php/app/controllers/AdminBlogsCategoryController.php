@@ -24,11 +24,11 @@
     public function getAll(){
       $this->requireSuperAdmin();
 
-      $blogCategories = $this->blogsCategoryModel->AllCategories();
+      $blogCategories = $this->blogsCategoryModel->allCategories();
       if($blogCategories === false){
         $this->sendError("Error During Get Blogs Categories");
         return;
-      }elseif(empty($categories)){
+      }elseif(empty($blogCategories)){
         $this->sendError("No Category Found",404);
         return;
       }

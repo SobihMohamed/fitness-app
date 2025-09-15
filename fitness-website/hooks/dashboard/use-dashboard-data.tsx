@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { API_CONFIG } from "@/config/api";
 import { Users, Package, BookOpen, Shield, ShoppingCart } from "lucide-react";
-import { useAdminAuth } from "../admin/use-admin-auth";
+import { getHttpClient } from "@/lib/http";
+import { extractArray, toNumber } from "@/lib/data";
 
 // API Response interfaces
 interface UsersApiResponse {
@@ -111,42 +112,38 @@ export function useDashboardData(): UseDashboardDataReturn {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { getAuthHeaders } = useAdminAuth();
+  const http = getHttpClient();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
-        // Fetch all data concurrently
-        const authHeaders = getAuthHeaders();
-        const headers: Record<string, string> = {
-          "Content-Type": "application/json",
-        };
-        
-        // Add authorization header if it exists
-        if (authHeaders.Authorization) {
-          headers["Authorization"] = authHeaders.Authorization;
-        }
-
-        const [usersResponse, ordersResponse, productsResponse, coursesResponse, adminsResponse, trainingResponse, courseRequestsResponse] = await Promise.all([
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.adminUsers.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getAllProducts, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminCourse.getAllCourses, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.superAdminControlleAdmins.getAll, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
-          fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests, { headers }).then(res => res.json()).catch(() => ({ data: [] })),
+        // Fetch all data concurrently via Axios
+        const [
+          usersRes,
+          ordersRes,
+          productsRes,
+          coursesRes,
+          adminsRes,
+          trainingRes,
+          courseReqsRes,
+        ] = await Promise.all([
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.adminUsers.getAll).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getAllProducts).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.AdminCourse.getAllCourses).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.superAdminControlleAdmins.getAll).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests).catch(() => ({ data: { data: [] } } as any)),
+          http.get(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests).catch(() => ({ data: { data: [] } } as any)),
         ]);
 
-        const users = usersResponse.users || usersResponse.data || [];
-        const orders = ordersResponse.orders || ordersResponse.data || [];
-        const products = productsResponse.products || productsResponse.data || [];
-        const courses = coursesResponse.courses || coursesResponse.data || [];
-        console.log('ADMINS API RESPONSE:', adminsResponse);
-        const admins = adminsResponse.admins || adminsResponse.users || adminsResponse.data || [];
-        const trainingRequests = trainingResponse.data || trainingResponse.requests || [];
-        const courseRequests = courseRequestsResponse.data || courseRequestsResponse.requests || [];
+        const users = usersRes?.data?.users || extractArray(usersRes?.data);
+        const orders = ordersRes?.data?.orders || extractArray(ordersRes?.data);
+        const products = productsRes?.data?.products || extractArray(productsRes?.data);
+        const courses = coursesRes?.data?.courses || extractArray(coursesRes?.data);
+        const admins = adminsRes?.data?.admins || adminsRes?.data?.users || extractArray(adminsRes?.data);
+        const trainingRequests = trainingRes?.data?.requests || extractArray(trainingRes?.data);
+        const courseRequests = courseReqsRes?.data?.requests || extractArray(courseReqsRes?.data);
 
         // Process data for stats cards
         const totalUsers = users.length;
@@ -155,18 +152,15 @@ export function useDashboardData(): UseDashboardDataReturn {
         const totalProducts = products.length;
         const totalCourses = courses.length;
         const totalOrders = orders.length;
-        const totalRevenue = orders.reduce((sum: number, order: any) => sum + (parseFloat(order.total_amount) || parseFloat(order.total_price) || 0), 0);
+        const totalRevenue = orders.reduce((sum: number, order: any) => sum + (toNumber(order.total_amount) || toNumber(order.total_price) || 0), 0);
 
         const newStats: StatCard[] = [
-          { title: "Users", value: totalUsers.toString(), change: "+12%", trend: "up", icon: Users, color: "#007BFF" },
-          { title: "Admins", value: totalAdmins.toString(), change: "+2%", trend: "up", icon: Shield, color: "#6C757D" },
-          { title: "Products", value: totalProducts.toString(), change: "+7%", trend: "up", icon: Package, color: "#6C757D" },
-          { title: "Courses", value: totalCourses.toString(), change: "+4%", trend: "up", icon: BookOpen, color: "#FF8042" },
-          { title: "Orders", value: totalOrders.toString(), change: "+5%", trend: "up", icon: ShoppingCart, color: "#007BFF" },
-          // Removed Revenue card from stats to avoid showing pseudo data in UI
+          { title: "Users", value: String(totalUsers), change: "+12%", trend: "up", icon: Users, color: "#007BFF" },
+          { title: "Admins", value: String(totalAdmins), change: "+2%", trend: "up", icon: Shield, color: "#6C757D" },
+          { title: "Products", value: String(totalProducts), change: "+7%", trend: "up", icon: Package, color: "#6C757D" },
+          { title: "Courses", value: String(totalCourses), change: "+4%", trend: "up", icon: BookOpen, color: "#FF8042" },
+          { title: "Orders", value: String(totalOrders), change: "+5%", trend: "up", icon: ShoppingCart, color: "#007BFF" },
         ];
-
-        console.log('ADMIN COUNT DERIVED:', totalAdmins, admins);
         setStats(newStats);
 
         // Process user stats
