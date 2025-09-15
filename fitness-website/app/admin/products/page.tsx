@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, Fragment, useCallback, useMemo } from "react";
-import { useLoading } from "@/hooks/use-loading";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +12,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
+import { getHttpClient } from "@/lib/http";
 import { Plus, Search, Edit3, Trash2, Save, X, Package, Tag, Upload, UploadCloud, ImageIcon, 
   Images, Info, Sparkles, CheckCircle, AlertCircle, Loader2, ChevronDown, ChevronLeft, 
   ChevronRight, DollarSign, PlusCircle, FolderTree, Filter, FileText, BarChart2, 
   Settings, ShoppingBag, Eye, RefreshCcw } from "lucide-react";
-import Loading from "@/app/loading";
 import { API_CONFIG } from "@/config/api";
+ 
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -101,7 +101,6 @@ export default function ProductsManagement() {
   const [showCategoryGenerator, setShowCategoryGenerator] = useState(false);
 
   // Loading states
-  const { isAnyLoading, withLoading } = useLoading();
   const [initialLoading, setInitialLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -113,6 +112,7 @@ export default function ProductsManagement() {
 
   const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast, showInfoToast } =
     useAdminApi();
+  const http = getHttpClient();
 
   // Initialize data
   useEffect(() => {
@@ -121,18 +121,10 @@ export default function ProductsManagement() {
         await Promise.all([
           (async () => {
             try {
-              const res = await fetch(
-                `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
-                {
-                  headers: getAuthHeaders(),
-                }
+              const { data } = await http.get(
+                `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`
               );
-              const data = await res.json();
-              if (res.ok) {
-                setCategories(data.data || []);
-              } else {
-                showErrorToast("Failed to load categories");
-              }
+              setCategories(data.data || []);
             } catch (err) {
               showErrorToast("Network error while loading categories");
             }
@@ -147,36 +139,28 @@ export default function ProductsManagement() {
   }, []);
 
   const fetchProducts = async () => {
-    await withLoading("products", async () => {
-      try {
-        const res = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getAllProducts}`,
-          {
-            headers: getAuthHeaders(),
-          }
-        );
-        if (res.status === 404) {
-          setProducts([]);
-          return;
-        }
-        const result = await parseResponse(res);
-        const data = result.data || [];
-        const formattedData: Product[] = data.map((product: any) => ({
-          product_id: product.product_id,
-          name: product.name,
-          main_image_url: product.main_image_url || "",
-          price: product.price,
-          description: product.description,
-          is_in_stock: product.is_in_stock || "0",
-          category_id: product.category_id,
-        }));
-
-        // Do not fetch sub-images here. We'll lazy-load them when opening details.
-        setProducts(formattedData);
-      } catch (err: any) {
-        showErrorToast(err.message || "Network error while loading products");
+    try {
+      const { data: result } = await http.get(
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.getAll}`
+      );
+      const data = result.data || [];
+      const formattedData: Product[] = data.map((product: any) => ({
+        product_id: product.product_id,
+        name: product.name,
+        main_image_url: product.main_image_url || "",
+        price: product.price,
+        description: product.description,
+        is_in_stock: product.is_in_stock || "0",
+        category_id: product.category_id,
+      }));
+      setProducts(formattedData);
+    } catch (err: any) {
+      if (err?.status === 404) {
+        setProducts([]);
+        return;
       }
-    });
+      showErrorToast(err?.message || "Network error while loading products");
+    }
   };
 
   // Ensure product details (sub-images) are loaded before opening details dialog
@@ -185,12 +169,9 @@ export default function ProductsManagement() {
       // Only skip fetching if we already have a non-empty sub_images array
       if (product.sub_images && product.sub_images.length > 0) return product;
       try {
-        const res = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(product.product_id)}`,
-          { headers: getAuthHeaders() }
+        const { data: subJson } = await http.get(
+          `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(product.product_id)}`
         );
-        if (!res.ok) return product;
-        const subJson = await res.json();
         const subImages: string[] = subJson?.Product?.sub_images || [];
         const updated = { ...product, sub_images: subImages } as Product;
         // update in products list too
@@ -337,7 +318,7 @@ export default function ProductsManagement() {
       if (!fullProduct.sub_images || fullProduct.sub_images.length === 0) {
         try {
           const res = await fetch(
-            `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(product.product_id)}`,
+            `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(product.product_id)}`,
             { headers: getAuthHeaders() }
           );
           if (res.ok) {
@@ -412,7 +393,7 @@ export default function ProductsManagement() {
       filesToUpload.forEach((f) => formData.append("sub_images[]", f));
 
       const response = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.update(fullProduct.product_id)}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.update(fullProduct.product_id)}`,
         {
           method: "POST",
           headers: { Authorization: getAuthHeaders().Authorization },
@@ -466,7 +447,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.add}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.add}`,
         {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -478,7 +459,7 @@ export default function ProductsManagement() {
         showSuccessToast(`Category "${newCategoryName}" added successfully!`);
         setNewCategoryName("");
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -506,7 +487,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.update}/${editingCategoryId}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.update}/${editingCategoryId}`,
         {
           method: "POST",
           headers: getAuthHeaders(),
@@ -519,7 +500,7 @@ export default function ProductsManagement() {
         setEditingCategoryId(null);
         setEditingCategoryName("");
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -557,7 +538,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.delete}/${deleteTarget.id}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.delete}/${deleteTarget.id}`,
         {
           method: "DELETE",
           headers: getAuthHeaders(),
@@ -602,7 +583,7 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.add}`,
+        `${API_CONFIG.ADMIN_FUNCTIONS.categories.add}`,
         {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -613,7 +594,7 @@ export default function ProductsManagement() {
       if (res.ok) {
         showSuccessToast(`Category "${categoryName}" added successfully!`);
         const refreshRes = await fetch(
-          `${API_CONFIG.ADMIN_FUNCTIONS.AdminCategory.getAllCategory}`,
+          `${API_CONFIG.ADMIN_FUNCTIONS.categories.getAll}`,
           {
             headers: getAuthHeaders(),
           }
@@ -664,7 +645,7 @@ export default function ProductsManagement() {
         if (!subImages || subImages.length === 0) {
           try {
             const res = await fetch(
-              `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.getSingleProduct(editingProduct.product_id)}`,
+              `${API_CONFIG.ADMIN_FUNCTIONS.products.getById(editingProduct.product_id)}`,
               { headers: getAuthHeaders() }
             );
             if (res.ok) {
@@ -704,10 +685,10 @@ export default function ProductsManagement() {
     try {
       setIsSubmitting(true);
       const url = editingProduct
-        ? API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.update(
+        ? API_CONFIG.ADMIN_FUNCTIONS.products.update(
             editingProduct.product_id
           )
-        : API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.add;
+        : API_CONFIG.ADMIN_FUNCTIONS.products.add;
       const res = await fetch(url, {
         method: "POST",
         headers: { Authorization: getAuthHeaders().Authorization },
@@ -752,21 +733,15 @@ export default function ProductsManagement() {
     if (!deleteTarget || deleteTarget.type !== "product") return;
     try {
       setIsSubmitting(true);
-      const res = await fetch(
-        `${API_CONFIG.ADMIN_FUNCTIONS.AdminProduct.delete(deleteTarget.id)}`,
-        {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        }
+      await http.delete(
+        `${API_CONFIG.ADMIN_FUNCTIONS.products.delete(deleteTarget.id)}`
       );
-      const result = await parseResponse(res);
-      if (!res.ok) throw new Error(result.message || "Delete failed");
       showSuccessToast("Product deleted successfully!");
       setProducts((prev) =>
         prev.filter((p) => p.product_id !== deleteTarget.id)
       );
     } catch (err: any) {
-      showErrorToast(err.message || "Network error while deleting product");
+      showErrorToast(err?.message || "Network error while deleting product");
     } finally {
       setIsSubmitting(false);
       setShowDeleteConfirm(false);
@@ -826,18 +801,12 @@ export default function ProductsManagement() {
     setEditingCategoryName("");
   };
 
-  
+  // Use initialLoading without rendering a page-level loader (layout handles common loading)
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  initialLoading;
 
   return (
     <AdminLayout>
-      {(isAnyLoading() || initialLoading) ? (
-        <Loading
-          variant="admin"
-          size="lg"
-          message="Loading products and categories..."
-          className="h-[80vh]"
-        />
-      ) : (
       <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 to-white min-h-screen">
         {/* Header */}
         <div className="flex justify-between items-start p-4">
@@ -2139,7 +2108,6 @@ export default function ProductsManagement() {
           </DialogContent>
         </Dialog>
       </div>
-      )}
     </AdminLayout>
   );
 }

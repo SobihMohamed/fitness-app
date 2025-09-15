@@ -36,6 +36,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { getHttpClient } from "@/lib/http";
+ 
 
 const { ADMIN_FUNCTIONS, USER_FUNCTIONS } = API_CONFIG;
 
@@ -102,6 +104,7 @@ function useUser(userId: string | null) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const { getAuthHeaders } = useAdminApi();
+  const http = getHttpClient();
 
   useEffect(() => {
     if (!userId) return;
@@ -109,13 +112,9 @@ function useUser(userId: string | null) {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        const res = await fetch(ADMIN_FUNCTIONS.adminUsers.getById(userId), {
+        const { data } = await http.get(ADMIN_FUNCTIONS.users.getById(userId), {
           headers: getAuthHeaders(),
         });
-
-        if (!res.ok) return;
-
-        const data = await res.json();
         setUser(data.user || data.data || null);
       } catch (e) {
         console.error("Error fetching user:", e);
@@ -140,9 +139,9 @@ const UserDisplay = ({ userId, fallbackName }: { userId?: string; fallbackName?:
     return <span>{user.name}</span>;
   }
 
-  // If we're loading user data, show a loading indicator
+  // Do not show an inline loading indicator; keep UI clean like services/blogs
   if (loading) {
-    return <span className="text-slate-500">Loading...</span>;
+    return <span />;
   }
 
   // If we have a fallback name, display it
@@ -164,6 +163,7 @@ function useApiGet(url: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { getAuthHeaders } = useAdminApi();
+  const http = getHttpClient();
 
   useEffect(() => {
     if (!url) return;
@@ -175,23 +175,12 @@ function useApiGet(url: string | null) {
       setLoading(false);
       return;
     }
-    fetch(url, { headers: getAuthHeaders() })
-      .then(async (res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        try {
-          return await res.json();
-        } catch (e) {
-          throw new Error("Invalid server response. Please contact support.");
-        }
-      })
-      .then(setData)
-      .catch((e) => {
+    http
+      .get(url, { headers: getAuthHeaders() })
+      .then((res) => setData(res.data))
+      .catch((e: any) => {
         console.error(e);
-        setError(
-          e instanceof Error
-            ? e.message
-            : "Network or server error. Please check your backend and try again."
-        );
+        setError(e?.message || "Network or server error. Please check your backend and try again.");
       })
       .finally(() => setLoading(false));
   }, [url]);
@@ -260,14 +249,17 @@ function RequestsTable({
   section: "training" | "courses" | "orders";
 }) {
   const { getAuthHeaders, showSuccessToast, showErrorToast } = useAdminApi();
+  const http = getHttpClient();
   // Use the correct API endpoint for orders
   const apiUrl =
     section === "training"
-      ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests
+      ? ADMIN_FUNCTIONS.requests.training.getAll
       : section === "courses"
-      ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests
-      : ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders;
+      ? ADMIN_FUNCTIONS.requests.courses.getAll
+      : ADMIN_FUNCTIONS.orders.getAll;
   const { data, loading, error, setData } = useApiGet(apiUrl);
+
+  // page-level overlay removed; rely on common loader in layout only
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -348,20 +340,12 @@ function RequestsTable({
       const token = typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
       if (!token)
         throw new Error("Missing adminAuth token. Please log in as admin.");
-
-      const res = await fetch(
-        section === "training"
-          ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.showSpecificInformationAboutRequestAndUser(id)
-          : section === "courses"
-          ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.showSpecificInformationAboutRequestAndUser(id)
-          : ADMIN_FUNCTIONS.AdminManagesOrders.getSingleOrder(id),
-        {
-        headers: getAuthHeaders(),
-      });
-
-      if (!res.ok) throw new Error("Failed to fetch details");
-
-      const raw = await res.json();
+      const url = section === "training"
+        ? ADMIN_FUNCTIONS.requests.training.getDetails(id)
+        : section === "courses"
+        ? ADMIN_FUNCTIONS.requests.courses.getDetails(id)
+        : ADMIN_FUNCTIONS.orders.getById(id);
+      const { data: raw } = await http.get(url, { headers: getAuthHeaders() });
       const d = raw?.data ?? raw;
       let normalized: any = d;
       if (section === "courses") {
@@ -406,24 +390,24 @@ function RequestsTable({
       if (type === "cancel") {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.cancelRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.cancel(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.cancelRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.cancelOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.cancel(id)
+            : ADMIN_FUNCTIONS.orders.cancel(id);
       } else if (type === "approve") {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.approveRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.approve(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.approveRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.approveOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.approve(id)
+            : ADMIN_FUNCTIONS.orders.approve(id);
       } else {
         url =
           section === "training"
-            ? ADMIN_FUNCTIONS.AdminManageTrainingRequests.deleteRequest(id)
+            ? ADMIN_FUNCTIONS.requests.training.delete(id)
             : section === "courses"
-            ? ADMIN_FUNCTIONS.AdminManageCoursesRequests.deleteRequest(id)
-            : ADMIN_FUNCTIONS.AdminManagesOrders.deleteOrder(id);
+            ? ADMIN_FUNCTIONS.requests.courses.delete(id)
+            : ADMIN_FUNCTIONS.orders.delete(id);
       }
 
       // Use HTTP methods per backend routes:
@@ -487,17 +471,10 @@ function RequestsTable({
           throw new Error(`Failed to cancel course request. Tried ${candidates.length} endpoints. Last status: ${lastStatus}. Body: ${lastBody}`);
         }
       } else {
-        const res = await fetch(url, {
-          method,
-          headers: getAuthHeaders(),
-        });
-        
-        if (!res.ok) {
-          const errorBody = await res.text();
-          console.error("API Error Response:", errorBody);
-          throw new Error(
-            `Failed to ${type}. Status: ${res.status}. Body: ${errorBody}`
-          );
+        if (method === "DELETE") {
+          await http.delete(url, { headers: getAuthHeaders() });
+        } else {
+          await http.put(url, {}, { headers: getAuthHeaders() });
         }
       }
 
@@ -588,15 +565,7 @@ function RequestsTable({
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                Array.from({ length: rowsPerPage }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="px-4 py-4 bg-slate-50" colSpan={5}>
-                      <div className="h-4 bg-slate-200 rounded w-3/4 mx-auto" />
-                    </td>
-                  </tr>
-                ))
-              ) : paginated.length === 0 ? (
+              {(!loading && paginated.length === 0) ? (
                 <tr>
                   <td colSpan={5} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-2">

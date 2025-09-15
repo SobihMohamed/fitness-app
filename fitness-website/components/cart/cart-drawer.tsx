@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/contexts/auth-context"
 import { ShoppingCart, Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
+import { toast } from "sonner"
 
 export function CartDrawer() {
   const cartContext = useCart();
@@ -14,6 +15,24 @@ export function CartDrawer() {
   const { toggleCart, closeCart, updateQuantity, removeItem, getCartCount, openCart } = cartContext;
   const { user } = useAuth();
   const itemCount = getCartCount();
+
+  const handleDecrease = (id: string, quantity: number, name?: string) => {
+    if (quantity > 1) {
+      updateQuantity(id, quantity - 1)
+      toast("Quantity decreased")
+    } else {
+      // quantity is 1 -> confirm deletion
+      toast.warning("Are you sure you want to delete the product?", {
+        action: {
+          label: "Delete",
+          onClick: () => {
+            removeItem(id)
+            toast.success("Product removed")
+          },
+        },
+      })
+    }
+  }
 
   return (
     <Sheet
@@ -89,8 +108,7 @@ export function CartDrawer() {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 bg-transparent"
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
+                      onClick={() => handleDecrease(item.id, item.quantity, item.name)}
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
@@ -99,7 +117,7 @@ export function CartDrawer() {
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 bg-transparent"
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                      onClick={() => { updateQuantity(item.id, item.quantity + 1); toast("Quantity increased") }}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
@@ -119,14 +137,11 @@ export function CartDrawer() {
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium text-foreground">Total:</span>
-                <span className="text-xl font-bold text-primary">${total.toFixed(2)}</span>
+                <span className="text-xl font-bold text-primary">{total.toFixed(2)} EGP</span>
               </div>
-              <div className="space-y-2">
-                <Button  className="w-full bg-primary" onClick={closeCart}>
-                  <Link href="/checkout">Proceed to Checkout</Link>
-                </Button>
-                <Button  variant="outline" className="w-full bg-transparent" onClick={closeCart}>
-                  <Link href="/cart">View Cart</Link>
+              <div>
+                <Button className="w-full bg-primary" onClick={closeCart}>
+                  <Link href="/checkout">Produce CheckOut</Link>
                 </Button>
               </div>
             </div>

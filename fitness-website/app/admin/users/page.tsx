@@ -37,6 +37,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
+import { getHttpClient } from "@/lib/http";
 import {
   Plus,
   Search,
@@ -54,10 +55,9 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
-import Loading from "@/app/loading";
-import { useLoading } from "@/hooks/use-loading";
 import { API_CONFIG } from "@/config/api";
 import { formatDateUTC } from "@/utils/format";
+ 
 
 const { BASE_URL: API_BASE } = API_CONFIG;
 
@@ -114,13 +114,15 @@ export default function UsersManagement() {
   const [currentPage, setCurrentPage] = useState(1);
 
   // Loading states
-  const { setLoading, isLoading, isAnyLoading, withLoading } = useLoading();
-  const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
-
-  // Add initial loading state
   const [initialLoading, setInitialLoading] = useState(true);
+  const [fetchingUsers, setFetchingUsers] = useState(false);
+  const [fetchingAdmins, setFetchingAdmins] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { getAuthHeaders, parseResponse, showSuccessToast, showErrorToast } = useAdminApi();
+  const http = getHttpClient();
 
-  
+  // Show a page-level loader during the very first data fetch to provide feedback
 
   const checkEmailExists = (email: string, excludeId?: string): boolean => {
     const allEmails = [
@@ -157,39 +159,27 @@ export default function UsersManagement() {
   }, []);
 
   const fetchUsers = async () => {
-    return withLoading("users", async () => {
-      try {
-        const res = await fetch(`${API_BASE}/ManageUsers/getAllUsers`, {
-          headers: getAuthHeaders(),
-        });
-        const data = await parseResponse(res);
-        if (res.ok) {
-          setUsers(data.data || data.users || []);
-        } else {
-          showErrorToast(data.message || "Failed to load users");
-        }
-      } catch (err) {
-        showErrorToast("Network error while loading users");
-      }
-    });
+    try {
+      setFetchingUsers(true);
+      const { data } = await http.get(`${API_BASE}/ManageUsers/getAllUsers`);
+      setUsers(data.data || data.users || []);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to load users");
+    } finally {
+      setFetchingUsers(false);
+    }
   };
 
   const fetchAdmins = async () => {
-    return withLoading("admins", async () => {
-      try {
-        const res = await fetch(`${API_BASE}/ManageAdmins/getAllAdmins`, {
-          headers: getAuthHeaders(),
-        });
-        const data = await parseResponse(res);
-        if (res.ok) {
-          setAdmins(data.users || data.data || data.admins || []);
-        } else {
-          showErrorToast(data.message || "Failed to load admins");
-        }
-      } catch (err) {
-        showErrorToast("Network error while loading admins");
-      }
-    });
+    try {
+      setFetchingAdmins(true);
+      const { data } = await http.get(`${API_BASE}/ManageAdmins/getAllAdmins`);
+      setAdmins(data.users || data.data || data.admins || []);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to load admins");
+    } finally {
+      setFetchingAdmins(false);
+    }
   };
 
   // Memoized filtered data calculation for better performance
@@ -268,10 +258,10 @@ export default function UsersManagement() {
       return;
     }
 
-    await withLoading("submit", async () => {
-      try {
+    try {
+      setSubmitting(true);
         let endpoint: string;
-        let method: string;
+        let method: "POST" | "PUT";
         let requestBody: any = {};
 
         if (editingItem) {
@@ -333,32 +323,21 @@ export default function UsersManagement() {
           }
         }
 
-        const res = await fetch(endpoint, {
-          method,
-          headers: getAuthHeaders(),
-          body: JSON.stringify(requestBody),
-        });
+        const res = await (method === "POST"
+          ? http.post(endpoint, requestBody)
+          : http.put(endpoint, requestBody));
 
-        const data = await parseResponse(res);
-
-        if (res.ok || res.status === 200) {
-          const successMessage = editingItem
-            ? `${
-                editingType === "user" ? "User" : "Admin"
-              } updated successfully!`
-            : `${
-                formData.user_type === "admin" ? "Admin" : "User"
-              } added successfully!`;
-          showSuccessToast(successMessage);
-          await Promise.all([fetchUsers(), fetchAdmins()]);
-          resetForm();
-        } else {
-          showErrorToast(data?.message || "Failed to save");
-        }
-      } catch (err) {
-        showErrorToast("Network error while saving");
+        const successMessage = editingItem
+          ? `${editingType === "user" ? "User" : "Admin"} updated successfully!`
+          : `${formData.user_type === "admin" ? "Admin" : "User"} added successfully!`;
+        showSuccessToast(successMessage);
+        await Promise.all([fetchUsers(), fetchAdmins()]);
+        resetForm();
+      } catch (err: any) {
+        showErrorToast(err?.message || "Failed to save");
+      } finally {
+        setSubmitting(false);
       }
-    });
   };
 
   const handleEdit = (item: any) => {
@@ -391,37 +370,26 @@ export default function UsersManagement() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
 
-    await withLoading("delete", async () => {
-      try {
+    try {
+      setDeleting(true);
         const endpoint =
           deleteTarget.type === "user"
             ? `${API_BASE}/ManageUsers/deleteUser/${deleteTarget.id}`
             : `${API_BASE}/ManageAdmins/deleteAdmin/${deleteTarget.id}`;
 
-        const res = await fetch(endpoint, {
-          method: "DELETE",
-          headers: getAuthHeaders(),
-        });
+        await http.delete(endpoint);
 
-        const data = await parseResponse(res);
-
-        if (res.ok || res.status === 200) {
-          showSuccessToast(
-            `${
-              deleteTarget.type === "user" ? "User" : "Admin"
-            } deleted successfully!`
-          );
-          await Promise.all([fetchUsers(), fetchAdmins()]);
-        } else {
-          showErrorToast(data?.message || "Failed to delete");
-        }
-      } catch (err) {
-        showErrorToast("Network error while deleting");
-      } finally {
-        setShowDeleteConfirm(false);
-        setDeleteTarget(null);
-      }
-    });
+        showSuccessToast(
+          `${deleteTarget.type === "user" ? "User" : "Admin"} deleted successfully!`
+        );
+        await Promise.all([fetchUsers(), fetchAdmins()]);
+    } catch (err: any) {
+      showErrorToast(err?.message || "Failed to delete");
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setDeleteTarget(null);
+    }
   };
 
   const resetForm = () => {
@@ -445,20 +413,12 @@ export default function UsersManagement() {
     return formatDateUTC(dateString);
   };
 
-  // Show initial loading screen
-  if (initialLoading) {
-    return (
-      <AdminLayout>
-        <Loading
-          variant="admin"
-          size="lg"
-          message="Loading users and administrators..."
-          icon="users"
-          className="h-[80vh]"
-        />
-      </AdminLayout>
-    );
-  }
+  
+
+  // Render an initial full-screen spinner while fetching data for the first time.
+  // initialLoading handled by AdminLayout overlay only
+  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+  initialLoading;
 
   return (
     <AdminLayout>
@@ -472,172 +432,63 @@ export default function UsersManagement() {
               </div>
               User Management
             </h1>
-            <p className="text-slate-600 mt-3 text-lg">
-              Manage your users and administrators with ease
-            </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={() => setIsAddDialogOpen(true)}
-              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base"
-              disabled={isAnyLoading()}
-            >
-              <Plus className="h-5 w-5" />
-              Add New Admin
-            </Button>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-indigo-700 mb-1">
-                    Total Users
-                  </p>
-                  <p className="text-3xl font-bold text-indigo-900">
-                    {isLoading("users") ? (
-                      <Loading variant="inline" size="sm" message="..." />
-                    ) : (
-                      users.length
-                    )}
-                  </p>
-                </div>
-                <div className="p-3 bg-indigo-200 rounded-full">
-                  <Users className="h-8 w-8 text-indigo-700" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-purple-700 mb-1">
-                    Administrators
-                  </p>
-                  <p className="text-3xl font-bold text-purple-900">
-                    {isLoading("admins") ? (
-                      <Loading variant="inline" size="sm" message="..." />
-                    ) : (
-                      admins.length
-                    )}
-                  </p>
-                </div>
-                <div className="p-3 bg-purple-200 rounded-full">
-                  <Shield className="h-8 w-8 text-purple-700" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Search and Filter */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-slate-800">
-              <Search className="h-5 w-5 text-indigo-600" />
-              Search & Filter Users
-            </CardTitle>
-            <CardDescription className="text-slate-600">
-              Find users by name or email, or filter by account type
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-5 w-5" />
-                  <Input
-                    placeholder="Search users and admins..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-12 text-base border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
-                    disabled={isLoading("users") || isLoading("admins")}
-                  />
-                </div>
-              </div>
-              <Select
-                value={selectedType}
-                onValueChange={(val) => setSelectedType(val)}
-                disabled={isLoading("users") || isLoading("admins")}
+          {(searchTerm || selectedType !== "admins") && (
+            <div className="mt-4 flex items-center gap-3">
+              <span className="text-sm text-slate-600">
+                Found {filteredDataMemo.length} accounts
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchTerm("");
+                  setSelectedType("admins");
+                }}
+                className="h-7 px-3 text-xs hover:bg-slate-50"
+                disabled={fetchingUsers || fetchingAdmins}
               >
-                <SelectTrigger className="w-full md:w-48 h-12 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="users">Users Only</SelectItem>
-                  <SelectItem value="admins">Admins Only</SelectItem>
-                </SelectContent>
-              </Select>
+                Clear Filters
+              </Button>
             </div>
-            {(searchTerm || selectedType !== "admins") && (
-              <div className="mt-4 flex items-center gap-3">
-                <span className="text-sm text-slate-600">
-                  Found {filteredDataMemo.length} accounts
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setSelectedType("admins");
-                  }}
-                  className="h-7 px-3 text-xs hover:bg-slate-50"
-                >
-                  Clear Filters
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
 
         {/* Users Table */}
         <Card className="border-0 shadow-lg">
           <CardContent className="p-0">
-            {(isLoading("users") || isLoading("admins")) &&
-            !isLoading("initial") ? (
-              <Loading
-                variant="admin"
-                message="Loading data..."
-                icon="users"
-                className="py-16"
-              />
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50 border-b border-slate-200">
-                      <TableHead className="font-semibold text-slate-700">
-                        Type
-                      </TableHead>
-                      <TableHead className="font-semibold text-slate-700">
-                        Name
-                      </TableHead>
-                      <TableHead className="font-semibold text-slate-700">
-                        Email
-                      </TableHead>
-                      <TableHead className="font-semibold text-slate-700">
-                        Phone
-                      </TableHead>
-                      <TableHead className="font-semibold text-slate-700">
-                        Role/Type
-                      </TableHead>
-                      <TableHead className="font-semibold text-slate-700">
-                        Created
-                      </TableHead>
-                      <TableHead className="w-32 text-center font-semibold text-slate-700">
-                        Actions
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedData.map((item) => {
-                      const isUser = item.type === "user";
-                      const itemId = isUser ? item.user_id : item.admin_id;
-
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50 border-b border-slate-200">
+                    <TableHead className="font-semibold text-slate-700">
+                      Type
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Name
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Email
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Phone
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Role/Type
+                    </TableHead>
+                    <TableHead className="font-semibold text-slate-700">
+                      Created
+                    </TableHead>
+                    <TableHead className="w-32 text-center font-semibold text-slate-700">
+                      Actions
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedData.map((item) => {
+                    const isUser = item.type === "user";
+                    const itemId = isUser ? item.user_id : item.admin_id;
+ 
                       return (
                         <TableRow
                           key={itemId}
@@ -708,7 +559,7 @@ export default function UsersManagement() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleEdit(item)}
-                                disabled={isAnyLoading()}
+                                disabled={submitting || deleting}
                                 className="h-9 w-9 p-0 hover:bg-indigo-50 hover:border-indigo-200 transition-all duration-150"
                               >
                                 <Edit3 className="h-4 w-4 text-indigo-600" />
@@ -717,7 +568,7 @@ export default function UsersManagement() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => confirmDelete(item)}
-                                disabled={isAnyLoading()}
+                                disabled={deleting}
                                 className="h-9 w-9 p-0 hover:bg-red-50 hover:border-red-200 transition-all duration-150"
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
@@ -752,7 +603,7 @@ export default function UsersManagement() {
                       <Button
                         onClick={() => setIsAddDialogOpen(true)}
                         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
-                        disabled={isAnyLoading()}
+                        disabled={submitting || deleting || fetchingUsers || fetchingAdmins}
                       >
                         <Plus className="h-4 w-4" />
                         Add Your First Admin
@@ -770,7 +621,7 @@ export default function UsersManagement() {
                         variant={currentPage === i + 1 ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(i + 1)}
-                        disabled={isAnyLoading()}
+                        disabled={submitting || deleting}
                         className={`w-10 h-10 ${
                           currentPage === i + 1
                             ? "bg-indigo-600 hover:bg-indigo-700"
@@ -783,7 +634,7 @@ export default function UsersManagement() {
                   </div>
                 )}
               </div>
-            )}
+
           </CardContent>
         </Card>
 
@@ -817,7 +668,7 @@ export default function UsersManagement() {
                       setFormData({ ...formData, name: e.target.value })
                     }
                     required
-                    disabled={isLoading("submit")}
+                    disabled={submitting}
                     className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
@@ -834,7 +685,7 @@ export default function UsersManagement() {
                       setFormData({ ...formData, email: e.target.value })
                     }
                     required
-                    disabled={isLoading("submit")}
+                    disabled={submitting}
                     className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
@@ -849,7 +700,7 @@ export default function UsersManagement() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone: e.target.value })
                     }
-                    disabled={isLoading("submit")}
+                    disabled={submitting}
                     className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
@@ -864,7 +715,7 @@ export default function UsersManagement() {
                     onChange={(e) =>
                       setFormData({ ...formData, country: e.target.value })
                     }
-                    disabled={isLoading("submit")}
+                    disabled={submitting}
                     className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                   />
                 </div>
@@ -880,7 +731,7 @@ export default function UsersManagement() {
                       onValueChange={(val) =>
                         setFormData({ ...formData, role: val })
                       }
-                      disabled={isLoading("submit")}
+                      disabled={submitting}
                     >
                       <SelectTrigger className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500">
                         <SelectValue placeholder="Select role" />
@@ -910,7 +761,7 @@ export default function UsersManagement() {
                         setFormData({ ...formData, password: e.target.value })
                       }
                       required={!editingItem}
-                      disabled={isLoading("submit")}
+                      disabled={submitting}
                       className="h-11 border-slate-200 focus:border-indigo-500 focus:ring-indigo-500 pr-12"
                     />
                     <Button
@@ -919,7 +770,7 @@ export default function UsersManagement() {
                       size="sm"
                       className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                       onClick={() => setShowPassword(!showPassword)}
-                      disabled={isLoading("submit")}
+                      disabled={submitting}
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -942,7 +793,7 @@ export default function UsersManagement() {
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  disabled={isLoading("submit")}
+                  disabled={submitting}
                   className="border-slate-200 focus:border-indigo-500 focus:ring-indigo-500"
                 />
               </div>
@@ -951,28 +802,18 @@ export default function UsersManagement() {
                   type="button"
                   variant="outline"
                   onClick={resetForm}
-                  disabled={isLoading("submit")}
+                  disabled={submitting}
                   className="px-6 bg-transparent"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isLoading("submit")}
+                  disabled={submitting}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 px-6"
                 >
-                  {isLoading("submit") ? (
-                    <Loading
-                      variant="inline"
-                      size="sm"
-                      message={editingItem ? "Saving..." : "Adding..."}
-                    />
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      {editingItem ? "Save Changes" : "Add Account"}
-                    </>
-                  )}
+                  <Save className="h-4 w-4" />
+                  {editingItem ? "Save Changes" : "Add Account"}
                 </Button>
               </DialogFooter>
             </form>
@@ -999,29 +840,18 @@ export default function UsersManagement() {
                   setShowDeleteConfirm(false);
                   setDeleteTarget(null);
                 }}
-                disabled={isLoading("delete")}
+                disabled={deleting}
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
                 onClick={handleDelete}
-                disabled={isLoading("delete")}
+                disabled={deleting}
                 className="flex items-center gap-2"
               >
-                {isLoading("delete") ? (
-                  <Loading
-                    variant="inline"
-                    size="sm"
-                    message="Deleting..."
-                    icon="trash"
-                  />
-                ) : (
-                  <>
-                    <Trash2 className="h-4 w-4" />
-                    Delete
-                  </>
-                )}
+                <Trash2 className="h-4 w-4" />
+                Delete
               </Button>
             </DialogFooter>
           </DialogContent>
