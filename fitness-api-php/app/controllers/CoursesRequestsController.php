@@ -3,6 +3,7 @@ namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\Courses;
 use App\models\CoursesRequest;
+use App\models\Promo_Codes;
 use App\Helpers\NotifyHelper;
 
 use DateTime;
@@ -25,38 +26,41 @@ class CoursesRequestsController extends AbstractController {
     // تأكد أن course_id مرسل
     if (empty($data['course_id']))
         return $this->sendError("Course ID is required", 400);
+    $courseModel = new Courses();
+    $course = $courseModel->getCourseById($data['course_id']);
 
-    // احضر اسم الكورس
-    $course = $this->reqModel->getSpecificRequestById($data['course_id']);
     if (!$course)
         return $this->sendError("Course not found", 404);
 
     $data['original_total'] = $course['price'];
-    if($data['promo_code_used'] != null && trim($data['promo_code_used']) != "") {
-        $promoModel = new Promo_Codes();
-        $PromoCode = $promoModel->getPromoByPromo($data['promo_code_used']);
-        if(empty($PromoCode)){
-          $this->sendError("InValid Promo Code");
+    // Default pricing values
+    if (!isset($data['discount_value'])) { $data['discount_value'] = 0; }
+    if (!isset($data['net_total'])) { $data['net_total'] = $data['original_total']; }
+
+    // Only process promo code if the field exists and has a non-empty value
+    if (isset($data['promo_code_used']) && $data['promo_code_used'] !== null && trim($data['promo_code_used']) !== "") {
+      $promoModel = new Promo_Codes();
+      $PromoCode = $promoModel->getPromoByPromo($data['promo_code_used']);
+      if(empty($PromoCode)){
+        $this->sendError("InValid Promo Code");
+        return;
+      }
+      $currentDate = new DateTime();
+      $endDate = new DateTime($PromoCode['end_date']);
+      $percentageOfDiscount = 0;
+      if(!empty($PromoCode)){
+        if($currentDate < $endDate){
+          $percentageOfDiscount = $PromoCode['percentage_of_discount'];
+          $data['discount_value'] = $percentageOfDiscount;
+          $data['net_total'] = $data['original_total'] - ($data['original_total'] * $percentageOfDiscount / 100) ;
+        }else{
+          $this->sendError("Promo Code Not Available");
           return;
         }
-        $currentDate = new DateTime();
-        $endDate = new DateTime($PromoCode['end_date']);
-        $percentageOfDiscount = 0;
-        if(!empty($PromoCode)){
-          if($currentDate < $endDate){
-            $percentageOfDiscount = $PromoCode['percentage_of_discount'];
-            $data['discount_value'] = $percentageOfDiscount;
-            $data['net_total'] = $data['original_total'] - ($data['original_total'] * $percentageOfDiscount / 100) ;
-          }else{
-            $this->sendError("Promo Code Not Available");
-            return;
-          }
-        }
+      }
     }
 
-
-    // احضر اسم الكورس
-
+    // Create request
     $ok = $this->reqModel->create($data);
     if (!$ok) 
       return $this->sendError("Cannot submit request",500);

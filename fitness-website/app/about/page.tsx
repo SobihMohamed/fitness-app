@@ -1,6 +1,7 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Users, Award, Target, Heart, Trophy, Zap } from "lucide-react"
 
@@ -91,7 +92,7 @@ export default function AboutPage() {
       <section className="py-20 lg:py-32 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
+            <motion.div className="space-y-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className="space-y-4">
                 <Badge className="bg-secondary text-secondary-foreground">Our Story</Badge>
                 <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
@@ -107,15 +108,15 @@ export default function AboutPage() {
                 <Button className="bg-primary hover:bg-primary/90">Join Our Community</Button>
                 <Button variant="outline">Meet Our Team</Button>
               </div>
-            </div>
-            <div className="relative">
+            </motion.div>
+            <motion.div className="relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
               <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
                 <div className="text-center">
                   <Users className="h-24 w-24 text-primary mx-auto mb-4" />
                   <p className="text-lg font-semibold text-foreground">50,000+ Happy Members</p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>

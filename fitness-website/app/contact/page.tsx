@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Calendar, CheckCircle } from "lucide-react"
+import { motion } from "framer-motion"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -129,15 +130,17 @@ export default function ContactPage() {
       {/* Hero Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge className="bg-secondary text-secondary-foreground mb-4">Get In Touch</Badge>
-          <h1 className="text-4xl lg:text-5xl font-bold mb-6 text-foreground">
-            Contact
-            <span className="text-primary"> Us</span>
-          </h1>
-          <p className="text-xl max-w-3xl mx-auto text-muted">
-            Have questions about our services or need help getting started? We're here to help you on your fitness
-            journey.
-          </p>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <Badge className="bg-secondary text-secondary-foreground mb-4">Get In Touch</Badge>
+            <h1 className="text-4xl lg:text-5xl font-bold mb-6 text-foreground">
+              Contact
+              <span className="text-primary"> Us</span>
+            </h1>
+            <p className="text-xl max-w-3xl mx-auto text-muted">
+              Have questions about our services or need help getting started? We're here to help you on your fitness
+              journey.
+            </p>
+          </motion.div>
         </div>
       </section>
 

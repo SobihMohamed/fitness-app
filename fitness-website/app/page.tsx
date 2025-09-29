@@ -1,4 +1,4 @@
-import { HomePage } from "@/components/pages/home"
+import { HomePage } from "./home/page"
 import { API_CONFIG } from "@/config/api"
 
 export const revalidate = 300 // ISR: re-generate every 5 minutes
