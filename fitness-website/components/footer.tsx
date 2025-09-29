@@ -35,27 +35,27 @@ export function Footer() {
             <h4 className="text-lg font-semibold">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/about" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/services" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/services" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Services
                 </Link>
               </li>
               <li>
-                <Link href="/courses" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/courses" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Courses
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/blog" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/contact" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Contact
                 </Link>
               </li>
@@ -67,22 +67,22 @@ export function Footer() {
             <h4 className="text-lg font-semibold">Products</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/products" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/products" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   All Products
                 </Link>
               </li>
               <li>
-                <Link href="/products/supplements" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/products/supplements" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Supplements
                 </Link>
               </li>
               <li>
-                <Link href="/products/equipment" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/products/equipment" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Equipment
                 </Link>
               </li>
               <li>
-                <Link href="/products/apparel" className="text-gray-300 hover:text-primary transition-colors">
+                <Link href="/products/apparel" prefetch={false} className="text-gray-300 hover:text-primary transition-colors">
                   Apparel
                 </Link>
               </li>
@@ -120,11 +120,11 @@ export function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-300">
             © 2024 FitPro. All rights reserved. |
-            <Link href="/privacy" className="text-primary hover:underline ml-1">
+            <Link href="/privacy" prefetch={false} className="text-primary hover:underline ml-1">
               Privacy Policy
             </Link>{" "}
             |
-            <Link href="/terms" className="text-primary hover:underline ml-1">
+            <Link href="/terms" prefetch={false} className="text-primary hover:underline ml-1">
               Terms of Service
             </Link>
           </p>

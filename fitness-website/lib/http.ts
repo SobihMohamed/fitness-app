@@ -12,9 +12,8 @@ export function getHttpClient(): AxiosInstance {
     baseURL: getApiBaseUrl(),
     timeout: 15000,
     withCredentials: false,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    // Do not set a global Content-Type header.
+    // Axios will set the correct header automatically based on the request body.
   });
 
   // Inject auth token from localStorage on the client only

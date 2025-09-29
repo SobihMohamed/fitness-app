@@ -1,1 +1,1 @@
-URL Detected: CoursesRequests/getMyRequests
+URL Detected: AdminNotifications/getAdminNotifications

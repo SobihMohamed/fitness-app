@@ -1,332 +1,270 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import { API_CONFIG } from "@/config/api"
-import axios from "axios"
-import Link from "next/link"
-import { Calendar, Clock, User, ArrowLeft, Eye, Heart, Share2, Star, BookOpen, AlertCircle, ChevronRight, TrendingUp } from "lucide-react"
-import { formatNumber, formatDateUTC } from "@/utils/format"
+import React from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar, ArrowLeft, BookOpen, AlertCircle, Play } from "lucide-react";
+import Link from "next/link";
+import { useBlogDetails } from "@/hooks/client/use-blog-details";
 
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  excerpt: string
-  featuredImage?: string
-  author: string
-  authorRole?: string
-  categoryId?: string
-  categoryName?: string
-  tags?: string[]
-  status?: "draft" | "published"
-  views?: number
-  likes?: number
-  comments?: number
-  readTime?: string
-  difficulty?: string
-  featured?: boolean
-  rating?: number
-  estimatedCalories?: string
-  createdAt?: string
-  updatedAt?: string
-}
+const BlogPostPage = React.memo(() => {
+  const router = useRouter();
+  const routeParams = useParams();
+  const query = useSearchParams();
+  const blogId = (routeParams?.id as string) || "";
+  const shouldAutoWatch = query.get("watch") === "1";
+  
+  const {
+    blog,
+    relatedBlogs,
+    loading,
+    error,
+    showVideoModal,
+    watchRequested,
+    getCategoryName,
+    getImageUrl,
+    formatDate,
+    renderVideo,
+    setShowVideoModal,
+    setWatchRequested,
+  } = useBlogDetails(blogId, shouldAutoWatch);
 
-export default function BlogPostPage() {
-  const params = useParams()
-  const router = useRouter()
-  const [blog, setBlog] = useState<BlogPost | null>(null)
-  const [relatedBlogs, setRelatedBlogs] = useState<BlogPost[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [liked, setLiked] = useState(false)
-  const [shareMenuOpen, setShareMenuOpen] = useState(false)
-
-  const API = API_CONFIG
-  const blogId = (params?.id as string) || ""
-
-  const getImageUrl = (imagePath?: string) => {
-    if (!imagePath) return null
-    let p = String(imagePath).replace(/\\/g, "/")
-    p = p.replace(/^\/?public\//i, "/")
-    if (/^https?:\/\//i.test(p)) return p
-    const rel = p.startsWith("/") ? p : `/${p}`
-    const base = API.BASE_URL.replace(/\/$/, "")
-    return `${base}${rel}`
-  }
-
-  const formatDate = (dateString?: string) => {
-    try {
-      return dateString ? formatDateUTC(dateString) : "Recent"
-    } catch {
-      return "Recent"
-    }
-  }
-
-  const normalizeBlog = (raw: any): BlogPost => ({
-    id: String(raw.blog_id ?? raw.id ?? raw._id ?? ""),
-    title: raw.title ?? "Untitled",
-    content: raw.content ?? raw.body ?? "",
-    excerpt: raw.excerpt ?? raw.summary ?? "",
-    featuredImage: raw.main_image ?? raw.featuredImage ?? raw.image ?? raw.thumbnail,
-    author: raw.author ?? raw.authorName ?? "Unknown Author",
-    authorRole: raw.authorRole ?? raw.role,
-    categoryId: raw.categoryId ?? raw.category_id ?? raw.catId,
-    categoryName: raw.categoryName ?? raw.category_name ?? raw.category ?? raw.categoryTitle,
-    tags: raw.tags ?? [],
-    status: raw.status ?? "published",
-    views: raw.views ?? 0,
-    likes: raw.likes ?? 0,
-    comments: raw.comments ?? 0,
-    readTime: raw.readTime ?? raw.read_time ?? "5 min read",
-    difficulty: raw.difficulty ?? raw.level,
-    featured: raw.featured ?? false,
-    rating: raw.rating,
-    estimatedCalories: raw.estimatedCalories ?? raw.calories,
-    createdAt: raw.createdAt ?? raw.created_at ?? raw.publishedAt,
-    updatedAt: raw.updatedAt ?? raw.updated_at,
-  })
-
-  const fetchRelatedBlogs = async (categoryKey?: string) => {
-    try {
-      const resp = await axios.get(API.USER_BLOG_API.getAll)
-      const payload = resp.data
-      const arr = Array.isArray(payload)
-        ? payload
-        : Array.isArray(payload?.blogs)
-        ? payload.blogs
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : []
-      const related = arr
-        .filter((b: any) => String(b.blog_id ?? b.id ?? b._id) !== String(blogId))
-        .filter((b: any) => (b.status ?? "published") === "published")
-        .filter(
-          (b: any) =>
-            String(b.category_id ?? b.categoryId ?? b.catId) === String(categoryKey) ||
-            (b.category_name ?? b.categoryName ?? b.category ?? b.categoryTitle) === categoryKey,
-        )
-        .slice(0, 3)
-        .map(normalizeBlog)
-      setRelatedBlogs(related)
-    } catch {
-      // ignore
-    }
-  }
-
-  const fetchBlog = async () => {
-    // If blogId isn't available yet, do nothing and wait
-    if (!blogId || blogId === "undefined" || blogId === "null") {
-      return
-    }
-    try {
-      setLoading(true)
-      setError(null)
-      const url = API.USER_BLOG_API.getById(blogId)
-      const response = await axios.get(url)
-      const data = response.data
-      const raw = data?.Blog ?? data?.blog ?? data?.data ?? data
-      if (!raw) throw new Error("Blog not found")
-      const normalized = normalizeBlog(raw)
-      if (normalized.status === "published" || !normalized.status) {
-        setBlog(normalized)
-        fetchRelatedBlogs(normalized.categoryId ?? normalized.categoryName)
-      } else {
-        throw new Error("Blog is not published")
-      }
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Failed to fetch blog post")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!blogId || blogId === "undefined" || blogId === "null") return
-    fetchBlog()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blogId])
-
-  const handleShare = (platform: string) => {
-    const url = window.location.href
-    const title = blog?.title || "Check out this blog post"
-    switch (platform) {
-      case "facebook":
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank")
-        break
-      case "twitter":
-        window.open(
-          `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`,
-          "_blank",
-        )
-        break
-      case "linkedin":
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank")
-        break
-      case "copy":
-        navigator.clipboard.writeText(url)
-        alert("Link copied to clipboard!")
-        break
-    }
-    setShareMenuOpen(false)
-  }
-
+  const onWatchClick = () => {
+    setWatchRequested(true);
+    setShowVideoModal(true);
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-white pt-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <Skeleton className="h-8 w-32 mb-6" />
-          <Skeleton className="h-12 w-3/4 mb-4" />
-          <Skeleton className="h-6 w-1/2 mb-8" />
-          <Skeleton className="h-64 w-full mb-8 rounded-lg" />
-          <div className="space-y-4">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-          </div>
+          <div className="h-8 w-32 mb-6 bg-gray-200 animate-pulse rounded" />
+          <div className="h-12 w-3/4 mb-4 bg-gray-200 animate-pulse rounded" />
+          <div className="h-6 w-1/2 mb-8 bg-gray-200 animate-pulse rounded" />
+          <div className="h-64 w-full mb-8 bg-gray-200 animate-pulse rounded-lg" />
+          <div className="h-6 w-2/3 mb-2 bg-gray-200 animate-pulse rounded" />
+          <div className="h-6 w-1/2 bg-gray-200 animate-pulse rounded" />
         </div>
       </div>
-    )
+    );
   }
 
   if (error || !blog) {
     return (
       <div className="min-h-screen bg-white pt-20 flex items-center justify-center">
-        <Card className="shadow-lg max-w-md mx-auto border border-gray-200">
+        <Card className="shadow-xl max-w-md mx-auto border border-gray-100 rounded-2xl">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Blog Post Not Found</h2>
-            <p className="text-gray-600 mb-4">{error || "The blog post you're looking for doesn't exist."}</p>
+            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              Blog Post Not Found
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              {error || "The blog post you're looking for doesn't exist."}
+            </p>
             <div className="flex gap-3 justify-center">
-              <Button onClick={() => router.back()} variant="outline" className="border-gray-300">
+              <Button onClick={() => router.back()} variant="outline" className="border-gray-200 text-blue-700 hover:bg-gray-50">
                 Go Back
               </Button>
               <Link href="/blog">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">Browse All Blogs</Button>
+                <Button className="bg-primary text-white">Browse All Blogs</Button>
               </Link>
             </div>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <Button
           variant="ghost"
-          onClick={() => router.back()}
-          className="mb-8 text-gray-600 hover:text-blue-600 hover:bg-blue-50 -ml-2"
+          onClick={() => router.push("/blog")}
+          className="px-0 text-blue-700 hover:text-blue-800"
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Blog
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back to articles
         </Button>
+      </div>
 
-        <article className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-          <div className="relative h-80 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Card className="overflow-hidden bg-white border border-gray-100 rounded-2xl shadow-xl">
+          <div className="relative h-[400px] bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center">
             {blog.featuredImage ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={getImageUrl(blog.featuredImage) || ""} alt={blog.title} className="w-full h-full object-cover" />
+              <img
+                src={getImageUrl(blog.featuredImage) || ""}
+                alt={blog.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => {
+                  try {
+                    (e.currentTarget as HTMLImageElement).src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+                  } catch {}
+                }}
+              />
             ) : (
               <div className="text-center">
-                <BookOpen className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">Featured Article</p>
+                <BookOpen className="h-20 w-20 text-primary mx-auto mb-4" />
+                <p className="text-gray-600 font-medium text-lg">
+                  Featured Article
+                </p>
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-
-            <div className="absolute top-6 left-6 flex gap-2">
-              <Badge className="bg-blue-600 text-white border-0 font-medium">{blog.categoryName || "General"}</Badge>
-              {blog.difficulty && <Badge variant="outline">{blog.difficulty}</Badge>}
-            </div>
-
-            {blog.rating && (
-              <div className="absolute top-6 right-6 flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 border border-gray-200">
-                <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                <span className="text-sm font-semibold text-gray-900">{blog.rating}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="p-8 lg:p-12">
-            <div className="mb-8">
-              <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">{blog.title}</h1>
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">{blog.excerpt}</p>
-              <div className="flex flex-wrap items-center gap-6 mb-6 pb-6 border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-green-600 rounded-full flex items-center justify-center">
-                    <User className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900">{blog.author}</p>
-                    <p className="text-sm text-gray-600">{blog.authorRole || "Fitness Expert"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-6 text-sm text-gray-600">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">{formatDate(blog.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-green-600" />
-                    <span className="font-medium">{blog.readTime || "5 min read"}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Eye className="h-4 w-4 text-gray-500" />
-                    <span className="font-medium">{formatNumber(blog.views || 0)} views</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="prose prose-lg max-w-none mb-12 text-gray-800 leading-relaxed">
-              <div dangerouslySetInnerHTML={{ __html: blog.content }} />
-            </div>
-
-            {blog.estimatedCalories && (
-              <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6 mb-8">
-                <p className="text-gray-700 font-medium">{blog.estimatedCalories}</p>
-              </div>
-            )}
-
-            <div className="flex items-center justify-between border-t border-b border-gray-200 py-6 mb-8">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant={liked ? "default" : "outline"}
-                  onClick={() => setLiked((v) => !v)}
-                  className={liked ? "bg-red-500 hover:bg-red-600 text-white border-0" : "border-gray-300"}
-                >
-                  <Heart className={`h-4 w-4 mr-2 ${liked ? "fill-current" : ""}`} />
-                  {liked ? "Liked" : "Like"} ({blog.likes || 0})
-                </Button>
-                <div className="relative">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShareMenuOpen(!shareMenuOpen)}
-                    className="border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-600"
-                  >
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-                  {shareMenuOpen && (
-                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10 min-w-[160px]">
-                      <Button variant="ghost" size="sm" onClick={() => handleShare("facebook")} className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:text-blue-600">Facebook</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleShare("twitter")} className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:text-blue-600">Twitter</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleShare("linkedin")} className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:text-blue-600">LinkedIn</Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleShare("copy")} className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:text-blue-600">Copy Link</Button>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/0 to-transparent" />
+            <div className="absolute top-6 left-6">
+              <Badge className="bg-primary text-white border-0 px-4 py-2 text-sm font-medium">
+                {getCategoryName(blog.categoryId)}
+              </Badge>
             </div>
           </div>
-        </article>
+          <CardContent className="p-8">
+            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              {blog.title}
+            </h1>
+            <div className="flex items-center gap-4 text-gray-600 mb-6">
+              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-primary" />
+              </div>
+              <span className="font-medium text-lg">
+                {formatDate(blog.createdAt)}
+              </span>
+            </div>
+            {blog.excerpt && (
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed font-medium">
+                {blog.excerpt}
+              </p>
+            )}
+            {blog.videoUrl && (
+              <Button
+                className="font-medium py-3 px-6 group bg-primary text-white"
+                onClick={onWatchClick}
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Watch Video
+              </Button>
+            )}
+            {/* Blog Content */}
+            {blog.content && (
+              <div
+                className="mt-10 text-gray-800 leading-7 space-y-4"
+                dangerouslySetInnerHTML={{ __html: blog.content }}
+              />
+            )}
+          </CardContent>
+        </Card>
       </div>
-  )
-}
 
+      {/* Inline Video removed: video opens only in modal when clicking Watch */}
+
+      <AnimatePresence>
+        {showVideoModal && blog?.videoUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setShowVideoModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 20 }}
+              className="bg-white border border-gray-100 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="aspect-video w-full bg-primary/5">
+                <iframe
+                  className="w-full h-full rounded-lg"
+                  src={renderVideo(blog.videoUrl, true)}
+                  title="Blog video"
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+              <div className="p-4 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowVideoModal(false)}
+                  className="border-gray-200 text-blue-700 hover:bg-gray-50"
+                >
+                  Close
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {relatedBlogs.length > 0 && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-bold text-gray-900 mb-3">
+              Related Articles
+            </h3>
+            <div className="w-24 h-1 bg-gradient-to-r from-primary mx-auto rounded-full"></div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {relatedBlogs.map((p) => (
+              <Card
+                key={p.id}
+                className="overflow-hidden group bg-white border border-gray-100 hover:border-gray-200 rounded-2xl transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1"
+              >
+                <div className="h-48 bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center overflow-hidden relative">
+                  {p.featuredImage ? (
+                    <img
+                      src={getImageUrl(p.featuredImage) || ""}
+                      alt={p.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      loading="lazy"
+                      decoding="async"
+                      onError={(e) => {
+                        try {
+                          (e.currentTarget as HTMLImageElement).src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+                        } catch {}
+                      }}
+                    />
+                  ) : (
+                    <BookOpen className="h-12 w-12 text-primary" />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent" />
+                </div>
+                <CardContent className="p-6">
+                  <div className="mb-3">
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-primary/20 text-primary bg-primary/10"
+                    >
+                      {getCategoryName(p.categoryId)}
+                    </Badge>
+                  </div>
+                  <h4 className="font-bold text-gray-900 line-clamp-2 mb-2 group-hover:text-blue-700 transition-colors">
+                    {p.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+                    {p.excerpt}
+                  </p>
+                  <Link
+                    href={`/blog/${p.id}`}
+                    className="text-blue-700 hover:text-blue-800 font-medium transition-colors"
+                  >
+                    Read More →
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
+BlogPostPage.displayName = "BlogPostPage";
+
+export default BlogPostPage;
