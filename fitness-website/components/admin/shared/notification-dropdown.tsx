@@ -75,7 +75,7 @@ export function NotificationDropdown() {
   const fetchNotifications = async () => {
     try {
       // Rely on no-store and polling; avoid non-deterministic Date.now cache-busting
-      const baseUrl = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.getAllNotificationForThisAdmin;
+      const baseUrl = API_CONFIG.ADMIN_FUNCTIONS.notifications.getAll;
       const url = baseUrl as string;
       const response = await fetch(url as string, {
         headers: getAuthHeaders(),
@@ -127,7 +127,7 @@ export function NotificationDropdown() {
       if (markingIds[notificationId]) return;
       setMarkingIds((prev) => ({ ...prev, [notificationId]: true }));
 
-      const url = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.MarkAsRead(notificationId);
+      const url = API_CONFIG.ADMIN_FUNCTIONS.notifications.markAsRead(notificationId);
       console.log("[AdminNotifications] MarkAsRead:", url, notificationId);
 
       // OPTIMISTIC UPDATE: flip to read immediately
@@ -220,7 +220,7 @@ export function NotificationDropdown() {
         await markAsRead(notificationId);
       }
 
-      const url = API_CONFIG.ADMIN_FUNCTIONS.AdminNotifications.DeleteNotification(notificationId);
+      const url = API_CONFIG.ADMIN_FUNCTIONS.notifications.delete(notificationId);
       console.log("[AdminNotifications] Delete:", url, notificationId);
 
       let response = await fetch(url, {

@@ -13,8 +13,13 @@ export async function GET(req: NextRequest) {
   try {
     // Validate the URL and restrict proxying to your backend origins only
     const parsed = new URL(targetUrl);
-    const allowedOrigins = [API_CONFIG.BASE_URL, API_CONFIG.TARGET_URL];
-    const isAllowed = allowedOrigins.some((base) => targetUrl.startsWith(base));
+    const allowed = [API_CONFIG.BASE_URL, API_CONFIG.TARGET_URL]
+      .filter(Boolean)
+      .map((u) => {
+        try { return new URL(u as string).hostname } catch { return null }
+      })
+      .filter((h): h is string => !!h);
+    const isAllowed = allowed.includes(parsed.hostname);
     if (!isAllowed) {
       return new Response("Forbidden", { status: 403 });
     }

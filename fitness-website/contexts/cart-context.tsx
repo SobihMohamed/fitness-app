@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useReducer, useEffect } from "react"
-import { toast } from "react-hot-toast"
+import { toast } from "sonner"
 
 export interface CartItem {
   id: string

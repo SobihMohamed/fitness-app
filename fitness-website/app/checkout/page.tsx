@@ -5,35 +5,21 @@ import type React from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
+import { getProxyImageUrl } from "@/lib/images"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/contexts/cart-context"
 import type { CartItem } from "@/contexts/cart-context"
-import { ArrowLeft, CreditCard, Truck, Shield, CheckCircle } from "lucide-react"
+import { ArrowLeft, Truck, Shield, CheckCircle } from "lucide-react"
+import axios from "axios"
+import { API_CONFIG } from "@/config/api"
+import { useAuth } from "@/contexts/auth-context"
 
-interface CheckoutForm {
-  email: string
-  firstName: string
-  lastName: string
-  address: string
-  city: string
-  state: string
-  zipCode: string
-  country: string
-  phone: string
-  cardNumber: string
-  expiryDate: string
-  cvv: string
-  cardName: string
-  saveInfo: boolean
-  newsletter: boolean
-}
+// Removed detailed form fields; this page now focuses on summary + submit.
 
 export default function CheckoutPage() {
   const { state, clearCart, getCartTotal, getCartCount } = useCart()
@@ -42,45 +28,73 @@ export default function CheckoutPage() {
   const itemCount = getCartCount()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
-  const [formData, setFormData] = useState<CheckoutForm>({
-    email: "",
-    firstName: "",
-    lastName: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    country: "US",
-    phone: "",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardName: "",
-    saveInfo: false,
-    newsletter: false,
-  })
+  const { user } = useAuth()
+  const [promoCode, setPromoCode] = useState("")
 
   const shipping = total > 50 ? 0 : 9.99
   const tax = total * 0.08
-  const finalTotal = total + shipping + tax
+  // Simple front-end promo handling for demo purposes only
+  const discountPercent = promoCode.trim().toUpperCase() === "DISCOUNT10" ? 10 : 0
+  const preDiscountTotal = total + shipping + tax
+  const finalTotal = preDiscountTotal * (1 - discountPercent / 100)
 
-  const handleInputChange = (field: keyof CheckoutForm, value: string | boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
-  }
+  // No detailed form handlers needed.
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!user) {
+      alert("Please login to complete your order.")
+      router.push("/auth/login")
+      return
+    }
+
+    if (items.length === 0) return
+
     setIsProcessing(true)
+    try {
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null
+      const ORDERS_API = API_CONFIG.USER_FUNCTIONS.orders
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+      // Prepare one order per cart item to match the backend table shape
+      const purchaseDate = new Date()
+      const formattedDate = `${purchaseDate.getFullYear()}-${String(purchaseDate.getMonth() + 1).padStart(2, "0")}-${String(
+        purchaseDate.getDate()
+      ).padStart(2, "0")} 00:00:00`
 
-    // Clear cart and redirect to success page
-    clearCart()
-    router.push("/checkout/success")
+      const requests = items.map((item: CartItem) => {
+        const original_total = item.price * item.quantity
+        const itemNet = original_total * (1 - discountPercent / 100)
+        const payload = {
+          user_id: user.id,
+          product_id: item.id,
+          purchase_date: formattedDate,
+          quantity: item.quantity,
+          original_total: Number(original_total.toFixed(2)),
+          discount_value: discountPercent, // percentage used for promo
+          net_total: Number(itemNet.toFixed(2)),
+          promo_code_used: promoCode || "",
+          status: "pending",
+        }
+
+        return axios.post(ORDERS_API.create, payload, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        })
+      })
+
+      await Promise.all(requests)
+
+      // Clear cart and redirect to success page
+      clearCart()
+      router.push("/checkout/success")
+    } catch (error: any) {
+      console.error("Order creation failed:", error)
+      alert(error?.response?.data?.message || "Failed to complete the order. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   if (items.length === 0) {
@@ -121,230 +135,107 @@ export default function CheckoutPage() {
           </h1>
         </div>
 
+        {/* Stepper */}
+        <div aria-label="Checkout progress" className="mb-8">
+          <ol className="grid grid-cols-4 gap-4" role="list">
+            <li className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-semibold" style={{ backgroundColor: "#007BFF" }}>1</span>
+              <span className="text-sm font-medium" style={{ color: "#212529" }}>Cart</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-semibold" style={{ backgroundColor: "#007BFF" }}>2</span>
+              <span className="text-sm font-medium" style={{ color: "#212529" }}>Details</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-semibold" style={{ backgroundColor: "#007BFF" }}>3</span>
+              <span className="text-sm font-medium" style={{ color: "#212529" }}>Payment</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white text-xs font-semibold" style={{ backgroundColor: "#6C757D" }}>4</span>
+              <span className="text-sm" style={{ color: "#6C757D" }}>Review</span>
+            </li>
+          </ol>
+        </div>
+
         <form onSubmit={handleSubmit}>
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Checkout Form */}
-            <div className="space-y-6">
-              {/* Contact Information */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Left: Details + Payment */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Contact/Billing Details */}
               <Card className="bg-white border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
-                      style={{ backgroundColor: "#007BFF" }}
-                    >
-                      1
-                    </span>
-                    <span style={{ color: "#212529" }}>Contact Information</span>
-                  </CardTitle>
+                  <CardTitle style={{ color: "#212529" }}>Billing Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name *</Label>
-                      <Input
-                        id="firstName"
-                        value={formData.firstName}
-                        onChange={(e) => handleInputChange("firstName", e.target.value)}
-                        required
-                      />
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input id="fullName" name="fullName" placeholder="John Doe" autoComplete="name" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name *</Label>
-                      <Input
-                        id="lastName"
-                        value={formData.lastName}
-                        onChange={(e) => handleInputChange("lastName", e.target.value)}
-                        required
-                      />
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" name="email" type="email" placeholder="john@example.com" autoComplete="email" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange("phone", e.target.value)}
-                    />
+                    <Label htmlFor="address">Address</Label>
+                    <Input id="address" name="address" placeholder="123 Main St" autoComplete="street-address" />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Shipping Address */}
+              {/* Payment Method */}
               <Card className="bg-white border-0 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
-                      style={{ backgroundColor: "#007BFF" }}
-                    >
-                      2
-                    </span>
-                    <span style={{ color: "#212529" }}>Shipping Address</span>
-                  </CardTitle>
+                  <CardTitle style={{ color: "#212529" }}>Payment</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Street Address *</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
-                      <Input
-                        id="city"
-                        value={formData.city}
-                        onChange={(e) => handleInputChange("city", e.target.value)}
-                        required
-                      />
+                  <fieldset>
+                    <legend className="sr-only">Payment Method</legend>
+                    <div className="space-y-3" role="radiogroup" aria-label="Payment method">
+                      <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer" style={{ borderColor: "#E9ECEF" }}>
+                        <input type="radio" name="paymentMethod" defaultChecked className="h-4 w-4" aria-label="Credit or Debit Card" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium" style={{ color: "#212529" }}>Credit / Debit Card</p>
+                          <p className="text-xs" style={{ color: "#6C757D" }}>Visa, Mastercard</p>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer" style={{ borderColor: "#E9ECEF" }}>
+                        <input type="radio" name="paymentMethod" className="h-4 w-4" aria-label="Cash on Delivery" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium" style={{ color: "#212529" }}>Cash on Delivery</p>
+                          <p className="text-xs" style={{ color: "#6C757D" }}>Pay when your order arrives</p>
+                        </div>
+                      </label>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State *</Label>
-                      <Select value={formData.state} onValueChange={(value) => handleInputChange("state", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="CA">California</SelectItem>
-                          <SelectItem value="NY">New York</SelectItem>
-                          <SelectItem value="TX">Texas</SelectItem>
-                          <SelectItem value="FL">Florida</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="zipCode">ZIP Code *</Label>
-                      <Input
-                        id="zipCode"
-                        value={formData.zipCode}
-                        onChange={(e) => handleInputChange("zipCode", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Country *</Label>
-                      <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="US">United States</SelectItem>
-                          <SelectItem value="CA">Canada</SelectItem>
-                          <SelectItem value="UK">United Kingdom</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </fieldset>
 
-              {/* Payment Information */}
-              <Card className="bg-white border-0 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <span
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-white text-sm"
+                  <Separator />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm" style={{ color: "#6C757D" }}>You will be charged</p>
+                      <p className="text-xl font-bold" style={{ color: "#007BFF" }}>{finalTotal.toFixed(2)} EGP</p>
+                    </div>
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={isProcessing}
                       style={{ backgroundColor: "#007BFF" }}
+                      className="min-w-48"
                     >
-                      3
-                    </span>
-                    <span style={{ color: "#212529" }}>Payment Information</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cardName">Cardholder Name *</Label>
-                    <Input
-                      id="cardName"
-                      value={formData.cardName}
-                      onChange={(e) => handleInputChange("cardName", e.target.value)}
-                      required
-                    />
+                      {isProcessing ? "Processing..." : "Complete Order"}
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Card Number *</Label>
-                    <div className="relative">
-                      <Input
-                        id="cardNumber"
-                        placeholder="1234 5678 9012 3456"
-                        value={formData.cardNumber}
-                        onChange={(e) => handleInputChange("cardNumber", e.target.value)}
-                        required
-                      />
-                      <CreditCard
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4"
-                        style={{ color: "#6C757D" }}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="expiryDate">Expiry Date *</Label>
-                      <Input
-                        id="expiryDate"
-                        placeholder="MM/YY"
-                        value={formData.expiryDate}
-                        onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cvv">CVV *</Label>
-                      <Input
-                        id="cvv"
-                        placeholder="123"
-                        value={formData.cvv}
-                        onChange={(e) => handleInputChange("cvv", e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="saveInfo"
-                        checked={formData.saveInfo}
-                        onCheckedChange={(checked) => handleInputChange("saveInfo", checked as boolean)}
-                      />
-                      <Label htmlFor="saveInfo" className="text-sm">
-                        Save payment information for future purchases
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="newsletter"
-                        checked={formData.newsletter}
-                        onCheckedChange={(checked) => handleInputChange("newsletter", checked as boolean)}
-                      />
-                      <Label htmlFor="newsletter" className="text-sm">
-                        Subscribe to our newsletter for exclusive offers
-                      </Label>
-                    </div>
-                  </div>
+                  <p className="text-xs" style={{ color: "#6C757D" }}>
+                    By completing your order, you agree to our Terms of Service and Privacy Policy.
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Order Summary */}
-            <div className="space-y-6">
+            {/* Right: Summary */}
+            <div className="lg:sticky lg:top-6 space-y-6 h-max">
               <Card className="bg-white border-0 shadow-lg">
                 <CardHeader>
                   <CardTitle style={{ color: "#212529" }}>Order Summary</CardTitle>
@@ -355,11 +246,12 @@ export default function CheckoutPage() {
                       <div key={item.id} className="flex items-center space-x-3">
                         <div className="relative w-12 h-12 rounded-lg overflow-hidden">
                           <Image
-                            src={item.image || "/placeholder.svg"}
+                            src={getProxyImageUrl(item.image) || "/placeholder.svg"}
                             alt={item.name}
                             fill
                             className="object-cover"
                             loading="lazy"
+                            sizes="48px"
                           />
                         </div>
                         <div className="flex-1">
@@ -377,6 +269,25 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                   <Separator />
+                  {/* Promo Code */}
+                  <div className="space-y-2">
+                    <Label htmlFor="promo">Promo Code</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="promo"
+                        placeholder="Enter promo code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value)}
+                        aria-label="Promo code"
+                      />
+                      <Button type="button" variant="outline" disabled={!promoCode}>
+                        Apply
+                      </Button>
+                    </div>
+                    {discountPercent > 0 && (
+                      <p className="text-xs" style={{ color: "#32CD32" }}>Discount applied: {discountPercent}%</p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Subtotal ({itemCount} items)</span>
@@ -390,6 +301,12 @@ export default function CheckoutPage() {
                       <span style={{ color: "#6C757D" }}>Tax</span>
                       <span style={{ color: "#212529" }}>{tax.toFixed(2)} EGP</span>
                     </div>
+                    {discountPercent > 0 && (
+                      <div className="flex justify-between">
+                        <span style={{ color: "#6C757D" }}>Discount ({discountPercent}%)</span>
+                        <span style={{ color: "#212529" }}>- {(preDiscountTotal - finalTotal).toFixed(2)} EGP</span>
+                      </div>
+                    )}
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                       <span style={{ color: "#212529" }}>Total</span>
@@ -398,46 +315,6 @@ export default function CheckoutPage() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Security Features */}
-              <Card className="bg-white border-0 shadow-lg">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Shield className="h-5 w-5" style={{ color: "#32CD32" }} />
-                      <span className="text-sm" style={{ color: "#212529" }}>
-                        SSL Encrypted Checkout
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Truck className="h-5 w-5" style={{ color: "#32CD32" }} />
-                      <span className="text-sm" style={{ color: "#212529" }}>
-                        Free shipping on orders over $50
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <CheckCircle className="h-5 w-5" style={{ color: "#32CD32" }} />
-                      <span className="text-sm" style={{ color: "#212529" }}>
-                        30-day money-back guarantee
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                type="submit"
-                className="w-full"
-                size="lg"
-                disabled={isProcessing}
-                style={{ backgroundColor: "#007BFF" }}
-              >
-                {isProcessing ? "Processing..." : `Complete Order - ${finalTotal.toFixed(2)} EGP`}
-              </Button>
-
-              <p className="text-xs text-center" style={{ color: "#6C757D" }}>
-                By completing your order, you agree to our Terms of Service and Privacy Policy.
-              </p>
             </div>
           </div>
         </form>

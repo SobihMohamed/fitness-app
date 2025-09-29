@@ -1,93 +1,69 @@
 "use client";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { ErrorDisplay } from "@/components/admin/shared/error-display";
-import { StatsCard } from "@/components/admin/shared/stats-card";
 import { PageHeader } from "@/components/admin/shared/page-header";
-import {
-  Package,
-  Users,
-  Activity,
-  UserCheck,
-  ShoppingCart,
-  CheckCircle,
-  Clock,
-  Zap,
-  BookOpen,
-} from "lucide-react";
 import { useDashboardData } from "@/hooks/dashboard/use-dashboard-data";
 import {
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-} from "recharts";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { formatDateTimeUTC } from "@/utils/format";
+  DashboardStatsCards,
+  UserStatistics,
+  QuickActions,
+  RequestsChartDynamic,
+  RolesChartDynamic,
+  OrderStatisticsDynamic,
+} from "@/components/admin/dashboard";
+import { OrderStatusData } from "@/types";
 
-export default function AdminDashboardWrapper() {
-  return <AdminDashboard />;
-}
-
-const COLORS = ["#3B82F6", "#10B981", "#FBBF24", "#F97316", "#8B5CF6"];
-
-function AdminDashboard() {
+// Memoized Dashboard Component
+const AdminDashboard = React.memo(() => {
   const {
     stats,
-    recentActivity,
-    topProducts,
     userStats,
     orderStats,
+    requestsOverTime,
+    rolesDistribution,
     error,
     loading,
   } = useDashboardData();
 
   // Avoid hydration mismatch with Recharts by rendering charts only after mount
   const [isMounted, setIsMounted] = useState(false);
+  
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const adminCount = parseInt(stats.find((s) => s.title === "Admins")?.value ?? "0", 10);
+  // Memoized calculations to prevent unnecessary re-computations
+  const adminCount = useMemo(() => {
+    return parseInt(stats.find((s) => s.title === "Admins")?.value ?? "0", 10);
+  }, [stats]);
 
-  // Calculate order status data with protection against negative values
-  const orderStatusData = orderStats
-    ? [
-        { name: "Pending", value: orderStats.pendingOrders },
-        { name: "Completed", value: orderStats.completedOrders },
-        {
-          name: "Cancelled",
-          value: Math.max(
-            0,
-            orderStats.totalOrders -
-              orderStats.pendingOrders -
-              orderStats.completedOrders
-          ),
-        },
-      ]
-    : [
+  // Memoized order status data calculation
+  const orderStatusData = useMemo((): OrderStatusData[] => {
+    if (!orderStats) {
+      return [
         { name: "Pending", value: 0 },
         { name: "Completed", value: 0 },
         { name: "Cancelled", value: 0 },
       ];
+    }
+    
+    return [
+      { name: "Pending", value: orderStats.pendingOrders },
+      { name: "Completed", value: orderStats.completedOrders },
+      { name: "Cancelled", value: orderStats.cancelledOrders },
+    ];
+  }, [orderStats]);
 
-  // Loading overlay handled by AdminLayout; keep variable referenced to avoid lint
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  loading;
+  // Memoized error retry handler
+  const handleRetry = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   if (error) {
     return (
-      <ErrorDisplay message={error} onRetry={() => window.location.reload()} />
+      <ErrorDisplay message={error} onRetry={handleRetry} />
     );
   }
 
@@ -101,322 +77,51 @@ function AdminDashboard() {
         />
 
         {/* Stats Cards */}
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
-  {/* Render all stats including Admins */}
-  {stats.map((stat, index) => (
-    <div
-      key={index}
-      className="transform transition-all hover:scale-[1.03]"
-    >
-      <StatsCard
-        title={stat.title}
-        value={stat.title === "Admins" ? adminCount : stat.value}
-        icon={<stat.icon className="h-6 w-6" />}
-        color={stat.color}
-      />
-      {stat.title === "Admins" && (
-        <div className="mt-1 ml-2">
-          <Link href="/admin/users?role=admin" className="text-xs text-indigo-700 underline">Manage Admins</Link>
-        </div>
-      )}
-    </div>
-  ))}
-</div>
+        <DashboardStatsCards 
+          stats={stats} 
+          adminCount={adminCount} 
+        />
 
         {/* User Statistics */}
-        <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="text-gray-900 flex items-center">
-              <Users className="h-5 w-5 mr-2 text-green-500 animate-pulse" />
-              User Statistics
-            </CardTitle>
-            <CardDescription className="text-gray-500">
-              Overview of user engagement
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[
-                {
-                  icon: <UserCheck className="h-5 w-5 text-indigo-600 mr-2 animate-bounce" />,
-                  label: <span className="font-bold text-indigo-700">Admins</span>,
-                  value: <span className="text-xl font-bold text-indigo-700">{adminCount}</span>,
-                },
-                {
-                  icon: <UserCheck className="h-5 w-5 text-green-500 mr-2" />,
-                  label: "Total Users",
-                  value: userStats?.totalUsers || 0,
-                },
-                {
-                  icon: <CheckCircle className="h-5 w-5 text-blue-500 mr-2" />,
-                  label: "Active Users",
-                  value: userStats?.activeUsers || 0,
-                },
-                {
-                  icon: <Clock className="h-5 w-5 text-yellow-500 mr-2" />,
-                  label: "New Users (7d)",
-                  value: userStats?.newUsers || 0,
-                },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    {item.icon}
-                    <span className="text-gray-600">{item.label}</span>
-                  </div>
-                  <span className="font-bold text-lg">{item.value}</span>
-                </div>
-              ))}
-              <div className="pt-4">
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div
-                    className="bg-green-600 h-2.5 rounded-full transition-all"
-                    style={{ width: `${userStats?.userGrowth || 0}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-sm text-gray-600">User Growth</span>
-                  <span className="text-sm font-bold">
-                    {userStats?.userGrowth || 0}%
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <UserStatistics 
+          userStats={userStats} 
+          adminCount={adminCount} 
+        />
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Requests Over Time */}
+          <RequestsChartDynamic 
+            requestsOverTime={requestsOverTime} 
+            isMounted={isMounted} 
+          />
+
+          {/* Roles Distribution */}
+          <RolesChartDynamic 
+            rolesDistribution={rolesDistribution} 
+            isMounted={isMounted} 
+          />
+        </div>
 
         {/* Quick Actions + Order Statistics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Quick Actions */}
-          <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center">
-                <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                Quick Actions
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Common admin tasks
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[
-                  {
-                    href: "/admin/users",
-                    color: "from-blue-50 to-blue-100",
-                    icon: <UserCheck className="h-5 w-5 text-blue-500 mr-3" />,
-                    title: "Manage Users",
-                    desc: "View and edit users",
-                  },
-                  {
-                    href: "/admin/users?role=admin",
-                    color: "from-indigo-50 to-indigo-100",
-                    icon: <UserCheck className="h-5 w-5 text-indigo-600 mr-3" />,
-                    title: "Manage Admins",
-                    desc: "View and edit admins",
-                  },
-                  {
-                    href: "/admin/request",
-                    color: "from-green-50 to-green-100",
-                    icon: (
-                      <ShoppingCart className="h-5 w-5 text-green-500 mr-3" />
-                    ),
-                    title: "View Orders",
-                    desc: "Manage customer orders",
-                  },
-                  {
-                    href: "/admin/products",
-                    color: "from-purple-50 to-purple-100",
-                    icon: <Package className="h-5 w-5 text-purple-500 mr-3" />,
-                    title: "Manage Products",
-                    desc: "Add or update products",
-                  },
-                  {
-                    href: "/admin/courses",
-                    color: "from-orange-50 to-orange-100",
-                    icon: <BookOpen className="h-5 w-5 text-orange-500 mr-3" />,
-                    title: "Manage Courses",
-                    desc: "Add or update courses",
-                  },
-                  { href: "/admin/blogs",
-                    color: "from-red-50 to-red-100",
-                    title: "Manage Blogs",
-                    desc: "Add or update blog posts",
-                    icon: <BookOpen className="h-5 w-5 text-red-500 mr-3" />,},
-                    {
-                      href: "/admin/services",
-                      color: "from-teal-50 to-teal-100",
-                      icon: <Zap className="h-5 w-5 text-teal-500 mr-3" />,
-                      title: "Manage Services",
-                      desc: "Add or update services",
-                    }
-                ].map((item, idx) => (
-                  <Link
-                    key={idx}
-                    href={item.href}
-                    className={`w-full flex items-center p-3 bg-gradient-to-r ${item.color} rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition`}
-                  >
-                    {item.icon}
-                    <div>
-                      <p className="font-medium text-gray-900">{item.title}</p>
-                      <p className="text-sm text-gray-500">{item.desc}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <QuickActions />
 
           {/* Order Statistics */}
-          <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center">
-                <ShoppingCart className="h-5 w-5 mr-2 text-orange-500" />
-                Order Statistics
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Overview of order performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                {isMounted ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsPieChart>
-                      <Pie
-                        data={orderStatusData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name}: ${(percent * 100).toFixed(0)}%`
-                        }
-                      >
-                        {orderStatusData.map((entry, index) => (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend />
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-sm text-gray-400">Loading chart…</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Recent Activity + Top Products */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Activity */}
-          <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center">
-                <Activity className="h-5 w-5 mr-2 text-blue-500" />
-                Recent Activity
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Latest actions on the platform
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivity && recentActivity.length > 0 ? (
-                  recentActivity.map((activity: any, index: number) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                          <Activity className="h-4 w-4 text-blue-500" />
-                        </div>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {activity.title || activity.name || "Activity"}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {activity.description || activity.details || "No details available"}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {activity.time || activity.timestamp || "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No recent activity to display
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Products */}
-          <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
-            <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center">
-                <Package className="h-5 w-5 mr-2 text-blue-500" />
-                Top Products
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Best performing products this month
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topProducts && topProducts.length > 0 ? (
-                  topProducts.map((product, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-                          style={{
-                            backgroundColor:
-                              index === 0
-                                ? "#FFD700"
-                                : index === 1
-                                ? "#C0C0C0"
-                                : index === 2
-                                ? "#CD7F32"
-                                : "#6C757D",
-                          }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {product.sales} sales
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-sm font-medium text-green-500">
-                        {product.revenue}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">
-                    No product data available
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          <OrderStatisticsDynamic 
+            orderStatusData={orderStatusData} 
+            isMounted={isMounted} 
+          />
         </div>
       </div>
     </AdminLayout>
   );
+});
+
+AdminDashboard.displayName = "AdminDashboard";
+
+// Default export with wrapper for better performance
+export default function AdminDashboardWrapper() {
+  return <AdminDashboard />;
 }

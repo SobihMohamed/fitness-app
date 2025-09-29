@@ -42,7 +42,7 @@ export interface CourseRequest {
   job: string;
   age: number;
   created_at?: string;
-  status?: 'pending' | 'approved' | 'cancelled' ;
+  status?: "pending" | "approved" | "cancelled";
 }
 
 export interface CourseModule {

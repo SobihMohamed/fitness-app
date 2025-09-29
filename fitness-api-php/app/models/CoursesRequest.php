@@ -11,15 +11,28 @@ class CoursesRequest{
   {
     $this->db = new DB($this->table);
   }
-
   // new request 
   public function create($data){
     try{
-      $data['created_at'] = date('Y-m-d');
-      $this->db->insert($data)->excute();
+      // Whitelist insertable columns to match table schema
+      $allowed = [
+        'course_id', 'user_id', 'gender', 'job', 'age', 'created_at', 'status',
+        'promo_code_used', 'original_total', 'discount_value', 'net_total'
+      ];
+      $filtered = [];
+      foreach ($allowed as $k) {
+        if (isset($data[$k])) $filtered[$k] = $data[$k];
+      }
+
+      // Defaults
+      if (!isset($filtered['status']) || empty($filtered['status'])) {
+        $filtered['status'] = 'pending';
+      }
+      $filtered['created_at'] = date('Y-m-d');
+
+      $this->db->insert($filtered)->excute();
       return true;
     }catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -29,7 +42,6 @@ class CoursesRequest{
     try {
       return $this->db->select()->fetchAll();
     } catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -44,7 +56,6 @@ class CoursesRequest{
                   ->where("request_id" , "=",$id)
                   ->getRow();
     }catch(Exception $e) {
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -57,7 +68,6 @@ class CoursesRequest{
                   ->where("user_id","=",$userId)
                   ->fetchAll();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -68,7 +78,6 @@ class CoursesRequest{
                     ->where("request_id" , "=",$req_id)
                     ->getRow();
       }catch(Exception $e) {
-        var_dump($e->getMessage());
         return false;
       }
     }
@@ -80,7 +89,6 @@ class CoursesRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
@@ -93,7 +101,6 @@ class CoursesRequest{
                   ->where("request_id","=",$id)
                   ->excute();
     } catch(Exception $e){
-      var_dump($e->getMessage());
       return false;
     }
   }
