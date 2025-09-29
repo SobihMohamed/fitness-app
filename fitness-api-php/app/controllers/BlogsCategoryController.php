@@ -15,7 +15,7 @@
       if($blogCategories === false){
         $this->sendError("Error During Get Blogs Categories");
         return;
-      }elseif(empty($categories)){
+      }elseif(empty($blogCategories)){
         $this->sendError("No Category Found",404);
         return;
       }
@@ -57,13 +57,13 @@
       if($blogCategory === false){
         $this->sendError("Error During Get Blogs Categories");
         return;
-      }elseif(empty($categories)){
+      }elseif(empty($blogCategory)){
         $this->sendError("No Category Found",404);
         return;
       }
       return $this->json([
         "status" => "success",
-        "message" => "All Blog Categories Found",
+        "message" => "Category Found",
         "data" => $blogCategory
       ]);
     }

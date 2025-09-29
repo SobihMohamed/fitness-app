@@ -52,7 +52,7 @@ function NavigationInner() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8">
           {/* Logo */}
           <div className="flex lg:flex-1">
-            <Link href="/" className="-m-1.5 p-1.5">
+            <Link href="/" prefetch={false} className="-m-1.5 p-1.5">
               <span className="text-2xl font-bold text-blue-600">FitPro</span>
             </Link>
           </div>
@@ -68,7 +68,7 @@ function NavigationInner() {
 
               <SheetContent side="right" className="w-full sm:max-w-sm">
                 <div className="flex items-center justify-between">
-                  <Link href="/" className="-m-1.5 p-1.5">
+                  <Link href="/" prefetch={false} className="-m-1.5 p-1.5">
                     <span className="text-2xl font-bold text-blue-600">
                       FitPro
                     </span>
@@ -83,6 +83,7 @@ function NavigationInner() {
                         <Link
                           key={item.name}
                           href={item.href}
+                          prefetch={false}
                           className={`block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
                             pathname === item.href
                               ? "text-blue-600 bg-gray-100"
@@ -121,6 +122,7 @@ function NavigationInner() {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={false}
                 className={`text-sm font-semibold leading-6 ${
                   pathname === item.href
                     ? "text-blue-600 border-b-2 border-blue-600 pb-1"

@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
+import { getProxyImageUrl } from "@/lib/images"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -87,11 +88,11 @@ export function CartDrawer() {
         ) : (
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-4">
+              {items.map((item, idx) => (
+                <div key={`${String(item.id ?? "item")}-${idx}`} className="flex items-center space-x-4">
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
                     <Image
-                      src={item.image || "/placeholder.svg"}
+                      src={getProxyImageUrl(item.image) || "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover"
@@ -101,7 +102,7 @@ export function CartDrawer() {
                   <div className="flex-1 space-y-1">
                     <h4 className="font-medium text-sm text-foreground">{item.name}</h4>
                     <p className="text-xs text-muted">{item.category}</p>
-                    <p className="font-bold text-sm text-primary">${item.price.toFixed(2)}</p>
+                    <p className="font-bold text-sm text-primary">${Number(item.price ?? 0).toFixed(2)}</p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button

@@ -1,5 +1,7 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-const TARGET_URL = process.env.NEXT_PUBLIC_API_TARGET_URL || BASE_URL;
+import { getApiBaseUrl, getApiTargetUrl } from "@/lib/env";
+
+const BASE_URL = getApiBaseUrl();
+const TARGET_URL = getApiTargetUrl();
 
 export const API_CONFIG = {
   BASE_URL,
@@ -92,6 +94,10 @@ export const API_CONFIG = {
         `${BASE_URL}/Notifications/readNotification/${id}`,
       delete: (id: string) =>
         `${BASE_URL}/Notifications/delete/${id}`,
+    },
+    
+    promoCodes: {
+      validate: `${BASE_URL}/PromoCodes/validate`,
     },
   },
 
@@ -242,7 +248,7 @@ export const API_CONFIG = {
       approve: (id: string) =>
         `${BASE_URL}/AdminOrders/approve/${id}`,
       cancel: (id: string) =>
-        `${BASE_URL}/AdminOrders/canecl/${id}`,
+        `${BASE_URL}/AdminOrders/cancel/${id}`,
       delete: (id: string) =>
         `${BASE_URL}/AdminOrders/delete/${id}`,
     },
@@ -259,8 +265,8 @@ export const API_CONFIG = {
       getAll: `${BASE_URL}/AdminPromoCodes/getAll`,
       getById: (id: string) => `${BASE_URL}/AdminPromoCodes/getSinglePromoCode/${id}`,
       add: `${BASE_URL}/AdminPromoCodes/addPromoCode`,
-      update: `${BASE_URL}/AdminPromoCodes/updatePromoCode`,
-      delete: `${BASE_URL}/AdminPromoCodes/deletePromoCode`,
+      update: (id: string) => `${BASE_URL}/AdminPromoCodes/updatePromoCode/${id}`,
+      delete: (id: string) => `${BASE_URL}/AdminPromoCodes/deletePromoCode/${id}`,
     },
   },
 };

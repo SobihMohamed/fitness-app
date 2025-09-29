@@ -8,6 +8,7 @@ export function useAdminApi() {
       typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
+    headers["Accept"] = "application/json";
     if (withJson) headers["Content-Type"] = "application/json";
     return headers;
   };

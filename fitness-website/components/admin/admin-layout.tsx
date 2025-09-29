@@ -12,20 +12,21 @@ import {
   Menu,
   X,
   Badge,
+  Ticket,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/admin/shared/notification-dropdown";
 import { API_CONFIG } from "@/config/api";
-import { LoadingScreen } from "@/components/common/loading-screen";
 
 const sidebarItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/admin/dashboard" },
-  { icon: Package, label: "Products", href: "/admin/products" },
+  { icon: FileText, label: "Blogs", href: "/admin/blogs" },
   { icon: FileText, label: "Courses", href: "/admin/courses" },
-  { icon: Users, label: "Users", href: "/admin/users" },
+  { icon: Package, label: "Products", href: "/admin/products" },
   { icon: FileText, label: "Requests", href: "/admin/requests" },
   { icon: Badge, label: "Services", href: "/admin/services" },
-  { icon: FileText, label: "Blogs", href: "/admin/blogs" },
+  { icon: Users, label: "Users", href: "/admin/users" },
+  { icon: Ticket, label: "Promo Codes", href: "/admin/promocode" },
 ];
 
 interface NotificationData {
@@ -64,7 +65,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   // Validate token by making a test API call
   const validateToken = async () => {
     try {
-      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, {
+      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getAll, {
         headers: getAuthHeaders(),
         method: 'GET'
       });
@@ -78,48 +79,60 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   // Fetch notification counts
   const fetchNotificationCounts = async () => {
     try {
-      const [trainingRes, courseRes, ordersRes, expiringRes] = await Promise.all([
-        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getAllRequests, { headers: getAuthHeaders() }),
-        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageCoursesRequests.getAllRequests, { headers: getAuthHeaders() }),
-        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManagesOrders.getAllOrders, { headers: getAuthHeaders() }),
-        fetch(API_CONFIG.ADMIN_FUNCTIONS.AdminManageTrainingRequests.getTheTranieesWhoseTrainingRequestEndSoon, { headers: getAuthHeaders() })
+      const [trainingRes, courseRes, ordersRes] = await Promise.all([
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getAll, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.courses.getAll, { headers: getAuthHeaders() }),
+        fetch(API_CONFIG.ADMIN_FUNCTIONS.orders.getAll, { headers: getAuthHeaders() })
       ]);
 
       // Check for authentication errors (401 Unauthorized)
-      if (trainingRes.status === 401 || courseRes.status === 401 || ordersRes.status === 401 || expiringRes.status === 401) {
+      if (trainingRes.status === 401 || courseRes.status === 401 || ordersRes.status === 401) {
         console.warn("Token expired or invalid, logging out");
         handleLogout();
         return;
       }
 
-      // Handle responses, including 404 for expiring requests
+      // Handle responses
       const trainingData = await trainingRes.json();
       const courseData = await courseRes.json();
       const ordersData = await ordersRes.json();
 
-      // Handle expiring requests response which may return 404 when none exist
-      let expiringData = { data: [] as any[] };
-      if (expiringRes.ok) {
-        expiringData = await expiringRes.json();
-      } else if (expiringRes.status === 404) {
-        // Silently treat as zero expiring requests
-        expiringData = { data: [] };
-      } else {
-        // Non-404 errors only: log and continue
-        console.warn("Expiring requests endpoint error:", expiringRes.status);
+      // Optionally fetch expiring soon only if explicitly enabled
+      let expiringData: { data: any[] } = { data: [] };
+      const shouldFetchExpiring = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_FETCH_EXPIRING === 'true';
+      if (shouldFetchExpiring && API_CONFIG.ADMIN_FUNCTIONS?.requests?.training?.getExpirationSoon) {
+        try {
+          const expiringRes = await fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getExpirationSoon, { headers: getAuthHeaders() });
+          if (expiringRes.ok) {
+            expiringData = await expiringRes.json();
+          } else if (expiringRes.status !== 404) {
+            console.warn("Expiring requests endpoint error:", expiringRes.status);
+          }
+        } catch {
+          // ignore
+        }
       }
 
+      const trainingList: any[] = Array.isArray(trainingData?.data) ? trainingData.data : Array.isArray(trainingData) ? trainingData : [];
+      const courseList: any[] = Array.isArray(courseData?.data) ? courseData.data : Array.isArray(courseData) ? courseData : [];
+      const ordersList: any[] = Array.isArray(ordersData?.data) ? ordersData.data : Array.isArray(ordersData) ? ordersData : [];
+
+      const isPending = (s: any) => {
+        const v = (s ?? "").toString().toLowerCase();
+        return v.includes("pending");
+      };
+
       setNotifications({
-        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
-        courseRequests: courseData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
-        orders: ordersData.data?.filter((order: any) => order.status === "pending" || order.order_status === "pending").length || 0,
-        expiringRequests: expiringData.data?.length || 0,
+        trainingRequests: trainingList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
+        courseRequests: courseList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
+        orders: ordersList.filter((order: any) => isPending(order.status) || isPending(order.order_status)).length || 0,
+        expiringRequests: (Array.isArray(expiringData?.data) ? expiringData.data : []).length || 0,
       });
       console.log("Notification data:", {
-        trainingRequests: trainingData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
-        courseRequests: courseData.data?.filter((req: any) => req.status === "pending" || req.request_status === "pending").length || 0,
-        orders: ordersData.data?.filter((order: any) => order.status === "pending" || order.order_status === "pending").length || 0,
-        expiringRequests: expiringData.data?.length || 0,
+        trainingRequests: trainingList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
+        courseRequests: courseList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
+        orders: ordersList.filter((order: any) => isPending(order.status) || isPending(order.order_status)).length || 0,
+        expiringRequests: (Array.isArray(expiringData?.data) ? expiringData.data : []).length || 0,
       });
     } catch (error) {
       console.error("Error fetching notification counts:", error);
@@ -165,6 +178,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <div
+        id="admin-sidebar"
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
@@ -221,61 +235,47 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="w-full flex flex-col flex-1">
-        {/* Top Bar */}
-        <header className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              <h1 className="text-xl font-semibold text-gray-900">
-                Admin Dashboard
-              </h1>
+      {/* Top Bar */}
+      <header className="bg-white shadow-sm border-b px-6 py-4 sticky top-0 z-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen((prev) => !prev)}
+              aria-expanded={sidebarOpen}
+              aria-controls="admin-sidebar"
+              aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <h1 className="text-xl font-semibold text-gray-900">
+              Admin Dashboard
+            </h1>
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="relative">
+              <NotificationDropdown />
             </div>
-            <div className="flex items-center space-x-6">
-              {/* Notification Bell */}
-              <div className="relative">
-                <NotificationDropdown />
-              </div>
-              
-              {/* User Profile with Notification Count */}
-              <div className="flex flex-col items-center relative">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
-                    <span className="text-white font-medium">A</span>
-                  </div>
-                  <div className="hidden md:block">
-                    <p className="text-sm font-medium text-gray-900">Admin User</p>
-                    <p className="text-xs text-gray-500">Administrator</p>
-                  </div>
+            <div className="flex flex-col items-center relative">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                  <span className="text-white font-medium">A</span>
+                </div>
+                <div className="hidden md:block">
+                  <p className="text-sm font-medium text-gray-900">
+                    Admin User
+                  </p>
+                  <p className="text-xs text-gray-500">Administrator</p>
                 </div>
               </div>
             </div>
           </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="p-6 flex-1">{children}</main>
-
-        {/* Footer */}
-        <footer className="mt-auto bg-white border-t px-6 py-3 text-sm text-gray-600 flex items-center justify-between">
-          <span>© {new Date().getFullYear()} FitPro Admin</span>
-          <span className="hidden sm:inline">All rights reserved.</span>
-        </footer>
-      </div>
-
-      {/* Global Loading Overlay (auth/validation/boot) */}
-      {isLoading && (
-        <div className="absolute inset-0 z-[60] bg-white/70  flex items-center justify-center">
-          <LoadingScreen message="Preparing admin panel…" className="min-h-0" />
         </div>
-      )}
+      </header>
+
+      {/* Page Content */}
+      <main className="p-6 flex-1">{children}</main>
     </div>
   );
 }

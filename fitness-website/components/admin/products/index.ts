@@ -1,0 +1,9 @@
+export { StatsCards } from "./stats-cards";
+export { CategoryFilter } from "./category-filter";
+export { SearchAndFilter } from "./search-and-filter";
+export { ProductsTable } from "./products-table";
+export { ProductForm } from "./product-form";
+export { ProductDetailsDialog } from "./product-details-dialog";
+export { CategoryManagementDialog } from "./category-management-dialog";
+export { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+export { ImagePreviewDialog } from "./image-preview-dialog";
