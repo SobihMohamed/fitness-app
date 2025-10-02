@@ -177,6 +177,11 @@ export const courseDetailsApi = {
 
   // Get auth headers (will be overridden in component context)
   getAuthHeaders(includeContentType: boolean = false): Record<string, string> {
-    return {};
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    headers["Accept"] = "application/json";
+    if (includeContentType) headers["Content-Type"] = "application/json";
+    return headers;
   }
 };

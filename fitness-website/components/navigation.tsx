@@ -20,7 +20,7 @@ const LoginModal = dynamic(() => import("@/components/auth/login-modal").then(m 
   loading: () => null,
 });
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
 
 const staticNavigation = Object.freeze([
@@ -67,6 +67,7 @@ function NavigationInner() {
               </SheetTrigger>
 
               <SheetContent side="right" className="w-full sm:max-w-sm">
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <div className="flex items-center justify-between">
                   <Link href="/" prefetch={false} className="-m-1.5 p-1.5">
                     <span className="text-2xl font-bold text-blue-600">

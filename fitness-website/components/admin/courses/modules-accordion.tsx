@@ -55,10 +55,12 @@ export const ModulesAccordion = React.memo<ModulesAccordionProps>(({
       
       <CardContent className="pt-6">
         <Accordion type="multiple" className="w-full space-y-4">
-          {modules.map((module) => (
+          {modules.map((module) => {
+            const moduleKey = String(module.module_id);
+            return (
             <AccordionItem 
-              key={module.module_id} 
-              value={module.module_id} 
+              key={moduleKey} 
+              value={moduleKey} 
               className="border border-slate-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200"
             >
               <AccordionTrigger className="px-6 py-4 bg-white hover:bg-slate-50">
@@ -118,7 +120,7 @@ export const ModulesAccordion = React.memo<ModulesAccordionProps>(({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(chaptersByModule[module.module_id] || []).map((chapter, idx) => (
+                      {(chaptersByModule[moduleKey] || []).map((chapter, idx) => (
                         <TableRow
                           key={chapter.chapter_id}
                           className={`hover:bg-slate-50 transition-colors duration-150 ${
@@ -190,7 +192,7 @@ export const ModulesAccordion = React.memo<ModulesAccordionProps>(({
                           </TableCell>
                         </TableRow>
                       ))}
-                      {(!chaptersByModule[module.module_id] || chaptersByModule[module.module_id].length === 0) && (
+                      {(!chaptersByModule[moduleKey] || chaptersByModule[moduleKey].length === 0) && (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-6 sm:py-8">
                             <div className="flex flex-col items-center justify-center text-slate-500">
@@ -228,7 +230,8 @@ export const ModulesAccordion = React.memo<ModulesAccordionProps>(({
                 </div>
               </AccordionContent>
             </AccordionItem>
-          ))}
+            );
+          })}
           {modules.length === 0 && (
             <div className="text-center text-slate-500 py-10">
               No modules yet. Click "Add Module" to create one.

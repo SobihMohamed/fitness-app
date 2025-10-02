@@ -75,7 +75,7 @@ export default function CourseDetailsPage() {
 
     try {
       if (editingModule) {
-        await courseManagement.updateModule(editingModule.module_id, moduleFormData);
+        await courseManagement.updateModule(String(editingModule.module_id), moduleFormData);
       } else {
         await courseManagement.createModule(moduleFormData);
       }
@@ -88,7 +88,11 @@ export default function CourseDetailsPage() {
   }, [editingModule, moduleFormData, courseManagement, initialModuleFormData]);
 
   const handleDeleteModule = useCallback((module: Module) => {
-    setDeleteTarget({ kind: "module", id: module.module_id, name: module.title });
+    setDeleteTarget({
+      type: "module",
+      id: module.module_id,
+      name: module.title,
+    });
     setShowDeleteConfirm(true);
   }, []);
 
@@ -117,9 +121,9 @@ export default function CourseDetailsPage() {
 
     try {
       if (editingChapter) {
-        await courseManagement.updateChapter(editingChapter.chapter_id, chapterFormData);
+        await courseManagement.updateChapter(String(editingChapter.chapter_id), chapterFormData);
       } else {
-        await courseManagement.createChapter(currentModuleForChapter.module_id, chapterFormData);
+        await courseManagement.createChapter(String(currentModuleForChapter.module_id), chapterFormData);
       }
       setIsChapterFormOpen(false);
       setEditingChapter(null);
@@ -131,7 +135,7 @@ export default function CourseDetailsPage() {
   }, [editingChapter, chapterFormData, currentModuleForChapter, courseManagement, initialChapterFormData]);
 
   const handleDeleteChapter = useCallback((chapter: Chapter) => {
-    setDeleteTarget({ kind: "chapter", id: chapter.chapter_id, name: chapter.title });
+    setDeleteTarget({ type: "chapter", id: chapter.chapter_id, name: chapter.title });
     setShowDeleteConfirm(true);
   }, []);
 
@@ -139,10 +143,10 @@ export default function CourseDetailsPage() {
     if (!deleteTarget) return;
 
     try {
-      if (deleteTarget.kind === "module") {
-        await courseManagement.deleteModule(deleteTarget.id);
+      if (deleteTarget.type === "module") {
+        await courseManagement.deleteModule(String(deleteTarget.id));
       } else {
-        await courseManagement.deleteChapter(deleteTarget.id);
+        await courseManagement.deleteChapter(String(deleteTarget.id));
       }
       setShowDeleteConfirm(false);
       setDeleteTarget(null);

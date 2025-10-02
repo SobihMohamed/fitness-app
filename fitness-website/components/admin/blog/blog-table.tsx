@@ -27,7 +27,7 @@ export const BlogTable = React.memo(({
   const categoryTitleByIdMemo = useMemo(() => {
     const map: Record<string, string> = {};
     categories.forEach((c) => {
-      map[String(c.category_id)] = c.title;
+      map[String(c.id)] = c.name;
     });
     return map;
   }, [categories]);

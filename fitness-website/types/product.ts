@@ -117,6 +117,7 @@ export interface ProductCardProps {
   favorites: Set<number>;
   onAddToCart: (product: ClientProduct) => void;
   onToggleFavorite: (productId: number) => void;
+  priority?: boolean;
 }
 
 export interface ProductGridProps {
@@ -157,6 +158,7 @@ export interface ProductDetailsInfoProps {
 export interface Category {
   category_id: string;
   name: string;
+  description?: string;
 }
 
 export interface Product {
