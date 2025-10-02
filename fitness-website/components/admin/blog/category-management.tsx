@@ -12,7 +12,7 @@ import { DeleteConfirmation } from "./delete-confirmation";
 import { getHttpClient } from "@/lib/http";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import { API_CONFIG } from "@/config/api";
-import type { Category } from "@/types";
+import type { BlogCategory as Category } from "@/types";
 
 interface CategoryManagementProps {
   categories: Category[];
@@ -81,7 +81,7 @@ export const CategoryManagement = React.memo(({
 
   const openEditCategory = useCallback((cat: Category) => {
     setEditingCategory(cat);
-    setCatForm({ title: cat.title || "", description: cat.description || "" });
+    setCatForm({ title: cat.name || "", description: cat.description || "" });
     setIsCatDialogOpen(true);
   }, []);
 
@@ -113,7 +113,7 @@ export const CategoryManagement = React.memo(({
       setIsCatSubmitting(true);
       const endpoint = editingCategory
         ? API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.update(
-            String(editingCategory.category_id)
+            String(editingCategory.id)
           )
         : API_CONFIG.ADMIN_FUNCTIONS.blogs.categories.add;
 
@@ -156,7 +156,7 @@ export const CategoryManagement = React.memo(({
   }, [editingCategory, catForm, validateCategoryForm, getAuthHeaders, showSuccessToast, showErrorToast, http, onRefreshCategories]);
 
   const confirmDeleteCategory = useCallback((cat: Category) => {
-    setCatDeleteTarget({ id: cat.category_id, name: cat.title });
+    setCatDeleteTarget({ id: String(cat.id), name: cat.name });
     setShowCatDeleteConfirm(true);
   }, []);
 
@@ -205,7 +205,7 @@ export const CategoryManagement = React.memo(({
   const selectedCategoryDetails = useMemo(() => {
     if (selectedCategory === "all") return null;
     return (
-      categories.find((c) => String(c.category_id) === selectedCategory) ||
+      categories.find((c) => String(c.id) === selectedCategory) ||
       null
     );
   }, [categories, selectedCategory]);
@@ -270,7 +270,7 @@ export const CategoryManagement = React.memo(({
               </div>
               <div className="min-w-0 overflow-hidden">
                 <div className="font-semibold text-slate-900 truncate">
-                  {selectedCategoryDetails.title}
+                  {selectedCategoryDetails.name}
                 </div>
                 {selectedCategoryDetails.description ? (
                   <p className="text-sm text-slate-600 mt-1 line-clamp-2 overflow-hidden whitespace-normal break-words">

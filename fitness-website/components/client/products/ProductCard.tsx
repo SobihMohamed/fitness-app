@@ -18,6 +18,7 @@ const ProductCard = React.memo<ProductCardProps>(({
   favorites,
   onAddToCart,
   onToggleFavorite,
+  priority = false,
 }) => {
   const handleAddToCart = React.useCallback(() => {
     onAddToCart(product);
@@ -37,6 +38,7 @@ const ProductCard = React.memo<ProductCardProps>(({
               src={getProxyImageUrl(product.image_url) || "/placeholder.svg"}
               alt={product.name}
               fill
+              priority={priority}
               style={{ objectFit: "cover" }}
               className="group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"

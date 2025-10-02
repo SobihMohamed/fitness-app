@@ -87,9 +87,10 @@ export const useBlogManagement = (): BlogState & BlogActions & {
       // Transform Category[] to BlogCategory[] format
       const blogCategories: BlogCategory[] = categoriesData.map(cat => ({
         id: cat.category_id,
-        name: cat.name, 
-        color: '#007bff', 
-        blogCount: 0 
+        name: cat.name,
+        description: cat.description,
+        color: '#007bff',
+        blogCount: 0
       }));
       setCategories(blogCategories);
     } catch (err: any) {

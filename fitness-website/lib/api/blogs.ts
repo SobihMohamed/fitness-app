@@ -307,16 +307,19 @@ export const categoryApi = {
     return (categoriesDataRaw as any[])
       .filter(Boolean)
       .map((c: any) => {
+        // Normalize to the expected shape: { category_id, name }
         const category: Category = {
           category_id: String(c?.category_id ?? c?.category_Id ?? c?.id ?? c?.ID ?? ''),
-          title: String(c?.title ?? c?.name ?? '').trim()
+          name: String(c?.name ?? c?.title ?? '').trim()
         };
-        if (c?.description) {
+        // Preserve description if provided by backend
+        if (typeof c?.description === 'string' && c.description.trim()) {
+
           category.description = String(c.description).trim();
         }
         return category;
       })
-      .filter((c) => c.category_id && c.title);
+      .filter((c) => c.category_id && c.name);
   },
 
   // Get auth headers (using admin API hook)

@@ -56,24 +56,24 @@ export const CategoryPills = React.memo(({
 
             {/* Primary categories */}
             {primaryCategories.map((cat) => (
-              <Tooltip key={cat.category_id}>
+              <Tooltip key={cat.id || `category-${Math.random()}`}>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={() => {
-                      const id = String(cat.category_id);
+                      const id = String(cat.id);
                       if (selectedCategory !== id) {
                         onCategoryChange(id);
                       }
                     }}
                     className={`whitespace-nowrap px-4 py-2 rounded-full border text-sm transition-colors shadow-sm ${
-                      selectedCategory === String(cat.category_id)
+                      selectedCategory === String(cat.id)
                         ? "bg-indigo-600 text-white border-indigo-600"
                         : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                     }`}
-                    title={cat.title}
+                    title={cat.name}
                   >
-                    {cat.title}
+                    {cat.name}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-center overflow-hidden">
@@ -91,7 +91,7 @@ export const CategoryPills = React.memo(({
                     className={`whitespace-nowrap px-4 py-2 rounded-full border text-sm transition-colors shadow-sm flex items-center gap-1 ${
                       selectedCategory !== "all" &&
                       overflowCategories.some(
-                        (c) => String(c.category_id) === selectedCategory
+                        (c) => String(c.id) === selectedCategory
                       )
                         ? "bg-indigo-600 text-white border-indigo-600"
                         : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
@@ -110,9 +110,9 @@ export const CategoryPills = React.memo(({
                   <div className="max-h-72 overflow-y-auto overflow-x-hidden pr-2">
                     {overflowCategories.map((cat) => (
                       <DropdownMenuItem
-                        key={cat.category_id}
+                        key={cat.id || `overflow-${Math.random()}`}
                         onClick={() => {
-                          const id = String(cat.category_id);
+                          const id = String(cat.id);
                           if (selectedCategory !== id) {
                             onCategoryChange(id);
                           }
@@ -120,7 +120,7 @@ export const CategoryPills = React.memo(({
                         className="flex flex-col items-start gap-0.5"
                       >
                         <span className="text-sm text-slate-800">
-                          {cat.title}
+                          {cat.name}
                         </span>
                         <span className="text-xs text-slate-500 line-clamp-1 break-words overflow-hidden">
                           {(cat.description && cat.description.trim()) ||
