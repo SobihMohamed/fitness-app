@@ -23,6 +23,7 @@ import {
 import { formatNumber } from "@/utils/format";
 import { useAuth } from "@/contexts/auth-context";
 import { API_CONFIG } from "@/config/api";
+import { useUserApi } from "@/hooks/client/use-user-api";
 
 import {
   ShoppingCart,
@@ -56,6 +57,7 @@ interface CourseEnrollmentSectionProps {
 
 const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ course, onEnrollment }) => {
   const { user } = useAuth();
+  const { makeAuthenticatedRequest } = useUserApi();
 
   const [isFavorite, setIsFavorite] = React.useState(false);
 
@@ -102,7 +104,6 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
       }
 
       setSubmitting(true);
-      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
 
       const payload = {
         course_id: course.course_id,
@@ -115,22 +116,12 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
         net_total: netTotal,
       };
 
-      const res = await fetch(API_CONFIG.USER_FUNCTIONS.requests.courses.create, {
+      const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.requests.courses.create, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        throw new Error(txt || `Request failed with status ${res.status}`);
-      }
-      const data = await res.json().catch(() => ({}));
-
-      if (data?.status === "success" || res.ok) {
+      if (data?.status === "success") {
         toast.success("Enrollment request submitted!");
         setOpen(false);
         // reset
@@ -269,16 +260,13 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
               </div>
               <div>
                 <Label htmlFor="job">Job</Label>
-                <select
+                <Input
                   id="job"
-                  className="mt-1 w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  placeholder="Your job (e.g., Software Engineer)"
+                  className="mt-1"
                   value={job}
                   onChange={(e) => setJob(e.target.value)}
-                >
-                  <option value="">Select job</option>
-                  <option value="Developer">Developer</option>
-                  <option value="Not Developer">Not Developer</option>
-                </select>
+                />
               </div>
             </div>
 
