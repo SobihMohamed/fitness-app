@@ -49,13 +49,7 @@ export function useCourseManagement(): CourseManagementReturn {
   
   const pagination = { itemsPerPage: 10 };
 
-  // Override API auth headers
-  useEffect(() => {
-    courseApi.getAuthHeaders = (includeContentType = true) => {
-      const headers = getAuthHeaders(includeContentType);
-      return headers;
-    };
-  }, [getAuthHeaders]);
+  // Note: Auth headers are now handled directly in the API
 
   // Debounce search term
   useEffect(() => {
@@ -107,7 +101,7 @@ export function useCourseManagement(): CourseManagementReturn {
     } finally {
       setLoading(prev => ({ ...prev, courses: false, initial: false }));
     }
-  }, []); // Removed showErrorToast to prevent infinite loop
+  }, [showErrorToast]);
 
   // Load courses on mount
   useEffect(() => {
@@ -125,7 +119,7 @@ export function useCourseManagement(): CourseManagementReturn {
       }
     };
     init();
-  }, [fetchCourses]); // Removed showErrorToast to prevent infinite loop
+  }, [fetchCourses, showErrorToast]);
 
   // Filtered courses (memoized)
   const filteredCourses = useMemo(() => {

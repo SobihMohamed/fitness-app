@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Bell, Check, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -26,6 +26,11 @@ export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [markingIds, setMarkingIds] = useState<Record<string, boolean>>({});
   const [deletingIds, setDeletingIds] = useState<Record<string, boolean>>({});
+  
+  // Guarded open state updater to avoid redundant state updates
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsOpen((prev) => (prev === open ? prev : open));
+  }, []);
 
   // Local overlay to persist read IDs for UI, in case backend doesn't update immediately
   const LOCAL_READ_KEY = "adminNotificationReadIds";
@@ -284,7 +289,7 @@ export function NotificationDropdown() {
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+    <DropdownMenu open={isOpen} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />

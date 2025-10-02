@@ -31,7 +31,7 @@ export default function CoursesManagement() {
     title: "",
     price: "",
     description: "",
-    image_url: null,
+    image_url: "",
   }), []);
 
   const [formData, setFormData] = useState<CourseFormData>(initialFormData);
@@ -39,17 +39,17 @@ export default function CoursesManagement() {
   // Stable, guarded handlers
   const onSearchChange = useCallback((term: string) => {
     courseManagement.setSearchTerm(term);
-  }, [courseManagement.setSearchTerm]);
+  }, [courseManagement]);
 
   const onPageChange = useCallback((page: number) => {
     if (courseManagement.currentPage !== page) {
       courseManagement.setCurrentPage(page);
     }
-  }, [courseManagement.currentPage, courseManagement.setCurrentPage]);
+  }, [courseManagement]);
 
   const onClearFilters = useCallback(() => {
     courseManagement.setFilters({ searchTerm: "" });
-  }, [courseManagement.setFilters]);
+  }, [courseManagement]);
 
   // Handlers
   const handleOpenCreate = useCallback(() => {
@@ -66,7 +66,7 @@ export default function CoursesManagement() {
       title: course.title || "",
       price: course.price || "",
       description: course.description || "",
-      image_url: course.image_url || null,
+      image_url: course.image_url || "",
     });
     setSelectedImage(null);
     setFormErrors({});
@@ -77,7 +77,7 @@ export default function CoursesManagement() {
     const course = courseManagement.courses.find(c => c.course_id === courseId);
     setDeleteTarget({ id: courseId, name: course?.title || "Course" });
     setShowDeleteConfirm(true);
-  }, [courseManagement.courses]);
+  }, [courseManagement]);
 
   // Validation
   const validateForm = useCallback((data: CourseFormData) => {
@@ -123,7 +123,7 @@ export default function CoursesManagement() {
   // Image change from CourseForm
   const handleImageChange = useCallback((file: File | null) => {
     setSelectedImage(file);
-    setFormData((prev) => ({ ...prev, image_url: file }));
+    setFormData((prev) => ({ ...prev, image_url: file ?? "" }));
   }, []);
 
   // Delete confirmation

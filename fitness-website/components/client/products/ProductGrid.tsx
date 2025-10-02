@@ -53,7 +53,7 @@ const ProductGrid = React.memo<ProductGridProps>(({
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
-      {products.map((product) => (
+      {products.map((product, index) => (
         <ProductCard
           key={product.product_id}
           product={product}
@@ -61,6 +61,7 @@ const ProductGrid = React.memo<ProductGridProps>(({
           favorites={favorites}
           onAddToCart={onAddToCart}
           onToggleFavorite={onToggleFavorite}
+          priority={index < 6} // First 6 products get priority loading
         />
       ))}
     </div>

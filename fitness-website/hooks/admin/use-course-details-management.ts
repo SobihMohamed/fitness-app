@@ -50,12 +50,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     deleting: false,
   });
 
-  // Override API auth headers
-  useEffect(() => {
-    courseDetailsApi.getAuthHeaders = (includeContentType = false) => {
-      return getAuthHeaders(includeContentType);
-    };
-  }, [getAuthHeaders]);
+  // Note: Auth headers are now handled directly in the API
 
   // Load course data
   const loadCourseData = useCallback(async () => {
@@ -68,7 +63,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
       showErrorToast(error?.message || "Failed to load course");
       throw error;
     }
-  }, [courseId]); // Removed showErrorToast to prevent infinite loop
+  }, [courseId, showErrorToast]);
 
   // Load modules and chapters
   const loadModulesAndChapters = useCallback(async () => {
@@ -86,7 +81,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
       showErrorToast(error?.message || "Failed to load modules and chapters");
       throw error;
     }
-  }, [courseId]); // Removed showErrorToast to prevent infinite loop
+  }, [courseId, showErrorToast]);
 
   // Module operations
   const createModule = useCallback(async (formData: ModuleFormData) => {
@@ -103,7 +98,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
-  }, [courseId, loadModulesAndChapters]);
+  }, [courseId, loadModulesAndChapters, showSuccessToast, showErrorToast]);
 
   const updateModule = useCallback(async (moduleId: string, formData: ModuleFormData) => {
     try {
@@ -117,7 +112,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
-  }, [loadModulesAndChapters]);
+  }, [loadModulesAndChapters, showSuccessToast, showErrorToast]);
 
   const deleteModule = useCallback(async (moduleId: string) => {
     try {
@@ -131,7 +126,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, deleting: false }));
     }
-  }, [loadModulesAndChapters]);
+  }, [loadModulesAndChapters, showSuccessToast, showErrorToast]);
 
   // Optimistic update for chapters
   const optimisticUpdateChapter = useCallback((
@@ -185,7 +180,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
-  }, [loadModulesAndChapters, optimisticUpdateChapter]);
+  }, [loadModulesAndChapters, optimisticUpdateChapter, showSuccessToast, showErrorToast]);
 
   const updateChapter = useCallback(async (chapterId: string, formData: ChapterFormData) => {
     try {
@@ -199,7 +194,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
-  }, [loadModulesAndChapters]);
+  }, [loadModulesAndChapters, showSuccessToast, showErrorToast]);
 
   const deleteChapter = useCallback(async (chapterId: string) => {
     try {
@@ -213,7 +208,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     } finally {
       setLoading(prev => ({ ...prev, deleting: false }));
     }
-  }, [loadModulesAndChapters]);
+  }, [loadModulesAndChapters, showSuccessToast, showErrorToast]);
 
   // Initialize data on mount
   useEffect(() => {
@@ -230,7 +225,7 @@ export function useCourseDetailsManagement(courseId: string): CourseDetailsRetur
     };
     
     init();
-  }, [courseId, loadCourseData, loadModulesAndChapters]); // Removed showErrorToast to prevent infinite loop
+  }, [courseId, loadCourseData, loadModulesAndChapters, showErrorToast]);
 
   return {
     // State

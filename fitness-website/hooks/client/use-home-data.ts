@@ -4,38 +4,20 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_CONFIG } from "@/config/api";
 import { useCart } from "@/contexts/cart-context";
 import { useRouter } from "next/navigation";
-
-// Lightweight types for the Home page consumption
-export interface HomeProductItem {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  stock?: number;
-  category?: string;
-  description?: string;
-}
-
-export interface HomeCourseItem {
-  id: string;
-  title: string;
-  price?: number;
-  image?: string;
-  short_description?: string;
-}
+import type { HomeProduct, HomeCourse } from "@/types/home";
 
 export interface UseHomeDataParams {
-  initialFeaturedProducts?: HomeProductItem[];
-  initialFeaturedCourses?: HomeCourseItem[];
+  initialFeaturedProducts?: HomeProduct[];
+  initialFeaturedCourses?: HomeCourse[];
 }
 
 export interface UseHomeDataReturn {
-  featuredProducts: HomeProductItem[];
-  featuredCourses: HomeCourseItem[];
+  featuredProducts: HomeProduct[];
+  featuredCourses: HomeCourse[];
   isLoadingProducts: boolean;
   isLoadingCourses: boolean;
-  handleAddToCart: (product: HomeProductItem) => void;
-  handleCourseEnrollment: (course: HomeCourseItem) => void;
+  handleAddToCart: (product: HomeProduct) => void;
+  handleCourseEnrollment: (course: HomeCourse) => void;
 }
 
 // Helpers to normalize API responses that may vary in shape
@@ -58,7 +40,7 @@ function pickFirst<T = any>(obj: any, keys: string[], fallback?: any): T {
   return fallback as T;
 }
 
-function normalizeProduct(raw: any): HomeProductItem {
+function normalizeProduct(raw: any): HomeProduct {
   const id = toStr(pickFirst(raw, ["id", "product_id", "_id"])) || crypto.randomUUID();
   const name = toStr(pickFirst(raw, ["name", "title", "product_name"], "Product"));
   const price = toNum(pickFirst(raw, ["price", "amount", "final_price", "net_total"], 0));
@@ -104,10 +86,10 @@ function normalizeProduct(raw: any): HomeProductItem {
   };
 }
 
-function normalizeCourse(raw: any): HomeCourseItem {
+function normalizeCourse(raw: any): HomeCourse {
   const id = toStr(pickFirst(raw, ["id", "course_id", "_id"])) || crypto.randomUUID();
   const title = toStr(pickFirst(raw, ["title", "name", "course_title"], "Course"));
-  const price = pickFirst<number>(raw, ["price", "amount", "original_total", "net_total"], undefined as any);
+  const price = toNum(pickFirst(raw, ["price", "amount", "original_total", "net_total"], 0));
 
   const courseImageCandidate = pickFirst<any>(raw, [
     "image",
@@ -131,14 +113,22 @@ function normalizeCourse(raw: any): HomeCourseItem {
   ]);
   const imageUrl = Array.isArray(courseImageCandidate) ? toStr(courseImageCandidate[0]) : toStr(courseImageCandidate);
 
-  const short_description = toStr(pickFirst(raw, ["short_description", "description", "desc"], ""));
+  const description = toStr(pickFirst(raw, ["description", "short_description", "desc"], ""));
+  const instructor = toStr(pickFirst(raw, ["instructor", "teacher", "author", "trainer"], "Instructor"));
+  const students = toNum(pickFirst(raw, ["students", "enrolled", "learners", "registrations"], 0));
+  const rating = toNum(pickFirst(raw, ["rating", "avg_rating", "average_rating"], 0));
+  const category = toStr(pickFirst(raw, ["category", "category_name", "topic"], ""));
 
   return {
     id,
     title,
-    price: price === undefined ? undefined : toNum(price),
+    price,
     image: imageUrl || "/placeholder.svg",
-    short_description,
+    description,
+    instructor,
+    students,
+    rating,
+    category,
   };
 }
 
@@ -147,8 +137,8 @@ export function useHomeData(params: UseHomeDataParams = {}): UseHomeDataReturn {
   const router = useRouter();
   const { addItem } = useCart();
 
-  const [featuredProducts, setFeaturedProducts] = useState<HomeProductItem[]>(initialFeaturedProducts);
-  const [featuredCourses, setFeaturedCourses] = useState<HomeCourseItem[]>(initialFeaturedCourses);
+  const [featuredProducts, setFeaturedProducts] = useState<HomeProduct[]>(initialFeaturedProducts);
+  const [featuredCourses, setFeaturedCourses] = useState<HomeCourse[]>(initialFeaturedCourses);
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(false);
 
@@ -208,7 +198,7 @@ export function useHomeData(params: UseHomeDataParams = {}): UseHomeDataReturn {
     void fetchFeaturedCourses();
   }, [fetchFeaturedProducts, fetchFeaturedCourses]);
 
-  const handleAddToCart = useCallback((product: HomeProductItem) => {
+  const handleAddToCart = useCallback((product: HomeProduct) => {
     addItem({
       id: product.id,
       name: product.name,
@@ -220,7 +210,7 @@ export function useHomeData(params: UseHomeDataParams = {}): UseHomeDataReturn {
     });
   }, [addItem]);
 
-  const handleCourseEnrollment = useCallback((course: HomeCourseItem) => {
+  const handleCourseEnrollment = useCallback((course: HomeCourse) => {
     // For now, navigate to the course details page. Advanced flows can open request modal.
     const id = toStr(course.id);
     if (id) {
