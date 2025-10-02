@@ -51,7 +51,7 @@ const FeaturedProductsSection = React.memo<FeaturedProductsSectionProps>(({
                       width={300}
                       height={300}
                       className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
+                      priority={index < 3} // First 3 featured products get priority
                       sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
                       onError={(e) => {
                         const img = e.currentTarget as HTMLImageElement;

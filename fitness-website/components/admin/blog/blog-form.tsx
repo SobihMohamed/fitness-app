@@ -200,10 +200,10 @@ export const BlogForm = React.memo(({
                   ) : (
                     categories.map((c) => (
                       <SelectItem
-                        key={c.category_id}
-                        value={String(c.category_id)}
+                        key={c.id || `category-${Math.random()}`}
+                        value={String(c.id)}
                       >
-                        {c.title}
+                        {c.name}
                       </SelectItem>
                     ))
                   )}

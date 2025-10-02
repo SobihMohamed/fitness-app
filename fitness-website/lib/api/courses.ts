@@ -5,7 +5,7 @@ import { API_CONFIG } from "@/config/api";
 import type {
   Course,
   CourseFormData,
-  CourseApiResponse,
+  ApiResponse,
 } from "@/types";
 
 const http = getHttpClient();
@@ -14,24 +14,24 @@ const http = getHttpClient();
 export const courseApi = {
   // Fetch all courses
   async fetchCourses(): Promise<Course[]> {
-    const response = await http.get<CourseApiResponse>(
+    const response = await http.get<ApiResponse<Course[]>>(
       `${API_CONFIG.BASE_URL}/AdminCourses/getAll`,
       { headers: this.getAuthHeaders() }
     );
 
     const data = response.data;
-    const coursesData = Array.isArray(data?.data)
-      ? data.data
-      : Array.isArray(data?.courses)
-        ? data.courses
-        : Array.isArray(data) ? data : [];
+    const coursesData = Array.isArray((data as any)?.data)
+      ? (data as any).data
+      : Array.isArray((data as any)?.courses)
+        ? (data as any).courses
+        : Array.isArray(data as any) ? (data as any) : [];
 
     return this.formatCoursesData(coursesData);
   },
 
   // Search courses
   async searchCourses(keyword: string): Promise<Course[]> {
-    const response = await http.post<CourseApiResponse>(
+    const response = await http.post<ApiResponse<Course[]>>(
       API_CONFIG.USER_FUNCTIONS.courses.search,
       { keyword }
     );
@@ -159,12 +159,16 @@ export const courseApi = {
         image_url: course.image_url ? String(course.image_url) : '',
         description: String(course.description || ''),
         created_at: course.created_at ? new Date(course.created_at).toISOString() : new Date().toISOString(),
-        content_link: course.content_link ? String(course.content_link) : undefined,
       }));
   },
 
   // Get auth headers (will be overridden in component context)
   getAuthHeaders(includeContentType: boolean = true): Record<string, string> {
-    return {};
+    const token = typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
+    const headers: Record<string, string> = {};
+    if (token) headers.Authorization = `Bearer ${token}`;
+    headers["Accept"] = "application/json";
+    if (includeContentType) headers["Content-Type"] = "application/json";
+    return headers;
   }
 };

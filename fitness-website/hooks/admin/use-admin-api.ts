@@ -1,9 +1,10 @@
 "use client";
 
+import { useCallback } from "react";
 import { toast } from "sonner";
 
 export function useAdminApi() {
-  const getAuthHeaders = (withJson = true) => {
+  const getAuthHeaders = useCallback((withJson = true) => {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
     const headers: Record<string, string> = {};
@@ -11,9 +12,9 @@ export function useAdminApi() {
     headers["Accept"] = "application/json";
     if (withJson) headers["Content-Type"] = "application/json";
     return headers;
-  };
+  }, []);
 
-  const parseResponse = async <T = any>(
+  const parseResponse = useCallback(async <T = any>(
     response: Response
   ): Promise<T | { status: string; message: string }> => {
     const text = await response.text();
@@ -33,9 +34,9 @@ export function useAdminApi() {
         message: text.trim() || (response.ok ? "Success" : "An error occurred"),
       } as any;
     }
-  };
+  }, []);
 
-  const showSuccessToast = (message: string) => {
+  const showSuccessToast = useCallback((message: string) => {
     toast.success(message, {
       duration: 3000,
       position: "top-right",
@@ -50,9 +51,9 @@ export function useAdminApi() {
         letterSpacing: "0.3px",
       },
     });
-  };
+  }, []);
 
-  const showErrorToast = (message: string) => {
+  const showErrorToast = useCallback((message: string) => {
     toast.error(message, {
       duration: 4000,
       position: "top-right",
@@ -67,9 +68,9 @@ export function useAdminApi() {
         letterSpacing: "0.3px",
       },
     });
-  };
+  }, []);
 
-  const showInfoToast = (message: string) => {
+  const showInfoToast = useCallback((message: string) => {
     toast.info(message, {
       duration: 3000,
       position: "top-right",
@@ -84,7 +85,7 @@ export function useAdminApi() {
         letterSpacing: "0.3px",
       },
     });
-  };
+  }, []);
 
   return {
     getAuthHeaders,

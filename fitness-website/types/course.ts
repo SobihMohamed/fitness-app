@@ -85,3 +85,59 @@ export interface SearchRequest {
   page?: number;
   limit?: number;
 }
+
+// Admin UI compatible types (module_id/chapter_id naming)
+export interface Module {
+  module_id: string | number;
+  course_id?: string | number;
+  title: string;
+  description: string;
+  order_number?: number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Chapter {
+  chapter_id: string | number;
+  module_id: string | number;
+  title: string;
+  description: string;
+  video_link?: string;
+  order_number?: number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Admin forms data shapes
+export interface CourseFormData {
+  title: string;
+  price: string;
+  image_url: string | File;
+  description: string;
+}
+
+export interface ModuleFormData {
+  title: string;
+  order_number: string;
+  description: string;
+}
+
+export interface ChapterFormData {
+  title: string;
+  order_number: string;
+  video_link: string;
+  description: string;
+}
+
+// Delete confirmation targets
+export interface DeleteTarget {
+  id: string | number;
+  name: string;
+  type?: string;
+}
+
+export interface CourseDetailsDeleteTarget {
+  id: string | number;
+  name: string;
+  type: 'course' | 'module' | 'chapter';
+}

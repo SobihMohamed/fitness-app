@@ -22,6 +22,7 @@ const ProductDetailsImageGallery = React.memo<ProductDetailsImageGalleryProps>((
           src={getProxyImageUrl(activeImage || undefined) || "/placeholder.svg"}
           alt={product.name}
           fill
+          priority
           style={{ objectFit: "cover" }}
           className="rounded-lg transition-transform duration-500 hover:scale-105"
           sizes="(max-width: 768px) 100vw, 50vw"
@@ -56,6 +57,7 @@ const ProductDetailsImageGallery = React.memo<ProductDetailsImageGalleryProps>((
                   fill
                   style={{ objectFit: "cover" }}
                   className="transition-transform duration-300 hover:scale-110"
+                  sizes="(max-width: 768px) 20vw, 10vw"
                 />
               </button>
             ))}
