@@ -3,6 +3,7 @@
 
   use App\Core\AbstractController;
   use App\models\Courses;
+  use App\models\CoursesRequest;
   use App\models\Modules;
   use App\Models\Chapters;
   
@@ -10,14 +11,26 @@
     private $courseModel;
     private $modulModel;
     private $chapterModel;
+    private $requestModel;
 
     public function __construct(){
       $this->courseModel = new Courses();
       $this->modulModel = new Modules();
       $this->chapterModel = new Chapters();
+      $this->requestModel = new CoursesRequest();
     }
-      public function getAll(){
+    public function getAll(){
       $Courses = $this->courseModel->getAll();
+      $user = $this->getUserFromToken();
+      $userId = $user["id"];
+
+      $userCourses = $this->requestModel->getRequestsByUserId($userId);
+      $userCoursesIds = array_column($userCourses,'course_id');
+
+      foreach ($Courses as &$course) {
+        $course['is_subscribed'] = in_array($course['course_id'],$userCoursesIds);
+      }
+
       if($Courses === false){
         $this->sendError("Error During Get Courses");
       }elseif(empty($Courses)){

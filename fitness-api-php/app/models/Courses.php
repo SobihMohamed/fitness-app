@@ -19,6 +19,7 @@ class Courses{
       return false;
     }
   }
+
   public function getCourseById($id){
     try{
       return $this->db

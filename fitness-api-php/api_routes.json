@@ -11,8 +11,9 @@
       }
     },
     "user": {
-      "profile": { "method": "GET", "path": "/user/getProfile" },
-      "updateProfile": { "method": "POST", "path": "/user/updateProfile" }
+      "profile": { "method": "GET", "path": "/User/getProfile" },
+      "updateProfile": { "method": "POST", "path": "/User/updateProfile" },
+      "allSubscribedCourses": { "method": "GET", "path": "/User/AllSubscribedCourses" }
     },
     "UserCategory": {
       "getAllCategory": { "method": "GET", "path": "/Category/getAll" },

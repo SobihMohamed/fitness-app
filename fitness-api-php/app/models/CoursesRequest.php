@@ -59,7 +59,6 @@ class CoursesRequest{
       return false;
     }
   }
-
   // get all requests for a given user searching
   public function getRequestsByUserId($userId){
     try {
@@ -92,7 +91,6 @@ class CoursesRequest{
       return false;
     }
   }
-
     // delete a request
   public function delete($id){
     try {

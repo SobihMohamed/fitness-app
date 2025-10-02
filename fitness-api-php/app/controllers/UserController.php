@@ -2,13 +2,19 @@
 namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\User;
+use App\models\CoursesRequest;
+use App\models\Courses;
 
 class UserController extends AbstractController{
   protected $userModel;
+  protected $requestModel;
+  protected $courseModel;
 
   public function __construct(){
       parent::__construct();
       $this->userModel = new User();
+      $this->requestModel = new CoursesRequest();
+      $this->courseModel = new Courses();
   }
 
   public function getProfile(){
@@ -53,6 +59,42 @@ class UserController extends AbstractController{
       ]);
     }
     return $this->sendError("Error While Updating Data",400);
+  }
+  public function AllSubscribedCourses(){
+    $user = $this->getUserFromToken();
+    $userId = $user['id'];
+    $userRequests = $this->requestModel->getRequestsByUserId($userId);
+    if (!$userRequests) {
+        return $this->json([
+            "status" => "success",
+            "message" => "No requests found",
+            "data" => []
+        ]);
+    }
+
+    $approvedRequests = array_filter($userRequests, function($req) {
+        return isset($req['status']) && $req['status'] === 'approved';
+    });
+
+    if (empty($approvedRequests)) {
+        return $this->json([
+            "status" => "success",
+            "message" => "No approved courses found",
+            "data" => []
+        ]);
+    }
+    $courseIds = array_column($approvedRequests, 'course_id');
+    $allCourses = $this->courseModel->getAll();
+
+    $subscribedCourses = array_filter($allCourses, function($course) use ($courseIds) {
+        return in_array($course['course_id'], $courseIds);
+    });
+
+    return $this->json([
+        "status" => "success",
+        "message" => "Approved Courses Found",
+        "data" => array_values($subscribedCourses)
+    ]);
   }
 }
 ?>
