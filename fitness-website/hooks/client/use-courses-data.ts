@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
+import { useUserApi } from "./use-user-api";
 
 interface Course {
   course_id: number;
@@ -37,6 +38,8 @@ interface CoursesActions {
 }
 
 export function useCoursesData() {
+  const { makeAuthenticatedRequest } = useUserApi();
+  
   const [state, setState] = useState<CoursesState>({
     courses: [],
     loading: true,
@@ -53,8 +56,7 @@ export function useCoursesData() {
     try {
       setState(prev => ({ ...prev, loading: true }));
       
-      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.getAll);
-      const data = await response.json();
+      const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.getAll);
       
       if (data.status === "success") {
         // Debug log to see what courses data we're getting
@@ -79,7 +81,7 @@ export function useCoursesData() {
       toast.error(error.message || "Failed to load courses");
       setState(prev => ({ ...prev, loading: false }));
     }
-  }, []);
+  }, [makeAuthenticatedRequest]);
 
   // Search courses
   const searchCourses = useCallback(async (keyword: string) => {
@@ -91,15 +93,10 @@ export function useCoursesData() {
     try {
       setState(prev => ({ ...prev, loading: true }));
       
-      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.search, {
+      const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.search, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ keyword }),
       });
-      
-      const data = await response.json();
       
       if (data.status === "success") {
         setState(prev => ({ 
@@ -114,7 +111,7 @@ export function useCoursesData() {
       console.error("Error searching courses:", error);
       setState(prev => ({ ...prev, courses: [], loading: false }));
     }
-  }, [fetchCourses]);
+  }, [fetchCourses, makeAuthenticatedRequest]);
 
   // Update filter
   const updateFilter = useCallback((updates: Partial<CoursesFilter>) => {

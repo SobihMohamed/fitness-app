@@ -36,31 +36,6 @@ const SocialLogins = () => (
       <div className="absolute inset-0 flex items-center">
         <span className="w-full border-t" />
       </div>
-      <div className="relative flex justify-center text-xs uppercase">
-        <span className="bg-slate-50 px-2 text-muted-foreground">
-          OR CONTINUE WITH
-        </span>
-      </div>
-    </div>
-    <div className="grid grid-cols-1 gap-2">
-      <Button variant="outline" type="button">
-        <svg
-          className="mr-2 h-4 w-4"
-          aria-hidden="true"
-          focusable="false"
-          data-prefix="fab"
-          data-icon="google"
-          role="img"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 488 512"
-        >
-          <path
-            fill="currentColor"
-            d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 62.3l-66.5 64.6C305.5 114.6 277.9 104 248 104c-83.8 0-152.3 68.5-152.3 152s68.5 152 152.3 152c97.2 0 130.3-72.2 134.6-110.3H248v-85.3h236.1c2.3 12.7 3.9 26.9 3.9 41.4z"
-          ></path>
-        </svg>
-        Continue with Google
-      </Button>
     </div>
   </>
 );
@@ -108,7 +83,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (password: string) => password.length >= 8;
+  const validatePassword = (password: string) => password.length >= 6;
 
   const handleClose = useCallback(() => {
     setMessage(null);
