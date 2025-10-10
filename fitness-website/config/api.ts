@@ -41,6 +41,7 @@ export const API_CONFIG = {
       getById: (id: string) =>
         `${BASE_URL}/Courses/CoursePage/${id}`,
       search: `${BASE_URL}/Courses/searchCourse`,
+      allSubscribedCourses: `${BASE_URL}/User/AllSubscribedCourses`,
       modules: {
         getAll: `${BASE_URL}/AdminCourseModules/getAll`,
         getById: (id: string) => `${BASE_URL}/AdminCourseModules/getSingleModule/${id}`,

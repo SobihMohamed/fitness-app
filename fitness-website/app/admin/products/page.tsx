@@ -5,19 +5,37 @@ import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useProductManagement } from "@/hooks/admin/use-product-management";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, Loader2 } from "lucide-react";
 import type { Product, ProductFormData, ProductDeleteTarget } from "@/types";
 
-// Dynamic imports for heavy components to prevent hydration mismatches
-const StatsCards = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.StatsCards })), { ssr: false });
-const CategoryFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryFilter })), { ssr: false });
-const SearchAndFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.SearchAndFilter })), { ssr: false });
-const ProductsTable = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductsTable })), { ssr: false });
-const ProductForm = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductForm })), { ssr: false });
-const ProductDetailsDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductDetailsDialog })), { ssr: false });
-const CategoryManagementDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryManagementDialog })), { ssr: false });
-const DeleteConfirmationDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.DeleteConfirmationDialog })), { ssr: false });
-const ImagePreviewDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ImagePreviewDialog })), { ssr: false });
+// Lazy load heavy components for better performance
+const StatsCards = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.StatsCards })), { 
+  loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
+});
+const CategoryFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryFilter })), { 
+  loading: () => <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" />
+});
+const SearchAndFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.SearchAndFilter })), { 
+  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+});
+const ProductsTable = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductsTable })), { 
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ProductForm = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ProductDetailsDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductDetailsDialog })), { 
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+});
+const CategoryManagementDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryManagementDialog })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
+const DeleteConfirmationDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.DeleteConfirmationDialog })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ImagePreviewDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ImagePreviewDialog })), { 
+  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+});
 
 export default function ProductsManagement() {
   // Use the centralized product management hook

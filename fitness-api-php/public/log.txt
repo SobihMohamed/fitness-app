@@ -1,1 +1,1 @@
-URL Detected: orders/myOrders
+URL Detected: AdminTrainingRequests/getAll
