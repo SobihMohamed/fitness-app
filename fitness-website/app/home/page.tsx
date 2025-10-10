@@ -94,7 +94,7 @@ const HomePage = React.memo<HomePageProps>(({
 
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section - Dynamic import for performance */}
       <HeroSectionDynamic 
         isVisible={isVisible} 

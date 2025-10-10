@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,8 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Calendar, CheckCircle } from "lucide-react"
-import { motion } from "framer-motion"
+import { MapPin, Phone, Mail, Clock, Send, MessageCircle, Users, Calendar, CheckCircle, Loader2 } from "lucide-react"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -24,7 +23,8 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoized handlers for better performance
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
@@ -40,14 +40,25 @@ export default function ContactPage() {
       subject: "",
       message: "",
     })
-  }
+  }, [])
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = useCallback((field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }))
-  }
+  }, [])
+
+  const handleReset = useCallback(() => {
+    setIsSubmitted(false)
+    setFormData({
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
+    })
+  }, [])
 
   const contactInfo = [
     {
@@ -125,22 +136,29 @@ export default function ContactPage() {
     },
   ]
 
+  // Memoized data for better performance
+  const formStats = useMemo(() => ({
+    isFormValid: formData.name && formData.email && formData.subject && formData.message,
+    fieldsCompleted: Object.values(formData).filter(Boolean).length,
+    totalFields: Object.keys(formData).length
+  }), [formData])
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <Badge className="bg-secondary text-secondary-foreground mb-4">Get In Touch</Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6 text-foreground">
+          <div>
+            <Badge className="bg-blue-100 text-blue-800 mb-4">Get In Touch</Badge>
+            <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
               Contact
-              <span className="text-primary"> Us</span>
+              <span className="text-blue-600"> Us</span>
             </h1>
-            <p className="text-xl max-w-3xl mx-auto text-muted">
+            <p className="text-xl max-w-3xl mx-auto text-gray-600">
               Have questions about our services or need help getting started? We're here to help you on your fitness
               journey.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -189,7 +207,7 @@ export default function ContactPage() {
                     <CheckCircle className="h-16 w-16 text-secondary mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-foreground mb-2">Message Sent!</h3>
                     <p className="text-muted mb-4">Thank you for contacting us. We'll get back to you soon.</p>
-                    <Button onClick={() => setIsSubmitted(false)} variant="outline">
+                    <Button onClick={handleReset} variant="outline">
                       Send Another Message
                     </Button>
                   </div>

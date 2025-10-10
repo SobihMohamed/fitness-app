@@ -41,9 +41,11 @@ interface Module {
 interface CourseModulesSectionProps {
   modules: Module[];
   courseId: string;
+  isEnrolled?: boolean;
+  enrollmentStatus?: 'pending' | 'approved' | 'cancelled' | null;
 }
 
-const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, courseId }) => {
+const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, courseId, isEnrolled = false, enrollmentStatus = null }) => {
   const [openModules, setOpenModules] = React.useState<Set<number>>(new Set([modules[0]?.module_id]));
 
   const toggleModule = (moduleId: number) => {
@@ -97,6 +99,51 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
           <p className="text-muted-foreground">
             {modules.length} modules • {modules.reduce((total, module) => total + (module.chapters?.length || 0), 0)} chapters
           </p>
+          
+          {/* Enrollment Status Banner */}
+          {!isEnrolled && (
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center gap-2 text-amber-800">
+                <Lock className="w-4 h-4" />
+                <span className="font-medium text-sm">
+                  Course content is locked. Enroll to access modules and chapters.
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {isEnrolled && enrollmentStatus === 'pending' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-blue-800">
+                <Clock className="w-4 h-4" />
+                <span className="font-medium text-sm">
+                  Your enrollment is pending approval. Content will be available once approved.
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {isEnrolled && enrollmentStatus === 'approved' && (
+            <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <CheckCircle className="w-4 h-4" />
+                <span className="font-medium text-sm">
+                  You have full access to all course content. Start learning!
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {isEnrolled && enrollmentStatus === 'cancelled' && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-800">
+                <Lock className="w-4 h-4" />
+                <span className="font-medium text-sm">
+                  Your enrollment was cancelled. Please submit a new enrollment request to access content.
+                </span>
+              </div>
+            </div>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           <div className="space-y-2">
@@ -164,29 +211,52 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
                                   animate={{ opacity: 1, x: 0 }}
                                   transition={{ duration: 0.3, delay: chapterIndex * 0.05 }}
                                 >
-                                  <Link
-                                    href={`/courses/${courseId}/modules/${module.module_id}/chapters/${chapter.chapter_id}`}
-                                    className="block"
-                                  >
-                                    <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
-                                      <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <Play className="w-3 h-3 text-gray-600 group-hover:text-primary transition-colors" />
+                                  {isEnrolled && enrollmentStatus === 'approved' ? (
+                                    <Link
+                                      href={`/courses/${courseId}/modules/${module.module_id}/chapters/${chapter.chapter_id}`}
+                                      className="block"
+                                    >
+                                      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group">
+                                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                          <Play className="w-3 h-3 text-green-600 group-hover:text-primary transition-colors" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                            {chapter.title}
+                                          </h4>
+                                          <p className="text-sm text-muted-foreground truncate">
+                                            {chapter.description}
+                                          </p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                          <Clock className="w-3 h-3" />
+                                          <span>15m</span>
+                                          <CheckCircle className="w-3 h-3 text-green-600" />
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  ) : (
+                                    <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 opacity-60 cursor-not-allowed">
+                                      <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Lock className="w-3 h-3 text-gray-500" />
                                       </div>
                                       <div className="flex-1 min-w-0">
-                                        <h4 className="font-medium text-foreground group-hover:text-primary transition-colors truncate">
+                                        <h4 className="font-medium text-gray-500 truncate">
                                           {chapter.title}
                                         </h4>
-                                        <p className="text-sm text-muted-foreground truncate">
-                                          {chapter.description}
+                                        <p className="text-sm text-gray-400 truncate">
+                                          {enrollmentStatus === 'pending' ? 'Available after enrollment approval' : 
+                                           enrollmentStatus === 'cancelled' ? 'Enroll to access this content' :
+                                           'Enroll to access this content'}
                                         </p>
                                       </div>
-                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <div className="flex items-center gap-2 text-xs text-gray-400">
                                         <Clock className="w-3 h-3" />
-                                        <span>15m</span> {/* Mock duration */}
+                                        <span>15m</span>
                                         <Lock className="w-3 h-3" />
                                       </div>
                                     </div>
-                                  </Link>
+                                  )}
                                 </motion.div>
                               ))}
                           </div>
@@ -199,12 +269,24 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
                         
                         {/* Module Action Button */}
                         <div className="ml-12 mt-4">
-                          <Link href={`/courses/${courseId}/modules/${module.module_id}`}>
-                            <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary hover:text-white">
-                              <BookOpen className="w-4 h-4 mr-2" />
-                              View Module Details
+                          {isEnrolled && enrollmentStatus === 'approved' ? (
+                            <Link href={`/courses/${courseId}/modules/${module.module_id}`}>
+                              <Button variant="outline" size="sm" className="text-primary border-primary hover:bg-primary hover:text-white">
+                                <BookOpen className="w-4 h-4 mr-2" />
+                                View Module Details
+                              </Button>
+                            </Link>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              disabled 
+                              className="text-gray-400 border-gray-300 cursor-not-allowed"
+                            >
+                              <Lock className="w-4 h-4 mr-2" />
+                              {enrollmentStatus === 'pending' ? 'Pending Approval' : 'Enrollment Required'}
                             </Button>
-                          </Link>
+                          )}
                         </div>
                       </div>
                     </CollapsibleContent>

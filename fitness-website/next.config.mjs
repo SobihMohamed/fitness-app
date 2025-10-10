@@ -8,6 +8,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Performance optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   // Enable Next.js Image Optimization (do not disable globally)
   images: {
     localPatterns: [
@@ -41,6 +45,7 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    formats: ['image/webp', 'image/avif'],
   },
   experimental: {
     // Reduce bundle size by optimizing common package imports
@@ -49,7 +54,21 @@ const nextConfig = {
       "date-fns",
       "framer-motion",
       "clsx",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "recharts",
     ],
+    // Enable modern bundling optimizations
+    turbo: {
+      rules: {
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
+        },
+      },
+    },
   },
   async rewrites() {
     // Keep env handling consistent with lib/env.ts: prefer TARGET over BASE, fallback to localhost

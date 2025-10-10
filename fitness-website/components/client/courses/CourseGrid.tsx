@@ -43,32 +43,11 @@ interface CourseGridProps {
 }
 
 const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
-  // Debug log to see what we're receiving
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('CourseGrid render:', { 
-        coursesLength: courses?.length || 0, 
-        loading, 
-        courses: courses?.slice(0, 2) // Show first 2 courses for debugging
-      });
-    }
-  }, [courses, loading]);
   // Resolve best image URL for course with safe fallbacks
   const resolveCourseImage = (course: Course): string => {
     // Try multiple possible image field names from the API
     const raw = course?.image || course?.image_url || course?.main_image_url || course?.thumbnail || "";
     
-    // Debug log to see what image data we're getting
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Course image data:', { 
-        courseId: course.course_id, 
-        title: course.title,
-        image: course.image,
-        image_url: course?.image_url,
-        main_image_url: course?.main_image_url,
-        raw 
-      });
-    }
     
     // If no image data, try to use a sample fitness image based on course title
     if (!raw || raw.trim() === '' || raw === 'null' || raw === 'undefined') {
@@ -99,52 +78,7 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
     );
   }
 
-  // Create mock courses for testing - always show these if no real data
-  const mockCourses: Course[] = [
-    {
-      course_id: 1,
-      title: "Beginner Fitness Program",
-      description: "A comprehensive fitness program designed for beginners to build strength and endurance.",
-      price: 1000,
-      image: "",
-      instructor: "John Doe",
-      duration: "8 weeks",
-      level: "Beginner",
-      students_count: 150,
-      rating: 4.5,
-      created_at: new Date().toISOString()
-    },
-    {
-      course_id: 2,
-      title: "Advanced Strength Training",
-      description: "Take your strength training to the next level with advanced techniques and programming.",
-      price: 1500,
-      image: "",
-      instructor: "Jane Smith",
-      duration: "12 weeks",
-      level: "Advanced",
-      students_count: 89,
-      rating: 4.8,
-      created_at: new Date().toISOString()
-    },
-    {
-      course_id: 3,
-      title: "Yoga & Flexibility",
-      description: "Improve your flexibility and mindfulness with our comprehensive yoga program.",
-      price: 800,
-      image: "",
-      instructor: "Sarah Johnson",
-      duration: "6 weeks",
-      level: "All Levels",
-      students_count: 200,
-      rating: 4.7,
-      created_at: new Date().toISOString()
-    }
-  ];
-
-  // Use real courses if available, otherwise use mock courses
-  const displayCourses = courses.length > 0 ? courses : mockCourses;
-  const showMockWarning = courses.length === 0 && !loading;
+  const displayCourses = courses;
 
   if (displayCourses.length === 0 && !loading) {
     return (
@@ -159,7 +93,7 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
           </div>
           <h3 className="text-xl font-semibold text-foreground mb-2">No courses available</h3>
           <p className="text-muted-foreground mb-6">
-            Check back later for new courses or contact support.
+            Please log in to view available courses or check back later.
           </p>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Refresh Page
@@ -171,13 +105,6 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
 
   return (
     <div className="space-y-4">
-      {showMockWarning && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-          <p className="text-yellow-800 text-sm">
-            <strong>Development Mode:</strong> No courses found from API, showing sample courses for testing.
-          </p>
-        </div>
-      )}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {displayCourses.map((course, index) => (
         <motion.div
@@ -202,15 +129,6 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
                       const img = e.currentTarget as HTMLImageElement;
                       const originalSrc = img.src;
                       
-                      // Debug log for image loading errors
-                      if (process.env.NODE_ENV === 'development') {
-                        console.log('Image failed to load:', {
-                          courseId: course.course_id,
-                          title: course.title,
-                          originalSrc,
-                          imageData: course.image
-                        });
-                      }
                       
                       img.onerror = null;
                       img.src = "/placeholder.svg";
@@ -301,7 +219,6 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
                 <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors">
                   <Link href={`/courses/${course.course_id}`} className="block">
                     View Course Details
-                    <ChevronRight className="w-4 h-4 ml-2" />
                   </Link>
                 </Button>
               </div>

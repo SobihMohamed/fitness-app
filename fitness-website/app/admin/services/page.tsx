@@ -1,19 +1,29 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Wrench } from "lucide-react";
+import { Plus, Wrench, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useServiceManagement } from "@/hooks/admin/use-service-management";
 import type { Service, ServiceFormData, ServiceDeleteTarget } from "@/types";
 
-// Dynamic imports with SSR disabled to prevent hydration mismatches
-const StatsCards = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.StatsCards })), { ssr: false });
-const SearchAndFilter = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.SearchAndFilter })), { ssr: false });
-const ServiceTable = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceTable })), { ssr: false });
-const ServiceForm = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceForm })), { ssr: false });
-const DeleteConfirmation = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.DeleteConfirmation })), { ssr: false });
+// Lazy load heavy components for better performance
+const StatsCards = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.StatsCards })), { 
+  loading: () => <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
+});
+const SearchAndFilter = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.SearchAndFilter })), { 
+  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+});
+const ServiceTable = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceTable })), { 
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ServiceForm = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const DeleteConfirmation = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.DeleteConfirmation })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
 
 const AdminServicesPage = React.memo(() => {
   // Hook for service management

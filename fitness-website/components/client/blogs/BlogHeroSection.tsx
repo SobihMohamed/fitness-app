@@ -122,7 +122,7 @@ const BlogHeroSection = React.memo<BlogHeroSectionProps>(({
                         <Button
                           variant="outline"
                           size="lg"
-                          className="border-gray-200 text-blue-700 hover:bg-gray-50 font-medium py-3 px-6 group bg-white"
+                          className="border-gray-200 text-blue-700  font-medium py-3 px-6 group bg-white"
                         >
                           Watch Video
                           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />

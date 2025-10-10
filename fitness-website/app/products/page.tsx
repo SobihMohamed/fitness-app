@@ -1,33 +1,49 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/cart-context";
 import { toast } from "sonner";
 import { getFullImageUrl } from "@/lib/images";
 import { useProductsData } from "@/hooks/client/use-products-data";
 import type { ClientProduct } from "@/types";
-import { motion } from "framer-motion";
 
-// Dynamic imports to prevent hydration mismatches
+// Lazy load heavy components for better performance
 const ProductsHeroSection = dynamic(
   () => import("@/components/client/products/ProductsHeroSection"),
-  { ssr: false }
+  { 
+    loading: () => <div className="h-96 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 animate-pulse rounded-lg" />
+  }
 );
 
 const ProductsFilterSection = dynamic(
   () => import("@/components/client/products/ProductsFilterSection"),
-  { ssr: false }
+  { 
+    loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+  }
 );
 
 const ProductGrid = dynamic(
   () => import("@/components/client/products/ProductGrid"),
-  { ssr: false }
+  { 
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    )
+  }
 );
 
 const ProductPagination = dynamic(
   () => import("@/components/client/products/ProductPagination"),
-  { ssr: false }
+  { 
+    loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg" />
+  }
 );
 
 const ProductsPage = React.memo(() => {
@@ -44,8 +60,8 @@ const ProductsPage = React.memo(() => {
     actions,
   } = useProductsData();
 
-  // Handle add to cart with proper error checking
-  const handleAddToCart = React.useCallback(
+  // Memoized handlers for better performance
+  const handleAddToCart = useCallback(
     (product: ClientProduct) => {
       if (product.stock_quantity <= 0) {
         toast.error("This product is out of stock");
@@ -68,41 +84,62 @@ const ProductsPage = React.memo(() => {
     [addItem, categories]
   );
 
-  // Memoized handlers for filter actions
-  const handleSearchChange = React.useCallback((value: string) => {
+  const handleSearchChange = useCallback((value: string) => {
     actions.updateFilter({ searchTerm: value });
   }, [actions]);
 
-  const handleCategoryChange = React.useCallback((value: string) => {
+  const handleCategoryChange = useCallback((value: string) => {
     actions.updateFilter({ category: value });
   }, [actions]);
 
-  const handleSortChange = React.useCallback((value: string) => {
+  const handleSortChange = useCallback((value: string) => {
     actions.updateFilter({ sortBy: value });
   }, [actions]);
 
-  const handleFavoritesToggle = React.useCallback(() => {
+  const handleFavoritesToggle = useCallback(() => {
     actions.updateFilter({ showFavoritesOnly: !filter.showFavoritesOnly });
   }, [actions, filter.showFavoritesOnly]);
 
-  const handlePageChange = React.useCallback((page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     actions.updateFilter({ page });
   }, [actions]);
 
-  const handlePageSizeChange = React.useCallback((pageSize: number) => {
+  const handlePageSizeChange = useCallback((pageSize: number) => {
     actions.updateFilter({ pageSize, page: 1 });
   }, [actions]);
 
+  // Memoized calculations for better performance
+  const hasValidData = useMemo(() => 
+    products && categories && !loading,
+    [products, categories, loading]
+  );
+
+  const productStats = useMemo(() => ({
+    totalProducts: products?.length || 0,
+    totalCategories: categories?.length || 0,
+    filteredCount: filteredProducts?.length || 0,
+    favoriteCount: favorites?.size || 0
+  }), [products, categories, filteredProducts, favorites]);
+
+  // Show loading state with modern design
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex items-center space-x-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="text-gray-700 text-lg font-medium">Loading products...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
-       <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <ProductsHeroSection />
 
- <ProductsFilterSection
+      <ProductsFilterSection
         searchTerm={filter.searchTerm}
         selectedCategory={filter.category}
         sortBy={filter.sortBy}
@@ -114,7 +151,7 @@ const ProductsPage = React.memo(() => {
         onFavoritesToggle={handleFavoritesToggle}
       />
 
-      <section className="py-20 bg-background">
+      <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <ProductGrid
             products={paginatedProducts}
@@ -125,7 +162,7 @@ const ProductsPage = React.memo(() => {
             onToggleFavorite={actions.toggleFavorite}
           />
           
-          {!loading && filteredProducts.length > 0 && (
+          {hasValidData && filteredProducts.length > 0 && (
             <ProductPagination
               currentPage={filter.page}
               totalPages={totalPages}
@@ -137,9 +174,6 @@ const ProductsPage = React.memo(() => {
           )}
         </div>
       </section>
-        </motion.div>
-      
-     
     </div>
   );
 });

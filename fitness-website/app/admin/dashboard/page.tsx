@@ -69,7 +69,7 @@ const AdminDashboard = React.memo(() => {
 
   return (
     <AdminLayout>
-      <div className="space-y-8">
+      <div className="space-y-8 p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
         {/* Header */}
         <PageHeader
           title="Dashboard"

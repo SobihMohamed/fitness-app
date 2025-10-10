@@ -1,7 +1,7 @@
 "use client"
+import React, { useMemo } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Users, Award, Target, Heart, Trophy, Zap } from "lucide-react"
 
@@ -86,37 +86,46 @@ const milestones = [
 ]
 
 export default function AboutPage() {
+  // Memoized statistics for better performance
+  const aboutStats = useMemo(() => ({
+    memberCount: "50,000+",
+    trainerCount: "200+",
+    successStories: "10,000+",
+    averageRating: "4.9",
+    foundedYear: "2018"
+  }), [])
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <section className="py-20 lg:py-32 bg-white">
+      <section className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <motion.div className="space-y-8" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <div className="space-y-8">
               <div className="space-y-4">
-                <Badge className="bg-secondary text-secondary-foreground">Our Story</Badge>
-                <h1 className="text-4xl lg:text-5xl font-bold text-foreground">
+                <Badge className="bg-blue-100 text-blue-800">Our Story</Badge>
+                <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
                   Transforming Lives Through
-                  <span className="text-primary"> Fitness</span>
+                  <span className="text-blue-600"> Fitness</span>
                 </h1>
-                <p className="text-xl text-muted">
-                  Founded in 2018, FitPro has been dedicated to helping individuals achieve their fitness goals through
+                <p className="text-xl text-gray-600">
+                  Founded in {aboutStats.foundedYear}, FitPro has been dedicated to helping individuals achieve their fitness goals through
                   personalized training, expert guidance, and a supportive community that celebrates every victory.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-primary hover:bg-primary/90">Join Our Community</Button>
-                <Button variant="outline">Meet Our Team</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">Join Our Community</Button>
+                <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">Meet Our Team</Button>
               </div>
-            </motion.div>
-            <motion.div className="relative" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
-              <div className="w-full h-96 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
+            </div>
+            <div className="relative">
+              <div className="w-full h-96 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl flex items-center justify-center shadow-lg">
                 <div className="text-center">
-                  <Users className="h-24 w-24 text-primary mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-foreground">50,000+ Happy Members</p>
+                  <Users className="h-24 w-24 text-blue-600 mx-auto mb-4" />
+                  <p className="text-lg font-semibold text-gray-900">{aboutStats.memberCount} Happy Members</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
@@ -252,10 +261,10 @@ export default function AboutPage() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             {[
-              { number: "50K+", label: "Active Members" },
-              { number: "200+", label: "Certified Trainers" },
-              { number: "10K+", label: "Success Stories" },
-              { number: "4.9", label: "Average Rating" },
+              { number: aboutStats.memberCount, label: "Active Members" },
+              { number: aboutStats.trainerCount, label: "Certified Trainers" },
+              { number: aboutStats.successStories, label: "Success Stories" },
+              { number: aboutStats.averageRating, label: "Average Rating" },
             ].map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-4xl lg:text-5xl font-bold text-white mb-2">{stat.number}</div>

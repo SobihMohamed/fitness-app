@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, BookOpen, DollarSign } from "lucide-react";
+import { CheckCircle, BookOpen, DollarSign, Loader2 } from "lucide-react";
 import type { RequestSection } from "@/types";
 
-// Dynamic imports with SSR disabled to prevent hydration mismatches
+// Lazy load heavy components for better performance
 const RequestsHeader = dynamic(
   () => import("@/components/admin/requests").then((mod) => ({ default: mod.RequestsHeader })),
-  { ssr: false }
+  { loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" /> }
 );
 
 const RequestsTable = dynamic(
   () => import("@/components/admin/requests").then((mod) => ({ default: mod.RequestsTable })),
-  { ssr: false }
+  { loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" /> }
 );
  
 
