@@ -193,9 +193,12 @@ export default function ServiceDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pt-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex items-center space-x-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="text-gray-700 text-lg font-medium">Loading service details...</span>
+          </div>
         </div>
       </div>
     )
@@ -203,30 +206,24 @@ export default function ServiceDetailsPage() {
 
   if (error || !service) {
     return (
-      <div className="min-h-screen bg-background pt-20">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <Alert className="max-w-xl mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">Failed to load service</p>
-                <p className="text-sm">{error || "Service not found or removed."}</p>
-                <div className="pt-2">
-                  <Button onClick={() => router.push("/services")} variant="outline">
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Services
-                  </Button>
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+        <Card className="shadow-2xl max-w-md mx-auto">
+          <CardContent className="p-8 text-center">
+            <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Service Not Found</h2>
+            <p className="text-gray-600 mb-6">{error || "The service you are looking for does not exist or has been removed."}</p>
+            <Button onClick={() => router.push("/services")} className="bg-blue-600 hover:bg-blue-700">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Services
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-6 text-sm text-muted-foreground">

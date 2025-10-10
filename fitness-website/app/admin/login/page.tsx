@@ -93,7 +93,7 @@ export default function AdminLoginPage() {
   }, [error]);
 
   return (
-    <main className="min-h-screen bg-slate-100 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground">Admin Login</h1>

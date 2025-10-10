@@ -85,7 +85,7 @@ const BlogCard = React.memo<BlogCardProps>(({
               <Link href={`/blog/${blog.id}`} className="flex-1">
                 <Button
                   variant="outline"
-                  className="w-full border-gray-200 text-blue-700 hover:bg-gray-50 font-medium py-2 group bg-white"
+                  className="w-full border-gray-200 text-blue-700  font-medium py-2 group bg-white"
                 >
                   Read Article
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
