@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useUserApi } from "./use-user-api";
 
 interface Module {
   module_id: number;
@@ -38,6 +39,7 @@ interface Course {
   rating?: number;
   created_at: string;
   modules?: Module[];
+  is_subscribed?: boolean;
 }
 
 interface CourseDetailsState {
@@ -48,6 +50,7 @@ interface CourseDetailsState {
 
 export function useCourseDetails(courseId: string) {
   const router = useRouter();
+  const { makeAuthenticatedRequest } = useUserApi();
   const [state, setState] = useState<CourseDetailsState>({
     course: null,
     loading: true,

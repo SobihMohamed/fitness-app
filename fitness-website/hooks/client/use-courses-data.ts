@@ -17,6 +17,7 @@ interface Course {
   students_count?: number;
   rating?: number;
   created_at: string;
+  is_subscribed?: boolean;
 }
 
 interface CoursesFilter {
@@ -51,23 +52,73 @@ export function useCoursesData() {
     },
   });
 
-  // Fetch all courses
+  // Fetch all courses - try authenticated first, fallback to unauthenticated
   const fetchCourses = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
       
-      const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.getAll);
+      // Check if user is logged in
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+      
+      if (token) {
+        // User is logged in - make authenticated request
+        try {
+          const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.getAll);
+          console.log(data)
+
+          if (data.status === "success") {
+            setState(prev => ({ 
+              ...prev, 
+              courses: data.data || [],
+              loading: false 
+            }));
+            return;
+          } else {
+            throw new Error(data.message || "Failed to fetch courses");
+          }
+        } catch (authError: any) {
+          console.error("Authenticated request failed:", authError);
+          // If authenticated request fails, fall through to unauthenticated request
+        }
+      }
+      
+      // User is not logged in OR authenticated request failed - make unauthenticated request
+      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.getAll, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Handle 401 Unauthorized silently - just show empty state
+      if (response.status === 401) {
+        setState(prev => ({ 
+          ...prev, 
+          courses: [],
+          loading: false 
+        }));
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      let data;
+      
+      if (!text || text.trim() === "") {
+        data = { status: "success", data: [] };
+      } else {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("Invalid response format");
+        }
+      }
       
       if (data.status === "success") {
-        // Debug log to see what courses data we're getting
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Courses API response:', data);
-          console.log('Courses data:', data.data);
-          if (data.data && data.data.length > 0) {
-            console.log('First course sample:', data.data[0]);
-          }
-        }
-        
         setState(prev => ({ 
           ...prev, 
           courses: data.data || [],
@@ -78,12 +129,15 @@ export function useCoursesData() {
       }
     } catch (error: any) {
       console.error("Error fetching courses:", error);
-      toast.error(error.message || "Failed to load courses");
-      setState(prev => ({ ...prev, loading: false }));
+      // Don't show error toast for authentication issues
+      if (!error.message?.includes("401") && !error.message?.includes("Unauthorized")) {
+        toast.error(error.message || "Failed to load courses");
+      }
+      setState(prev => ({ ...prev, courses: [], loading: false }));
     }
   }, [makeAuthenticatedRequest]);
 
-  // Search courses
+  // Search courses - try authenticated first, fallback to unauthenticated
   const searchCourses = useCallback(async (keyword: string) => {
     if (!keyword.trim()) {
       await fetchCourses();
@@ -93,10 +147,69 @@ export function useCoursesData() {
     try {
       setState(prev => ({ ...prev, loading: true }));
       
-      const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.search, {
+      // Check if user is logged in
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+      
+      if (token) {
+        // User is logged in - make authenticated request
+        try {
+          const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.search, {
+            method: "POST",
+            body: JSON.stringify({ keyword }),
+          });
+          
+          if (data.status === "success") {
+            setState(prev => ({ 
+              ...prev, 
+              courses: data.data || [],
+              loading: false 
+            }));
+            return;
+          } else {
+            throw new Error(data.message || "No courses found");
+          }
+        } catch (authError: any) {
+          console.error("Authenticated search failed:", authError);
+          // If authenticated request fails, fall through to unauthenticated request
+        }
+      }
+      
+      // User is not logged in OR authenticated request failed - make unauthenticated request
+      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.search, {
         method: "POST",
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ keyword }),
       });
+      
+      // Handle 401 Unauthorized silently - just show empty state
+      if (response.status === 401) {
+        setState(prev => ({ 
+          ...prev, 
+          courses: [],
+          loading: false 
+        }));
+        return;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      let data;
+      
+      if (!text || text.trim() === "") {
+        data = { status: "success", data: [] };
+      } else {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          throw new Error("Invalid response format");
+        }
+      }
       
       if (data.status === "success") {
         setState(prev => ({ 
@@ -109,6 +222,10 @@ export function useCoursesData() {
       }
     } catch (error: any) {
       console.error("Error searching courses:", error);
+      // Don't show error toast for authentication issues
+      if (!error.message?.includes("401") && !error.message?.includes("Unauthorized")) {
+        toast.error("No courses found for your search");
+      }
       setState(prev => ({ ...prev, courses: [], loading: false }));
     }
   }, [fetchCourses, makeAuthenticatedRequest]);

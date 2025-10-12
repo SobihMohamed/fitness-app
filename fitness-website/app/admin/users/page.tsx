@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Users, Loader2 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useUserManagement } from "@/hooks/admin/use-user-management";
 import type { 
@@ -13,42 +14,40 @@ import type {
   AdminType
 } from "@/types";
 
-// Dynamic imports for heavy components to prevent hydration mismatches
-import dynamic from "next/dynamic";
-
+// Lazy load heavy components for better performance
 const StatsCards = dynamic(
   () => import("@/components/admin/users/stats-cards").then(mod => ({ default: mod.StatsCards })),
-  { ssr: false }
+  { loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div> }
 );
 
 const SearchAndFilter = dynamic(
   () => import("@/components/admin/users/search-and-filter").then(mod => ({ default: mod.SearchAndFilter })),
-  { ssr: false }
+  { loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" /> }
 );
 
 const UserTable = dynamic(
   () => import("@/components/admin/users/user-table").then(mod => ({ default: mod.UserTable })),
-  { ssr: false }
+  { loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" /> }
 );
 
 const ActionButtons = dynamic(
   () => import("@/components/admin/users/action-buttons").then(mod => ({ default: mod.ActionButtons })),
-  { ssr: false }
+  { loading: () => <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" /> }
 );
 
 const UserForm = dynamic(
   () => import("@/components/admin/users/user-form").then(mod => ({ default: mod.UserForm })),
-  { ssr: false }
+  { loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" /> }
 );
 
 const DeleteConfirmation = dynamic(
   () => import("@/components/admin/users/delete-confirmation").then(mod => ({ default: mod.DeleteConfirmation })),
-  { ssr: false }
+  { loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" /> }
 );
 
 const Pagination = dynamic(
   () => import("@/components/admin/users/pagination").then(mod => ({ default: mod.Pagination })),
-  { ssr: false }
+  { loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mt-6" /> }
 );
 
 export default function UsersManagement() {

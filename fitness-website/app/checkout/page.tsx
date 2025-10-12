@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { getProxyImageUrl } from "@/lib/images"
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { useCart } from "@/contexts/cart-context"
 import type { CartItem } from "@/contexts/cart-context"
-import { ArrowLeft, Truck, Shield, CheckCircle } from "lucide-react"
+import { ArrowLeft, Truck, Shield, CheckCircle, Loader2 } from "lucide-react"
 import axios from "axios"
 import { API_CONFIG } from "@/config/api"
 import { useAuth } from "@/contexts/auth-context"
@@ -31,16 +31,32 @@ export default function CheckoutPage() {
   const { user } = useAuth()
   const [promoCode, setPromoCode] = useState("")
 
-  const shipping = total > 50 ? 0 : 9.99
-  const tax = total * 0.08
-  // Simple front-end promo handling for demo purposes only
-  const discountPercent = promoCode.trim().toUpperCase() === "DISCOUNT10" ? 10 : 0
-  const preDiscountTotal = total + shipping + tax
-  const finalTotal = preDiscountTotal * (1 - discountPercent / 100)
+  // Memoized calculations for better performance
+  const orderCalculations = useMemo(() => {
+    const shipping = total > 50 ? 0 : 9.99
+    const tax = total * 0.08
+    const discountPercent = promoCode.trim().toUpperCase() === "DISCOUNT10" ? 10 : 0
+    const preDiscountTotal = total + shipping + tax
+    const finalTotal = preDiscountTotal * (1 - discountPercent / 100)
+    
+    return {
+      shipping,
+      tax,
+      discountPercent,
+      preDiscountTotal,
+      finalTotal
+    }
+  }, [total, promoCode])
 
-  // No detailed form handlers needed.
+  const orderStats = useMemo(() => ({
+    itemCount,
+    totalItems: items.length,
+    hasItems: items.length > 0,
+    isValidOrder: items.length > 0 && user
+  }), [items, itemCount, user])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoized handlers for better performance
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!user) {
       alert("Please login to complete your order.")
@@ -63,14 +79,14 @@ export default function CheckoutPage() {
 
       const requests = items.map((item: CartItem) => {
         const original_total = item.price * item.quantity
-        const itemNet = original_total * (1 - discountPercent / 100)
+        const itemNet = original_total * (1 - orderCalculations.discountPercent / 100)
         const payload = {
           user_id: user.id,
           product_id: item.id,
           purchase_date: formattedDate,
           quantity: item.quantity,
           original_total: Number(original_total.toFixed(2)),
-          discount_value: discountPercent, // percentage used for promo
+          discount_value: orderCalculations.discountPercent,
           net_total: Number(itemNet.toFixed(2)),
           promo_code_used: promoCode || "",
           status: "pending",
@@ -95,20 +111,24 @@ export default function CheckoutPage() {
     } finally {
       setIsProcessing(false)
     }
-  }
+  }, [user, items, orderCalculations, promoCode, router, clearCart])
+
+  const handlePromoChange = useCallback((value: string) => {
+    setPromoCode(value)
+  }, [])
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center space-y-6">
-            <h1 className="text-3xl font-bold" style={{ color: "#212529" }}>
+            <h1 className="text-3xl font-bold text-gray-900">
               Your cart is empty
             </h1>
-            <p className="text-lg" style={{ color: "#6C757D" }}>
+            <p className="text-lg text-gray-600">
               Add some items to your cart before checking out.
             </p>
-            <Button asChild size="lg" style={{ backgroundColor: "#007BFF" }}>
+            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
               <Link href="/products">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Continue Shopping
@@ -121,7 +141,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F8F9FA" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Button asChild variant="ghost" className="mb-4">
@@ -215,7 +235,7 @@ export default function CheckoutPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm" style={{ color: "#6C757D" }}>You will be charged</p>
-                      <p className="text-xl font-bold" style={{ color: "#007BFF" }}>{finalTotal.toFixed(2)} EGP</p>
+                      <p className="text-xl font-bold" style={{ color: "#007BFF" }}>{orderCalculations.finalTotal.toFixed(2)} EGP</p>
                     </div>
                     <Button
                       type="submit"
@@ -277,15 +297,15 @@ export default function CheckoutPage() {
                         id="promo"
                         placeholder="Enter promo code"
                         value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
+                        onChange={(e) => handlePromoChange(e.target.value)}
                         aria-label="Promo code"
                       />
                       <Button type="button" variant="outline" disabled={!promoCode}>
                         Apply
                       </Button>
                     </div>
-                    {discountPercent > 0 && (
-                      <p className="text-xs" style={{ color: "#32CD32" }}>Discount applied: {discountPercent}%</p>
+                    {orderCalculations.discountPercent > 0 && (
+                      <p className="text-xs" style={{ color: "#32CD32" }}>Discount applied: {orderCalculations.discountPercent}%</p>
                     )}
                   </div>
                   <div className="space-y-2">
@@ -295,22 +315,22 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Shipping</span>
-                      <span style={{ color: "#212529" }}>{shipping === 0 ? "FREE" : `${shipping.toFixed(2)} EGP`}</span>
+                      <span style={{ color: "#212529" }}>{orderCalculations.shipping === 0 ? "FREE" : `${orderCalculations.shipping.toFixed(2)} EGP`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span style={{ color: "#6C757D" }}>Tax</span>
-                      <span style={{ color: "#212529" }}>{tax.toFixed(2)} EGP</span>
+                      <span style={{ color: "#212529" }}>{orderCalculations.tax.toFixed(2)} EGP</span>
                     </div>
-                    {discountPercent > 0 && (
+                    {orderCalculations.discountPercent > 0 && (
                       <div className="flex justify-between">
-                        <span style={{ color: "#6C757D" }}>Discount ({discountPercent}%)</span>
-                        <span style={{ color: "#212529" }}>- {(preDiscountTotal - finalTotal).toFixed(2)} EGP</span>
+                        <span style={{ color: "#6C757D" }}>Discount ({orderCalculations.discountPercent}%)</span>
+                        <span style={{ color: "#212529" }}>- {(orderCalculations.preDiscountTotal - orderCalculations.finalTotal).toFixed(2)} EGP</span>
                       </div>
                     )}
                     <Separator />
                     <div className="flex justify-between text-lg font-bold">
                       <span style={{ color: "#212529" }}>Total</span>
-                      <span style={{ color: "#007BFF" }}>{finalTotal.toFixed(2)} EGP</span>
+                      <span style={{ color: "#007BFF" }}>{orderCalculations.finalTotal.toFixed(2)} EGP</span>
                     </div>
                   </div>
                 </CardContent>

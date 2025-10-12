@@ -1,20 +1,30 @@
 "use client";
 
+import React, { useCallback, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useCourseManagement } from "@/hooks/admin/use-course-management";
-import { useCallback, useMemo, useState } from "react";
 import { courseApi } from "@/lib/api/courses";
 import type { Course, CourseFormData, DeleteTarget } from "@/types";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
-import { Plus, BookOpen } from "lucide-react";
-import dynamic from "next/dynamic";
+import { Plus, BookOpen, Loader2 } from "lucide-react";
 
-// Dynamic imports for heavy components with SSR disabled to prevent hydration issues
-const StatsCards = dynamic(() => import("@/components/admin/courses/stats-cards").then(mod => ({ default: mod.StatsCards })), { ssr: false });
-const SearchAndFilter = dynamic(() => import("@/components/admin/courses/search-and-filter").then(mod => ({ default: mod.SearchAndFilter })), { ssr: false });
-const CourseTable = dynamic(() => import("@/components/admin/courses/course-table").then(mod => ({ default: mod.CourseTable })), { ssr: false });
-const CourseForm = dynamic(() => import("@/components/admin/courses/course-form").then(mod => ({ default: mod.CourseForm })), { ssr: false });
-const DeleteConfirmation = dynamic(() => import("@/components/admin/courses/delete-confirmation").then(mod => ({ default: mod.DeleteConfirmation })), { ssr: false });
+// Lazy load heavy components for better performance
+const StatsCards = dynamic(() => import("@/components/admin/courses/stats-cards").then(mod => ({ default: mod.StatsCards })), { 
+  loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
+});
+const SearchAndFilter = dynamic(() => import("@/components/admin/courses/search-and-filter").then(mod => ({ default: mod.SearchAndFilter })), { 
+  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+});
+const CourseTable = dynamic(() => import("@/components/admin/courses/course-table").then(mod => ({ default: mod.CourseTable })), { 
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+const CourseForm = dynamic(() => import("@/components/admin/courses/course-form").then(mod => ({ default: mod.CourseForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const DeleteConfirmation = dynamic(() => import("@/components/admin/courses/delete-confirmation").then(mod => ({ default: mod.DeleteConfirmation })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
 
 export default function CoursesManagement() {
   const courseManagement = useCourseManagement();
