@@ -42,7 +42,6 @@
         "data" => $Courses
       ]);
     }
-
     public function CoursePage($id) {
     $Course = $this->courseModel->getCourseById($id);
     if ($Course === false) {

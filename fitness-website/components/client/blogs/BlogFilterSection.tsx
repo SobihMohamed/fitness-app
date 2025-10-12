@@ -56,7 +56,7 @@ const BlogFilterSection = React.memo<BlogFilterSectionProps>(({
                   className={
                     sortBy === option.value
                       ? "rounded-full bg-blue-600 text-white border-0 shadow-sm"
-                      : "rounded-full border-gray-200 text-blue-700 hover:bg-gray-50"
+                      : "rounded-full border-gray-200 text-blue-700 "
                   }
                 >
                   {option.label}
@@ -76,7 +76,7 @@ const BlogFilterSection = React.memo<BlogFilterSectionProps>(({
               className={`rounded-full transition-all duration-200 hover:scale-105 ${
                 selectedCategory === category.name
                   ? "shadow-lg bg-blue-600 text-white border-0"
-                  : "bg-white border border-gray-200 text-blue-700 hover:bg-gray-50"
+                  : "bg-white border border-gray-200 text-blue-700 "
               }`}
             >
               <div

@@ -52,8 +52,8 @@ export function useUserApi() {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // Handle unauthorized - could redirect to login
-        throw new Error("Unauthorized");
+        // Handle unauthorized - just throw error without redirect
+        throw new Error("Authentication required for this action");
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }

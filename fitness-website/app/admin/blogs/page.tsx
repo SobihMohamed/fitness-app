@@ -1,18 +1,33 @@
 "use client";
 
+import React, { useCallback, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useBlogManagement } from "@/hooks/admin/use-blog-management";
-import { StatsCards } from "@/components/admin/blog/stats-cards";
-import { CategoryManagement } from "@/components/admin/blog/category-management";
-import { SearchAndFilter } from "@/components/admin/blog/search-and-filter";
-import { BlogTable } from "@/components/admin/blog/blog-table";
-import { BlogForm } from "@/components/admin/blog/blog-form";
-import { DeleteConfirmation } from "@/components/admin/blog/delete-confirmation";
-import { useCallback, useMemo, useState } from "react";
 import { blogApi } from "@/lib/api/blogs";
 import type { Blog, BlogFormData } from "@/types";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
-import { BookOpen } from "lucide-react";
+import { BookOpen, Loader2 } from "lucide-react";
+
+// Lazy load heavy components for better performance
+const StatsCards = dynamic(() => import("@/components/admin/blog/stats-cards").then(mod => ({ default: mod.StatsCards })), { 
+  loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
+});
+const CategoryManagement = dynamic(() => import("@/components/admin/blog/category-management").then(mod => ({ default: mod.CategoryManagement })), { 
+  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-4" />
+});
+const SearchAndFilter = dynamic(() => import("@/components/admin/blog/search-and-filter").then(mod => ({ default: mod.SearchAndFilter })), { 
+  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+});
+const BlogTable = dynamic(() => import("@/components/admin/blog/blog-table").then(mod => ({ default: mod.BlogTable })), { 
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+const BlogForm = dynamic(() => import("@/components/admin/blog/blog-form").then(mod => ({ default: mod.BlogForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const DeleteConfirmation = dynamic(() => import("@/components/admin/blog/delete-confirmation").then(mod => ({ default: mod.DeleteConfirmation })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
 
 export default function BlogsManagement() {
   const blogManagement = useBlogManagement();

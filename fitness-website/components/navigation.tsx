@@ -9,11 +9,11 @@ import dynamic from "next/dynamic";
 // Dynamically import client-only heavy components to reduce initial bundle size
 const CartDrawer = dynamic(() => import("@/components/cart/cart-drawer").then(m => m.CartDrawer), {
   ssr: false,
-  loading: () => null,
+  loading: () => <div className="w-6 h-6 animate-pulse bg-gray-200 rounded" />,
 });
 const UserMenu = dynamic(() => import("@/components/auth/user-menu").then(m => m.UserMenu), {
   ssr: false,
-  loading: () => null,
+  loading: () => <div className="w-8 h-8 animate-pulse bg-gray-200 rounded-full" />,
 });
 const LoginModal = dynamic(() => import("@/components/auth/login-modal").then(m => m.LoginModal), {
   ssr: false,
@@ -52,7 +52,7 @@ function NavigationInner() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8">
           {/* Logo */}
           <div className="flex lg:flex-1">
-            <Link href="/" prefetch={false} className="-m-1.5 p-1.5">
+            <Link href="/" className="-m-1.5 p-1.5">
               <span className="text-2xl font-bold text-blue-600">FitPro</span>
             </Link>
           </div>
@@ -69,7 +69,7 @@ function NavigationInner() {
               <SheetContent side="right" className="w-full sm:max-w-sm">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                 <div className="flex items-center justify-between">
-                  <Link href="/" prefetch={false} className="-m-1.5 p-1.5">
+                  <Link href="/" className="-m-1.5 p-1.5">
                     <span className="text-2xl font-bold text-blue-600">
                       FitPro
                     </span>
@@ -84,7 +84,6 @@ function NavigationInner() {
                         <Link
                           key={item.name}
                           href={item.href}
-                          prefetch={false}
                           className={`block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
                             pathname === item.href
                               ? "text-blue-600 bg-gray-100"
@@ -123,7 +122,6 @@ function NavigationInner() {
               <Link
                 key={item.name}
                 href={item.href}
-                prefetch={false}
                 className={`text-sm font-semibold leading-6 ${
                   pathname === item.href
                     ? "text-blue-600 border-b-2 border-blue-600 pb-1"

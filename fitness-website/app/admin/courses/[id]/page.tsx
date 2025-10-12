@@ -1,8 +1,9 @@
 "use client";
 
+import React, { useCallback, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useCourseDetailsManagement } from "@/hooks/admin/use-course-details-management";
-import { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import type { 
   Course, 
@@ -12,14 +13,24 @@ import type {
   ChapterFormData,
   CourseDetailsDeleteTarget
 } from "@/types";
-import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 
-// Dynamic imports for heavy components with SSR disabled to prevent hydration issues
-const CourseHeader = dynamic(() => import("@/components/admin/courses/course-header").then(mod => ({ default: mod.CourseHeader })), { ssr: false });
-const ModulesAccordion = dynamic(() => import("@/components/admin/courses/modules-accordion").then(mod => ({ default: mod.ModulesAccordion })), { ssr: false });
-const ModuleForm = dynamic(() => import("@/components/admin/courses/module-form").then(mod => ({ default: mod.ModuleForm })), { ssr: false });
-const ChapterForm = dynamic(() => import("@/components/admin/courses/chapter-form").then(mod => ({ default: mod.ChapterForm })), { ssr: false });
-const CourseDetailsDeleteConfirmation = dynamic(() => import("@/components/admin/courses/course-details-delete-confirmation").then(mod => ({ default: mod.CourseDetailsDeleteConfirmation })), { ssr: false });
+// Lazy load heavy components for better performance
+const CourseHeader = dynamic(() => import("@/components/admin/courses/course-header").then(mod => ({ default: mod.CourseHeader })), { 
+  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" />
+});
+const ModulesAccordion = dynamic(() => import("@/components/admin/courses/modules-accordion").then(mod => ({ default: mod.ModulesAccordion })), { 
+  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ModuleForm = dynamic(() => import("@/components/admin/courses/module-form").then(mod => ({ default: mod.ModuleForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const ChapterForm = dynamic(() => import("@/components/admin/courses/chapter-form").then(mod => ({ default: mod.ChapterForm })), { 
+  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+});
+const CourseDetailsDeleteConfirmation = dynamic(() => import("@/components/admin/courses/course-details-delete-confirmation").then(mod => ({ default: mod.CourseDetailsDeleteConfirmation })), { 
+  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+});
 
 export default function CourseDetailsPage() {
   const params = useParams<{ id: string }>();

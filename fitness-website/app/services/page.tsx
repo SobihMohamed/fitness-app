@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, Clock, AlertCircle, Loader2, Dumbbell } from "lucide-react"
@@ -11,10 +12,26 @@ import { GridSkeleton } from "@/components/common/LoadingSkeletons"
 import { Pagination } from "@/components/common"
 import type { ClientService } from "@/types"
 import { servicesApi } from "@/lib/api/services"
-import { motion } from "framer-motion"
 
-const ServicesHero = dynamic(() => import("@/components/client/services/ServicesHero").then(m => m.ServicesHero), { ssr: false })
-const ServicesGrid = dynamic(() => import("@/components/client/services/ServicesGrid").then(m => m.ServicesGrid), { ssr: false, loading: () => <GridSkeleton count={6} /> })
+// Lazy load heavy components for better performance
+const ServicesHero = dynamic(
+  () => import("@/components/client/services/ServicesHero").then(m => m.ServicesHero), 
+  { 
+    loading: () => <div className="h-96 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 animate-pulse rounded-lg" />
+  }
+)
+const ServicesGrid = dynamic(
+  () => import("@/components/client/services/ServicesGrid").then(m => m.ServicesGrid), 
+  { 
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    )
+  }
+)
 
 export default function ServicesPage() {
   const [services, setServices] = useState<ClientService[]>([])
@@ -46,43 +63,58 @@ export default function ServicesPage() {
     fetchServices()
   }, [fetchServices])
 
+  // Memoized calculations for better performance
   const hasServices = useMemo(() => !loading && !error && services.length > 0, [loading, error, services.length])
   const paged = useMemo(() => {
     const start = (page - 1) * pageSize
     return services.slice(start, start + pageSize)
   }, [services, page, pageSize])
 
+  const serviceStats = useMemo(() => ({
+    totalServices: services?.length || 0,
+    currentPage: page,
+    totalPages: Math.ceil(services.length / pageSize)
+  }), [services, page, pageSize])
+
+  // Show loading state with modern design
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex items-center space-x-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="text-gray-700 text-lg font-medium">Loading services...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
       <ServicesHero />
 
       {/* Plans */}
-       <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center mb-12"
-              >
       <section
         id="plans"
-        className="py-10 bg-background"
+        className="py-10"
         aria-labelledby="plans-heading"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2
               id="plans-heading"
-              className="text-3xl font-bold text-foreground"
+              className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent"
             >
               Plans & Pricing
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-gray-600 text-lg">
               Simple, transparent pricing. Cancel anytime.
             </p>
           </div>
         </div>
       </section>
-</motion.div>
       {/* Services Grid */}
       <section
         id="services"
@@ -99,19 +131,18 @@ export default function ServicesPage() {
           {/* Error State */}
           {error && !loading && (
             <div className="text-center py-12">
-              <Alert className="max-w-md mx-auto">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  <div className="space-y-2">
-                    <p className="font-medium">Failed to load services</p>
-                    <p className="text-sm">{error}</p>
-                    <Button onClick={retryFetch} size="sm" className="mt-2">
-                      <Loader2 className="h-4 w-4 mr-2" />
-                      Try Again
-                    </Button>
+              <Card className="max-w-md mx-auto shadow-2xl">
+                <CardContent className="p-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
+                    <AlertCircle className="h-6 w-6 text-red-600" />
                   </div>
-                </AlertDescription>
-              </Alert>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Failed to Load Services</h2>
+                  <p className="text-gray-600 mb-6">{error}</p>
+                  <Button onClick={retryFetch} className="px-6 bg-blue-600 hover:bg-blue-700">
+                    Try Again
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           )}
 

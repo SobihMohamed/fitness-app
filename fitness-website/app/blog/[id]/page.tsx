@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ArrowLeft, BookOpen, AlertCircle, Play } from "lucide-react";
+import { Calendar, ArrowLeft, BookOpen, AlertCircle, Play, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useBlogDetails } from "@/hooks/client/use-blog-details";
 
@@ -32,21 +31,37 @@ const BlogPostPage = React.memo(() => {
     setWatchRequested,
   } = useBlogDetails(blogId, shouldAutoWatch);
 
-  const onWatchClick = () => {
+  // Memoized handlers for better performance
+  const onWatchClick = useCallback(() => {
     setWatchRequested(true);
     setShowVideoModal(true);
-  };
+  }, [setWatchRequested, setShowVideoModal]);
+
+  const handleBackClick = useCallback(() => {
+    router.push("/blog");
+  }, [router]);
+
+  const handleCloseModal = useCallback(() => {
+    setShowVideoModal(false);
+  }, [setShowVideoModal]);
+
+  // Memoized calculations
+  const blogStats = useMemo(() => ({
+    hasVideo: !!blog?.videoUrl,
+    hasContent: !!blog?.content,
+    hasRelated: relatedBlogs.length > 0,
+    categoryName: blog ? getCategoryName(blog.categoryId) : '',
+    formattedDate: blog ? formatDate(blog.createdAt) : ''
+  }), [blog, relatedBlogs, getCategoryName, formatDate]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white pt-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="h-8 w-32 mb-6 bg-gray-200 animate-pulse rounded" />
-          <div className="h-12 w-3/4 mb-4 bg-gray-200 animate-pulse rounded" />
-          <div className="h-6 w-1/2 mb-8 bg-gray-200 animate-pulse rounded" />
-          <div className="h-64 w-full mb-8 bg-gray-200 animate-pulse rounded-lg" />
-          <div className="h-6 w-2/3 mb-2 bg-gray-200 animate-pulse rounded" />
-          <div className="h-6 w-1/2 bg-gray-200 animate-pulse rounded" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex items-center space-x-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="text-gray-700 text-lg font-medium">Loading blog post...</span>
+          </div>
         </div>
       </div>
     );
@@ -54,14 +69,14 @@ const BlogPostPage = React.memo(() => {
 
   if (error || !blog) {
     return (
-      <div className="min-h-screen bg-white pt-20 flex items-center justify-center">
-        <Card className="shadow-xl max-w-md mx-auto border border-gray-100 rounded-2xl">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+        <Card className="shadow-2xl max-w-md mx-auto">
           <CardContent className="p-8 text-center">
-            <AlertCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">
+            <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
               Blog Post Not Found
             </h2>
-            <p className="text-muted-foreground mb-4">
+            <p className="text-gray-600 mb-4">
               {error || "The blog post you're looking for doesn't exist."}
             </p>
             <div className="flex gap-3 justify-center">
@@ -69,7 +84,7 @@ const BlogPostPage = React.memo(() => {
                 Go Back
               </Button>
               <Link href="/blog">
-                <Button className="bg-primary text-white">Browse All Blogs</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">Browse All Blogs</Button>
               </Link>
             </div>
           </CardContent>
@@ -79,7 +94,7 @@ const BlogPostPage = React.memo(() => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <Button
           variant="ghost"
@@ -126,11 +141,11 @@ const BlogPostPage = React.memo(() => {
               {blog.title}
             </h1>
             <div className="flex items-center gap-4 text-gray-600 mb-6">
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <Calendar className="h-5 w-5 text-primary" />
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Calendar className="h-5 w-5 text-blue-600" />
               </div>
               <span className="font-medium text-lg">
-                {formatDate(blog.createdAt)}
+                {blogStats.formattedDate}
               </span>
             </div>
             {blog.excerpt && (
@@ -138,9 +153,9 @@ const BlogPostPage = React.memo(() => {
                 {blog.excerpt}
               </p>
             )}
-            {blog.videoUrl && (
+            {blogStats.hasVideo && (
               <Button
-                className="font-medium py-3 px-6 group bg-primary text-white"
+                className="font-medium py-3 px-6 group bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={onWatchClick}
               >
                 <Play className="mr-2 h-4 w-4" />
@@ -158,48 +173,32 @@ const BlogPostPage = React.memo(() => {
         </Card>
       </div>
 
-      {/* Inline Video removed: video opens only in modal when clicking Watch */}
-
-      <AnimatePresence>
-        {showVideoModal && blog?.videoUrl && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowVideoModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="bg-white border border-gray-100 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="aspect-video w-full bg-primary/5">
-                <iframe
-                  className="w-full h-full rounded-lg"
-                  src={renderVideo(blog.videoUrl, true)}
-                  title="Blog video"
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
-              </div>
-              <div className="p-4 flex justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowVideoModal(false)}
-                  className="border-gray-200 text-blue-700 hover:bg-gray-50"
-                >
-                  Close
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Video Modal */}
+      {showVideoModal && blog?.videoUrl && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden">
+            <div className="aspect-video w-full bg-blue-50">
+              <iframe
+                className="w-full h-full rounded-lg"
+                src={renderVideo(blog.videoUrl, true)}
+                title="Blog video"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+            <div className="p-4 flex justify-end">
+              <Button
+                variant="outline"
+                onClick={handleCloseModal}
+                className="border-gray-200 text-blue-700 hover:bg-gray-50"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {relatedBlogs.length > 0 && (
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">

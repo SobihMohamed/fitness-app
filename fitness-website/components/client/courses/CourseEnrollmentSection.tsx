@@ -24,6 +24,7 @@ import { formatNumber } from "@/utils/format";
 import { useAuth } from "@/contexts/auth-context";
 import { API_CONFIG } from "@/config/api";
 import { useUserApi } from "@/hooks/client/use-user-api";
+import { useCourseRequests } from "@/hooks/client/use-course-requests";
 
 import {
   ShoppingCart,
@@ -48,6 +49,7 @@ interface Course {
   rating?: number;
   created_at: string;
   modules?: any[];
+  is_subscribed?: boolean;
 }
 
 interface CourseEnrollmentSectionProps {
@@ -58,6 +60,7 @@ interface CourseEnrollmentSectionProps {
 const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ course, onEnrollment }) => {
   const { user } = useAuth();
   const { makeAuthenticatedRequest } = useUserApi();
+  const { getCourseRequestStatus, canEnroll, getEnrollmentButtonState, refetch } = useCourseRequests();
 
   const [isFavorite, setIsFavorite] = React.useState(false);
 
@@ -85,10 +88,24 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
     } catch {}
   };
 
+  // Get current course request status
+  const { isSubscribed, status } = getCourseRequestStatus(course.course_id);
+  const buttonState = getEnrollmentButtonState(course.course_id);
+  const canEnrollInCourse = canEnroll(course.course_id);
+
   const openEnroll = () => {
-    // Open the enrollment dialog only — do not call any external navigation
-    // to avoid redirects (e.g., to auth pages). Parent callbacks are intentionally
-    // not invoked here per request.
+    // Check if user can enroll
+    if (!canEnrollInCourse) {
+      if (status === 'approved') {
+        toast.info("You are already enrolled in this course!");
+        return;
+      } else if (status === 'pending') {
+        toast.info("Your enrollment request is pending admin approval.");
+        return;
+      }
+    }
+    
+    // Open the enrollment dialog
     setOpen(true);
   };
 
@@ -129,6 +146,8 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
         setJob("");
         setAge("");
         setPromoCode("");
+        // Refresh the requests to update the UI
+        refetch();
       } else {
         throw new Error(data?.message || "Failed to create request");
       }
@@ -160,13 +179,47 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
         <CardContent className="space-y-4">
           {/* Enroll Now */}
           <Button
-            onClick={openEnroll}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3 text-lg"
+            onClick={buttonState.disabled ? undefined : openEnroll}
+            disabled={buttonState.disabled}
+            className={buttonState.className}
             size="lg"
           >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            Enroll Now
+            {buttonState.icon === 'CheckCircle' && <CheckCircle className="w-5 h-5 mr-2" />}
+            {buttonState.icon === 'Eye' && <Eye className="w-5 h-5 mr-2" />}
+            {buttonState.icon === 'ShoppingCart' && <ShoppingCart className="w-5 h-5 mr-2" />}
+            {buttonState.text}
           </Button>
+
+          {/* Status Display */}
+          {isSubscribed && (
+            <div className="p-3 rounded-lg border text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Enrollment Status:</span>
+                <Badge 
+                  variant={status === 'approved' ? 'default' : status === 'pending' ? 'secondary' : 'destructive'}
+                  className={
+                    status === 'approved' ? 'bg-green-100 text-green-800' :
+                    status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }
+                >
+                  {status === 'approved' ? 'Approved' :
+                   status === 'pending' ? 'Pending Review' :
+                   status === 'cancelled' ? 'Cancelled' : 'Unknown'}
+                </Badge>
+              </div>
+              {status === 'pending' && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Your enrollment request is being reviewed by our team. You'll be notified once it's approved.
+                </p>
+              )}
+              {status === 'cancelled' && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Your previous request was cancelled. You can submit a new request.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Quick Actions */}
           <div className="grid grid-cols-2 gap-2">
