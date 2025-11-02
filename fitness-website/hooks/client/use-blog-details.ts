@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { cachedBlogsApi } from "@/lib/api/cached-blogs";
 import { clientBlogApi } from "@/lib/api/client-blogs";
 import type { BlogPost, BlogCategory, UseBlogDetailsReturn } from "@/types";
 
@@ -27,7 +28,7 @@ export function useBlogDetails(id: string, autoWatch = false): UseBlogDetailsRet
     setLoading(true);
     setError(null);
     try {
-      const b = await clientBlogApi.fetchBlogById(blogId);
+      const b = await cachedBlogsApi.fetchBlogById(blogId);
       if (!b) {
         setError("Blog not found");
         setBlog(null);
@@ -118,11 +119,15 @@ export function useBlogDetails(id: string, autoWatch = false): UseBlogDetailsRet
   }, []);
 
   const formatDate = useCallback((dateString?: string) => {
-    if (!dateString) return "";
+    if (!dateString) return "Recently";
     try {
-      return new Date(dateString).toLocaleDateString();
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return "Recently";
+      }
+      return date.toLocaleDateString();
     } catch {
-      return dateString;
+      return "Recently";
     }
   }, []);
 

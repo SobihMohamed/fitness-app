@@ -69,7 +69,6 @@ interface CourseRequest {
 }
 
 export function useDashboardData(user: any) {
-  console.log("🔍 USER useDashboardData hook called with user:", !!user);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -100,11 +99,6 @@ export function useDashboardData(user: any) {
 
   const getAuthHeaders = useCallback(() => {
     const token = sessionStorage.getItem("token");
-    console.log("🔑 Auth Debug:", { 
-      hasToken: !!token, 
-      tokenLength: token?.length,
-      tokenPreview: token ? `${token.substring(0, 10)}...` : null
-    });
     if (!token) throw new Error("No authentication token found");
     return { Authorization: `Bearer ${token}` };
   }, []);
@@ -128,7 +122,6 @@ export function useDashboardData(user: any) {
         user_type: profileData.user_type || "",
       });
     } catch (error: any) {
-      console.error("Failed to load profile:", error);
       if (user) {
         setProfile({
           name: user.name || "",
@@ -150,12 +143,9 @@ export function useDashboardData(user: any) {
       const headers = getAuthHeaders();
       const response = await axios.get(API_CONFIG.USER_FUNCTIONS.orders.getMyOrders, { headers });
 
-      console.log("🔍 Raw orders response:", response.data);
       const ordersData = response.data.orders || response.data.data || response.data || [];
-      console.log("🔍 Orders data array:", ordersData);
       
       const normalized = (Array.isArray(ordersData) ? ordersData : []).map((raw: any) => {
-        console.log("🔍 Processing order:", raw);
         const order = {
           id: String(raw.id || raw.order_id || raw._id || Math.random()),
           total_price: Number(raw.total_price || raw.net_total || raw.total || raw.amount || 0),
@@ -170,14 +160,11 @@ export function useDashboardData(user: any) {
               }))
             : undefined,
         } as Order;
-        console.log("🔍 Normalized order:", order);
         return order;
       });
       
-      console.log("🔍 Final normalized orders:", normalized);
       setOrders(normalized);
     } catch (error: any) {
-      console.error("Failed to load orders:", error);
       setOrders([]);
     } finally {
       setLoading(prev => ({ ...prev, orders: false }));
@@ -190,12 +177,9 @@ export function useDashboardData(user: any) {
       const headers = getAuthHeaders();
       const response = await axios.get(API_CONFIG.USER_FUNCTIONS.notifications.getAll, { headers });
 
-      console.log("🔍 Raw notifications response:", response.data);
       const notificationsData = response.data?.notifications || response.data?.data || response.data || [];
-      console.log("🔍 Notifications data array:", notificationsData);
       
       const normalized = (Array.isArray(notificationsData) ? notificationsData : []).map((raw: any) => {
-        console.log("🔍 Processing notification:", raw);
         const readRaw = raw?.is_read ?? raw?.isRead ?? raw?.read ?? raw?.seen;
         const isRead = readRaw === true || readRaw === 1 || readRaw === "1" || readRaw === "true" || readRaw === "yes";
         const notification = {
@@ -206,14 +190,10 @@ export function useDashboardData(user: any) {
           created_at: String(raw?.created_at ?? raw?.delivered_at ?? raw?.createdAt ?? new Date().toISOString()),
           type: raw?.type ?? raw?.category ?? undefined,
         } as Notification;
-        console.log("🔍 Normalized notification:", notification);
         return notification;
       }).filter((n: Notification) => n.id && n.id !== "NaN");
-
-      console.log("🔍 Final normalized notifications:", normalized);
       setNotifications(normalized);
     } catch (error: any) {
-      console.error("Failed to load notifications:", error);
       setNotifications([]);
     } finally {
       setLoading(prev => ({ ...prev, notifications: false }));
@@ -226,12 +206,9 @@ export function useDashboardData(user: any) {
       const headers = getAuthHeaders();
       const response = await axios.get(API_CONFIG.USER_FUNCTIONS.courses.allSubscribedCourses, { headers });
 
-      console.log("🔍 Raw courses response:", response.data);
       const coursesData = response.data?.courses || response.data?.data || response.data || [];
-      console.log("🔍 Courses data array:", coursesData);
       
       const normalized = (Array.isArray(coursesData) ? coursesData : []).map((raw: any) => {
-        console.log("🔍 Processing course:", raw);
         const course = {
           id: String(raw.id || raw.course_id || Math.random()),
           title: String(raw.title || raw.name || "Course"),
@@ -243,14 +220,10 @@ export function useDashboardData(user: any) {
           enrolled_at: String(raw.enrolled_at || raw.created_at || new Date().toISOString()),
           status: String(raw.status || "active"),
         } as SubscribedCourse;
-        console.log("🔍 Normalized course:", course);
         return course;
       });
-
-      console.log("🔍 Final normalized courses:", normalized);
       setSubscribedCourses(normalized);
     } catch (error: any) {
-      console.error("Failed to load subscribed courses:", error);
       setSubscribedCourses([]);
     } finally {
       setLoading(prev => ({ ...prev, courses: false }));
@@ -267,27 +240,22 @@ export function useDashboardData(user: any) {
 
       // Load training requests with error handling
       try {
-        console.log("🔍 Loading training requests...");
         let trainingResponse;
         try {
           // Try POST first
           trainingResponse = await axios.post(API_CONFIG.USER_FUNCTIONS.requests.training.getMyRequests, {}, { headers });
         } catch (postError: any) {
           if (postError.response?.status === 404 || postError.response?.status === 405) {
-            console.log("🔍 POST failed, trying GET for training requests...");
             // Try GET as fallback
             trainingResponse = await axios.get(API_CONFIG.USER_FUNCTIONS.requests.training.getMyRequests, { headers });
           } else {
             throw postError;
           }
         }
-        console.log("🔍 Raw training requests response:", trainingResponse.data);
         
         const trainingData = trainingResponse.data?.requests || trainingResponse.data?.data || trainingResponse.data || [];
-        console.log("🔍 Training data array:", trainingData);
         
         normalizedTraining = (Array.isArray(trainingData) ? trainingData : []).map((raw: any) => {
-          console.log("🔍 Processing training request:", raw);
           const request = {
             id: String(raw.id || raw.request_id || Math.random()),
             service_name: raw.service_name || raw.service?.name,
@@ -298,41 +266,30 @@ export function useDashboardData(user: any) {
             end_date: raw.end_date,
             notes: raw.notes,
           } as TrainingRequest;
-          console.log("🔍 Normalized training request:", request);
           return request;
         });
       } catch (trainingError: any) {
-        console.warn("🔍 Training requests endpoint not available:", {
-          status: trainingError.response?.status,
-          message: trainingError.message,
-          url: API_CONFIG.USER_FUNCTIONS.requests.training.getMyRequests
-        });
         normalizedTraining = [];
       }
 
       // Load course requests with error handling
       try {
-        console.log("🔍 Loading course requests...");
         let courseResponse;
         try {
           // Try POST first
           courseResponse = await axios.post(API_CONFIG.USER_FUNCTIONS.requests.courses.getMyRequests, {}, { headers });
         } catch (postError: any) {
           if (postError.response?.status === 404 || postError.response?.status === 405) {
-            console.log("🔍 POST failed, trying GET for course requests...");
             // Try GET as fallback
             courseResponse = await axios.get(API_CONFIG.USER_FUNCTIONS.requests.courses.getMyRequests, { headers });
           } else {
             throw postError;
           }
         }
-        console.log("🔍 Raw course requests response:", courseResponse.data);
         
         const courseData = courseResponse.data?.requests || courseResponse.data?.data || courseResponse.data || [];
-        console.log("🔍 Course requests data array:", courseData);
         
         normalizedCourse = (Array.isArray(courseData) ? courseData : []).map((raw: any) => {
-          console.log("🔍 Processing course request:", raw);
           const request = {
             id: String(raw.id || raw.request_id || Math.random()),
             course_name: raw.course_name || raw.course?.title,
@@ -341,25 +298,16 @@ export function useDashboardData(user: any) {
             approved_at: raw.approved_at,
             notes: raw.notes,
           } as CourseRequest;
-          console.log("🔍 Normalized course request:", request);
           return request;
         });
       } catch (courseError: any) {
-        console.warn("🔍 Course requests endpoint not available:", {
-          status: courseError.response?.status,
-          message: courseError.message,
-          url: API_CONFIG.USER_FUNCTIONS.requests.courses.getMyRequests
-        });
         normalizedCourse = [];
       }
 
-      console.log("🔍 Final normalized training requests:", normalizedTraining);
-      console.log("🔍 Final normalized course requests:", normalizedCourse);
       
       setTrainingRequests(normalizedTraining);
       setCourseRequests(normalizedCourse);
     } catch (error: any) {
-      console.error("Failed to load requests:", error);
       setTrainingRequests([]);
       setCourseRequests([]);
     } finally {
@@ -395,7 +343,6 @@ export function useDashboardData(user: any) {
         )
       );
     } catch (error: any) {
-      console.error("Failed to mark notification as read:", error);
     }
   }, [getAuthHeaders]);
 
@@ -406,14 +353,12 @@ export function useDashboardData(user: any) {
       setNotifications(prev => prev.filter(notif => notif.id !== id));
       toast.success("Notification deleted successfully!");
     } catch (error: any) {
-      console.error("Failed to delete notification:", error);
       toast.error("Failed to delete notification");
     }
   }, [getAuthHeaders]);
 
   const loadAllData = useCallback(async () => {
     try {
-      console.log("🔍 loadAllData started - calling all data loading functions...");
       
       // Load data with individual error handling to prevent one failure from blocking others
       const results = await Promise.allSettled([
@@ -424,33 +369,14 @@ export function useDashboardData(user: any) {
         loadRequests()
       ]);
 
-      // Log results for debugging
-      results.forEach((result, index) => {
-        const functionNames = ['loadProfile', 'loadOrders', 'loadNotifications', 'loadSubscribedCourses', 'loadRequests'];
-        if (result.status === 'rejected') {
-          console.warn(`🔍 ${functionNames[index]} failed:`, result.reason);
-        } else {
-          console.log(`🔍 ${functionNames[index]} completed successfully`);
-        }
-      });
-      
-      console.log("🔍 loadAllData completed - some functions may have failed but others succeeded");
     } catch (error) {
-      console.error("🔍 Error loading dashboard data:", error);
     }
   }, [loadProfile, loadOrders, loadNotifications, loadSubscribedCourses, loadRequests]);
 
   useEffect(() => {
-    console.log("🔍 useDashboardData useEffect triggered:", { 
-      user: !!user, 
-      userId: user?.id,
-      hasLoadAllData: !!loadAllData 
-    });
     if (user && user.id) {
-      console.log("🔍 Starting to load all dashboard data...");
       loadAllData();
     } else {
-      console.log("🔍 Not loading data - user not ready:", { user: !!user, userId: user?.id });
     }
   }, [user, loadAllData]);
 

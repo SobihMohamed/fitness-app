@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { motion } from "framer-motion";
 import { 
   Play, 
   Clock, 
@@ -67,11 +66,7 @@ const ModuleChaptersSection = React.memo<ModuleChaptersSectionProps>(({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.4 }}
-    >
+    <div>
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -101,11 +96,8 @@ const ModuleChaptersSection = React.memo<ModuleChaptersSectionProps>(({
               const isLocked = isChapterLocked(index);
               
               return (
-                <motion.div
+                <div
                   key={chapter.chapter_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   {isLocked ? (
                     <div className="flex items-center gap-4 p-6 border-b border-gray-100 opacity-60">
@@ -182,7 +174,7 @@ const ModuleChaptersSection = React.memo<ModuleChaptersSectionProps>(({
                       </div>
                     </Link>
                   )}
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -205,7 +197,7 @@ const ModuleChaptersSection = React.memo<ModuleChaptersSectionProps>(({
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

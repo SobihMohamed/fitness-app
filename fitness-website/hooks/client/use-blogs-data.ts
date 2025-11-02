@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { cachedBlogsApi } from "@/lib/api/cached-blogs";
 import { clientBlogApi } from "@/lib/api/client-blogs";
 import type { BlogPost, BlogCategory } from "@/types";
 
@@ -13,12 +14,18 @@ interface UseBlogsDataReturn {
   searchTerm: string;
   sortBy: string;
   filteredBlogs: BlogPost[];
+  paginatedBlogs: BlogPost[];
   featuredPost: BlogPost | undefined;
   categoryStats: Array<{ id: string; name: string; count: number; color: string }>;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
   actions: {
     setSearchTerm: (term: string) => void;
     setSortBy: (sort: string) => void;
     handleCategorySelect: (categoryId: string) => void;
+    setCurrentPage: (page: number) => void;
+    setPageSize: (size: number) => void;
     refresh: () => Promise<void>;
   };
 }
@@ -37,6 +44,8 @@ export function useBlogsData(initialData?: {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   // Align default with UI which uses "latest" | "popular"
   const [sortBy, setSortBy] = useState<string>("latest");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(6);
 
   const fetchBlogs = useCallback(async () => {
     if (initialData) return; // Skip if we have initial data
@@ -46,7 +55,7 @@ export function useBlogsData(initialData?: {
 
     try {
       const [blogsArr, catsArr] = await Promise.all([
-        clientBlogApi.fetchBlogs(),
+        cachedBlogsApi.fetchBlogs(),
         clientBlogApi.fetchCategories(),
       ]);
 
@@ -137,6 +146,23 @@ export function useBlogsData(initialData?: {
     }));
   }, [categories, blogs]);
 
+  // Calculate total pages
+  const totalPages = useMemo(() => {
+    return Math.ceil(filteredBlogs.length / pageSize);
+  }, [filteredBlogs.length, pageSize]);
+
+  // Get paginated blogs
+  const paginatedBlogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredBlogs.slice(startIndex, endIndex);
+  }, [filteredBlogs, currentPage, pageSize]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory, sortBy]);
+
   // UI passes category NAME; toggle by name
   const handleCategorySelect = useCallback((categoryName: string) => {
     setSelectedCategory(prev => prev === categoryName ? '' : categoryName);
@@ -155,12 +181,18 @@ export function useBlogsData(initialData?: {
     searchTerm,
     sortBy,
     filteredBlogs,
+    paginatedBlogs,
     featuredPost,
     categoryStats,
+    currentPage,
+    pageSize,
+    totalPages,
     actions: {
       setSearchTerm,
       setSortBy,
       handleCategorySelect,
+      setCurrentPage,
+      setPageSize,
       refresh,
     },
   };

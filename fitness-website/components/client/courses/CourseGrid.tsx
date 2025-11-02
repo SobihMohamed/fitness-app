@@ -6,10 +6,9 @@ import Image from "next/image";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CardSkeleton } from "@/components/common/LoadingSkeletons";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getProxyImageUrl } from "@/lib/images";
 import { formatNumber } from "@/utils/format";
-import { motion } from "framer-motion";
 import { 
   Clock, 
   Users, 
@@ -72,7 +71,19 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
     return (
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {Array(6).fill(0).map((_, index) => (
-          <CardSkeleton key={`skeleton-${index}`} />
+          <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+            <CardHeader className="p-0">
+              <Skeleton className="w-full h-48 rounded-t-lg" />
+            </CardHeader>
+            <CardContent className="p-6">
+              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-1/2 mb-4" />
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
@@ -82,9 +93,7 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
 
   if (displayCourses.length === 0 && !loading) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
         className="text-center py-16"
       >
         <div className="max-w-md mx-auto">
@@ -93,13 +102,13 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
           </div>
           <h3 className="text-xl font-semibold text-foreground mb-2">No courses available</h3>
           <p className="text-muted-foreground mb-6">
-            Please log in to view available courses or check back later.
+            We're currently updating our course catalog. Please check back later for exciting new fitness courses!
           </p>
           <Button variant="outline" onClick={() => window.location.reload()}>
             Refresh Page
           </Button>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
@@ -107,24 +116,20 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
     <div className="space-y-4">
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {displayCourses.map((course, index) => (
-        <motion.div
+        <div
           key={course.course_id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: index * 0.1 }}
         >
           <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md bg-white overflow-hidden h-full">
             <CardHeader className="p-0">
               <div className="relative overflow-hidden">
                   <Image
-                    unoptimized
                     src={resolveCourseImage(course)}
                     alt={course.title}
                     width={400}
                     height={240}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
                     sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                    priority={index < 3}
                     onError={(e) => {
                       const img = e.currentTarget as HTMLImageElement;
                       const originalSrc = img.src;
@@ -224,7 +229,7 @@ const CourseGrid = React.memo<CourseGridProps>(({ courses, loading }) => {
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       ))}
       </div>
     </div>

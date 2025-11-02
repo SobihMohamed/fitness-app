@@ -26,22 +26,22 @@ import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
 
 // Lazy load heavy components for better performance
-const StatsCard = dynamic(() => import("@/components/dashboard/StatsCard").then(m => ({ default: m.StatsCard })), {
+const StatsCard = dynamic(() => import("@/components/dashboard/StatsCard").then(m => m.StatsCard), {
   loading: () => <div className="h-24 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ProfileSection = dynamic(() => import("@/components/dashboard/ProfileSection").then(m => ({ default: m.ProfileSection })), {
+const ProfileSection = dynamic(() => import("@/components/dashboard/ProfileSection").then(m => m.ProfileSection), {
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
-const OrdersSection = dynamic(() => import("@/components/dashboard/OrdersSection").then(m => ({ default: m.OrdersSection })), {
+const OrdersSection = dynamic(() => import("@/components/dashboard/OrdersSection").then(m => m.OrdersSection), {
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
 });
-const CoursesSection = dynamic(() => import("@/components/dashboard/CoursesSection").then(m => ({ default: m.CoursesSection })), {
+const CoursesSection = dynamic(() => import("@/components/dashboard/CoursesSection").then(m => m.CoursesSection), {
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
 });
-const NotificationsSection = dynamic(() => import("@/components/dashboard/NotificationsSection").then(m => ({ default: m.NotificationsSection })), {
+const NotificationsSection = dynamic(() => import("@/components/dashboard/NotificationsSection").then(m => m.NotificationsSection), {
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
-const StatsSkeleton = dynamic(() => import("@/components/dashboard/LoadingSkeleton").then(m => ({ default: m.StatsSkeleton })), {
+const StatsSkeleton = dynamic(() => import("@/components/dashboard/LoadingSkeleton").then(m => m.StatsSkeleton), {
   loading: () => <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
     {Array.from({ length: 6 }).map((_, i) => (
       <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
@@ -61,7 +61,12 @@ interface OrderDetails {
     name: string;
     price: number;
     quantity: number;
+    product_id?: string;
   }>;
+  original_total?: number;
+  discount_value?: number;
+  net_total?: number;
+  promo_code_used?: string;
 }
 
 export default function DashboardPage() {
@@ -111,6 +116,8 @@ export default function DashboardPage() {
       case 'completed':
       case 'delivered':
       case 'approved':
+      case 'approve':
+      case 'aproove':
         return 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
       case 'processing':
@@ -170,26 +177,157 @@ export default function DashboardPage() {
         }
       }
 
-      const raw = response?.data?.order || response?.data?.data || response?.data || {};
-      const normalized = {
-        id: String(raw.id || raw.order_id || orderId),
-        status: String(raw.status || raw.status_name || "unknown"),
-        total_price: Number(raw.total_price || raw.total || raw.amount || 0),
-        created_at: String(raw.created_at || raw.createdAt || raw.date || new Date().toISOString()),
-        payment_method: raw.payment_method || raw.paymentMethod || "-",
-        items: Array.isArray(raw.products || raw.items)
-          ? (raw.products || raw.items).map((p: any) => ({
-              id: String(p.id || p.product_id || Math.random()),
-              name: p.name || p.title || "Item",
-              price: Number(p.price || p.unit_price || 0),
-              quantity: Number(p.quantity || p.qty || 1),
+      const body = response?.data ?? {};
+      const raw = body?.order || body?.data?.order || body?.data || body || {};
+
+      let itemsSource: any = (raw as any)?.products
+        || (raw as any)?.items
+        || (raw as any)?.order_items
+        || (raw as any)?.OrderItems
+        || (raw as any)?.order_details
+        || (raw as any)?.OrderDetails
+        || (raw as any)?.details?.items
+        || (raw as any)?.details
+        || (raw as any)?.cart
+        || (raw as any)?.cart_items
+        || (raw as any)?.cartItems
+        || (body as any)?.products
+        || (body as any)?.order_items
+        || (body as any)?.OrderItems
+        || (body as any)?.order_details
+        || (body as any)?.OrderDetails
+        || (body as any)?.items
+        || (raw as any)?.order?.items
+        || (raw as any)?.order?.order_items
+        || (raw as any)?.order?.order_details
+        || (body as any)?.order?.items
+        || (body as any)?.order?.order_items
+        || (body as any)?.order?.order_details
+        || [];
+
+      // If wrapped in an object with data, unwrap it
+      if (!Array.isArray(itemsSource) && itemsSource && Array.isArray(itemsSource.data)) {
+        itemsSource = itemsSource.data;
+      }
+      // If server returned a JSON string, try parsing
+      if (!Array.isArray(itemsSource) && typeof itemsSource === "string") {
+        try { const parsed = JSON.parse(itemsSource); if (Array.isArray(parsed)) itemsSource = parsed; } catch {}
+      }
+
+      const normalized: any = {
+        id: String((raw as any)?.id || (raw as any)?.order_id || orderId),
+        status: String((raw as any)?.status || (raw as any)?.status_name || "unknown"),
+        total_price: Number(
+          (raw as any)?.total_price || (raw as any)?.total || (raw as any)?.amount ||
+          (raw as any)?.order_total || (raw as any)?.price ||
+          (raw as any)?.order?.total || (body as any)?.total || (body as any)?.total_price || 0
+        ),
+        created_at: String(
+          (raw as any)?.created_at || (raw as any)?.createdAt || (raw as any)?.date ||
+          (raw as any)?.order?.created_at || (body as any)?.created_at || new Date().toISOString()
+        ),
+        payment_method:
+          (raw as any)?.payment_method || (raw as any)?.paymentMethod || (raw as any)?.payment ||
+          (raw as any)?.method || (raw as any)?.gateway ||
+          (raw as any)?.order?.payment_method || (body as any)?.payment_method ||
+          "Insta pay",
+        items: Array.isArray(itemsSource)
+          ? itemsSource.map((p: any) => ({
+              id: String(p.id || p.product_id || p.item_id || p.order_item_id || Math.random()),
+              name: p.name || p.title || p.product_name || p.product_title || p.product?.name || p.Product?.name || "Item",
+              price: Number(
+                p.price || p.unit_price || p.product_price || p.net_price || p.subtotal || p.total || p.product?.price || p.Product?.price || 0
+              ),
+              quantity: Number(p.quantity || p.qty || p.count || p.quantity_ordered || p.amount || 1),
+              product_id: String(p.product_id || p.productId || p.ProductId || p.product?.id || p.Product?.id || ""),
             }))
           : [],
+        original_total: Number((raw as any)?.original_total || (raw as any)?.original || (raw as any)?.gross_total || (raw as any)?.total || 0),
+        discount_value: Number((raw as any)?.discount_value || (raw as any)?.discount || 0),
+        net_total: Number((raw as any)?.net_total || (raw as any)?.net || (raw as any)?.total_price || 0),
+        promo_code_used: String((raw as any)?.promo_code_used || (raw as any)?.promo || (raw as any)?.coupon || ""),
       };
 
-      setOrderDetails(normalized);
+      // Merge with cached list data if details are incomplete
+      const cached = orders.find((o: any) => String(o.id) === String(orderId));
+      if (cached) {
+        if (!normalized.total_price || Number.isNaN(normalized.total_price)) {
+          normalized.total_price = Number(cached.total_price || 0);
+        }
+        if ((!Array.isArray(normalized.items) || normalized.items.length === 0) && Array.isArray((cached as any).products)) {
+          normalized.items = (cached as any).products.map((p: any) => ({
+            id: String(p.id || p.product_id || Math.random()),
+            name: p.name || p.title,
+            price: Number(p.price || p.unit_price || 0),
+            quantity: Number(p.quantity || p.qty || 1),
+            product_id: String(p.product_id || p.productId || p.ProductId || p.product?.id || p.Product?.id || ""),
+          }));
+        }
+        if (!normalized.created_at) {
+          normalized.created_at = String(cached.created_at || new Date().toISOString());
+        }
+      }
+
+      // Final fallback: if API returns single-row order with top-level product_id
+      if ((!Array.isArray(normalized.items) || normalized.items.length === 0) && ((raw as any)?.product_id || (raw as any)?.productId)) {
+        const pid = String((raw as any)?.product_id || (raw as any)?.productId);
+        const qty = Number((raw as any)?.quantity || 1);
+        const priceCandidate = (raw as any)?.net_total ?? (raw as any)?.original_total ?? (raw as any)?.total_price ?? (raw as any)?.total ?? 0;
+        const unit = Number(priceCandidate) && qty ? Number(priceCandidate) / qty : Number(priceCandidate) || 0;
+        normalized.items = [
+          {
+            id: pid,
+            name: "",
+            price: Number(unit || 0),
+            quantity: qty,
+            product_id: pid,
+          },
+        ];
+      }
+
+  // Show loading state (placed after all hooks to keep hook order stable)
+  if (!isInitialized || isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="flex items-center space-x-3">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <span className="text-gray-700 text-lg font-medium">Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+      
+      // Enrich item names if missing but product_id exists
+      try {
+        const missing = Array.isArray(normalized.items) ? normalized.items.filter((it: any) => (!it.name || it.name === "Item") && it.product_id) : [];
+        if (missing.length > 0) {
+          const uniqueIds: string[] = Array.from(new Set(missing.map((m: any) => String(m.product_id)))) as string[];
+          const results = await Promise.allSettled(uniqueIds.map(async (pid) => {
+            const token = typeof window !== 'undefined' ? sessionStorage.getItem('token') : null;
+            const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+            const res = await axios.get(API_CONFIG.USER_FUNCTIONS.products.getById(pid), headers ? { headers } : undefined);
+            const root = res?.data ?? {};
+            const pdata = root?.product || root?.data?.product || root?.data || root?.Product || root || {};
+            const name =
+              pdata?.title || pdata?.name || pdata?.product_name || pdata?.productTitle ||
+              pdata?.product_name_en || pdata?.productName || pdata?.Name ||
+              pdata?.product?.name || pdata?.product?.title ||
+              pdata?.data?.name || pdata?.data?.title || "";
+            return { pid, name };
+          }));
+          const nameMap = new Map<string, string>();
+          results.forEach((r: any) => { if (r.status === 'fulfilled' && r.value?.pid) nameMap.set(String(r.value.pid), r.value.name || ""); });
+          normalized.items = normalized.items.map((it: any) => {
+            if ((!it.name || it.name === "Item") && it.product_id && nameMap.get(String(it.product_id))) {
+              return { ...it, name: nameMap.get(String(it.product_id)) };
+            }
+            return it;
+          });
+        }
+      } catch {}
+
+      setOrderDetails(normalized as OrderDetails);
     } catch (e: any) {
-      console.error("Failed to load order details:", e);
       const status = e?.response?.status;
       const msg = e?.response?.data?.message || 
         (status === 403 ? "Unauthorized to view this order." :
@@ -203,6 +341,26 @@ export default function DashboardPage() {
   }, [orders]);
 
   const openOrderDetails = (orderId: string) => {
+    // Prefill from cached list for instant UI
+    const cached = orders.find((o: any) => String(o.id) === String(orderId));
+    if (cached) {
+      setOrderDetails({
+        id: String(cached.id),
+        status: String(cached.status || "unknown"),
+        total_price: Number(cached.total_price || 0),
+        created_at: String(cached.created_at || new Date().toISOString()),
+        payment_method: "-",
+        items: Array.isArray((cached as any).products)
+          ? (cached as any).products.map((p: any) => ({
+              id: String(p.id || p.product_id || Math.random()),
+              name: p.name || p.title,
+              price: Number(p.price || p.unit_price || 0),
+              quantity: Number(p.quantity || p.qty || 1),
+              product_id: String(p.product_id || p.productId || p.ProductId || p.product?.id || p.Product?.id || ""),
+            }))
+          : [],
+      });
+    }
     setOrderModalOpen(true);
     loadOrderDetails(orderId);
   };
@@ -212,18 +370,6 @@ export default function DashboardPage() {
     setOrderDetails(null);
     setOrderDetailsError(null);
   };
-
-  // Show loading state
-  if (!isInitialized || isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="flex items-center space-x-3">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="text-gray-700 text-lg font-medium">Loading dashboard...</span>
-        </div>
-      </div>
-    );
-  }
 
   // Memoized calculations for better performance
   const isAnyLoading = useMemo(() => 
@@ -240,10 +386,10 @@ export default function DashboardPage() {
   const statsData = useMemo(() => ({
     totalOrders: orders?.length || 0,
     unreadNotifications: notifications?.filter((n) => !n.is_read)?.length || 0,
-    activeOrders: orders?.filter((o) => 
-      o.status?.toLowerCase() === "pending" || 
-      o.status?.toLowerCase() === "processing"
-    )?.length || 0,
+    activeOrders: orders?.filter((o) => {
+      const s = o.status?.toLowerCase();
+      return s === "pending" || s === "processing" || s === "approve" || s === "approved";
+    })?.length || 0,
     totalCourses: subscribedCourses?.length || 0,
     trainingRequestsCount: trainingRequests?.length || 0,
     courseRequestsCount: courseRequests?.length || 0
@@ -251,24 +397,12 @@ export default function DashboardPage() {
   
   // Safe action handlers with fallbacks
   const safeActions = {
-    updateProfile: (actions as any)?.updateProfile || (async () => {
-      console.log("updateProfile action not available");
-    }),
-    loadOrders: (actions as any)?.loadOrders || (async () => {
-      console.log("loadOrders action not available");
-    }),
-    loadSubscribedCourses: (actions as any)?.loadSubscribedCourses || (async () => {
-      console.log("loadSubscribedCourses action not available");
-    }),
-    loadNotifications: (actions as any)?.loadNotifications || (async () => {
-      console.log("loadNotifications action not available");
-    }),
-    markNotificationAsRead: (actions as any)?.markNotificationAsRead || (async () => {
-      console.log("markNotificationAsRead action not available");
-    }),
-    deleteNotification: (actions as any)?.deleteNotification || (async () => {
-      console.log("deleteNotification action not available");
-    }),
+    updateProfile: (actions as any)?.updateProfile || (async () => {}),
+    loadOrders: (actions as any)?.loadOrders || (async () => {}),
+    loadSubscribedCourses: (actions as any)?.loadSubscribedCourses || (async () => {}),
+    loadNotifications: (actions as any)?.loadNotifications || (async () => {}),
+    markNotificationAsRead: (actions as any)?.markNotificationAsRead || (async () => {}),
+    deleteNotification: (actions as any)?.deleteNotification || (async () => {}),
   };
 
   return (
@@ -392,7 +526,7 @@ export default function DashboardPage() {
                 </Button>
               </div>
               
-              <ScrollArea className="max-h-[70vh]">
+              <ScrollArea className="h-[70vh]">
                 <div className="p-6">
                   {orderDetailsLoading ? (
                     <div className="flex items-center justify-center h-40 text-gray-600">
@@ -419,15 +553,39 @@ export default function DashboardPage() {
                         <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
                           <p className="text-sm font-medium text-gray-600 mb-1">Total Amount</p>
                           <p className="text-2xl font-bold text-green-700">
-                            ${Number(orderDetails.total_price || 0).toFixed(2)}
+                            {Number(orderDetails.total_price || 0).toFixed(2)} EGP
                           </p>
                         </div>
                         <div className="p-4 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200">
                           <p className="text-sm font-medium text-gray-600 mb-1">Payment Method</p>
                           <p className="text-lg font-semibold text-blue-700">
-                            {orderDetails.payment_method || "Not specified"}
+                            {orderDetails.payment_method || "Insta pay"}
                           </p>
                         </div>
+                        {typeof orderDetails.net_total !== 'undefined' && Number(orderDetails.net_total) !== Number(orderDetails.total_price) && (
+                          <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
+                            <p className="text-sm font-medium text-gray-600 mb-1">Net Total</p>
+                            <p className="text-xl font-semibold text-green-700">
+                              {Number(orderDetails.net_total || orderDetails.total_price || 0).toFixed(2)} EGP
+                            </p>
+                          </div>
+                        )}
+                        {typeof orderDetails.discount_value !== 'undefined' && Number(orderDetails.discount_value) > 0 && (
+                          <div className="p-4 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-200">
+                            <p className="text-sm font-medium text-gray-600 mb-1">Discount</p>
+                            <p className="text-xl font-semibold text-yellow-700">
+                              {Number(orderDetails.discount_value || 0).toFixed(2)} EGP
+                            </p>
+                          </div>
+                        )}
+                        {orderDetails.promo_code_used ? (
+                          <div className="p-4 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200">
+                            <p className="text-sm font-medium text-gray-600 mb-1">Promo Code</p>
+                            <p className="text-xl font-semibold text-indigo-700">
+                              {orderDetails.promo_code_used}
+                            </p>
+                          </div>
+                        ) : null}
                       </div>
                       
                       <div>
@@ -447,16 +605,16 @@ export default function DashboardPage() {
                                 {orderDetails.items.map((item: any, index: number) => (
                                   <tr key={item.id} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                                     <td className="px-4 py-3 text-gray-900 font-medium">
-                                      {item.name || `Item #${item.id}`}
+                                      {item.name && String(item.name).trim().length > 0 ? item.name : "Loading..."}
                                     </td>
                                     <td className="px-4 py-3 text-gray-700">
-                                      ${Number(item.price || 0).toFixed(2)}
+                                      {Number(item.price || 0).toFixed(2)} EGP
                                     </td>
                                     <td className="px-4 py-3 text-gray-700">
                                       {Number(item.quantity || 1)}
                                     </td>
                                     <td className="px-4 py-3 font-semibold text-gray-900">
-                                      ${(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)}
+                                      {(Number(item.price || 0) * Number(item.quantity || 1)).toFixed(2)} EGP
                                     </td>
                                   </tr>
                                 ))}

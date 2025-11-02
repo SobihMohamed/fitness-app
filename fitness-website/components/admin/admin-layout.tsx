@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -35,7 +35,7 @@ interface NotificationData {
   orders: number;
   expiringRequests: number;
 }
-export function AdminLayout({ children }: { children: React.ReactNode }) {
+function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,22 +48,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const getAuthHeaders = () => {
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem("adminAuth");
     return {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     };
-  };
+  }, []);
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem("adminAuth");
     setIsAuthenticated(false);
     router.push("/admin/login");
-  };
+  }, [router]);
 
   // Validate token by making a test API call
-  const validateToken = async () => {
+  const validateToken = useCallback(async () => {
     try {
       const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getAll, {
         headers: getAuthHeaders(),
@@ -71,13 +71,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       });
       return response.ok;
     } catch (error) {
-      console.error("Token validation error:", error);
       return false;
     }
-  };
+  }, [getAuthHeaders]);
 
   // Fetch notification counts
-  const fetchNotificationCounts = async () => {
+  const fetchNotificationCounts = useCallback(async () => {
     try {
       const [trainingRes, courseRes, ordersRes] = await Promise.all([
         fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getAll, { headers: getAuthHeaders() }),
@@ -87,7 +86,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
       // Check for authentication errors (401 Unauthorized)
       if (trainingRes.status === 401 || courseRes.status === 401 || ordersRes.status === 401) {
-        console.warn("Token expired or invalid, logging out");
         handleLogout();
         return;
       }
@@ -105,8 +103,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           const expiringRes = await fetch(API_CONFIG.ADMIN_FUNCTIONS.requests.training.getExpirationSoon, { headers: getAuthHeaders() });
           if (expiringRes.ok) {
             expiringData = await expiringRes.json();
-          } else if (expiringRes.status !== 404) {
-            console.warn("Expiring requests endpoint error:", expiringRes.status);
           }
         } catch {
           // ignore
@@ -128,16 +124,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         orders: ordersList.filter((order: any) => isPending(order.status) || isPending(order.order_status)).length || 0,
         expiringRequests: (Array.isArray(expiringData?.data) ? expiringData.data : []).length || 0,
       });
-      console.log("Notification data:", {
-        trainingRequests: trainingList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
-        courseRequests: courseList.filter((req: any) => isPending(req.status) || isPending(req.request_status)).length || 0,
-        orders: ordersList.filter((order: any) => isPending(order.status) || isPending(order.order_status)).length || 0,
-        expiringRequests: (Array.isArray(expiringData?.data) ? expiringData.data : []).length || 0,
-      });
     } catch (error) {
-      console.error("Error fetching notification counts:", error);
+      // Error handled silently in production
     }
-  };
+  }, [getAuthHeaders, handleLogout]);
+
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("adminAuth");
@@ -149,7 +140,6 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       // Validate token
       const isValid = await validateToken();
       if (!isValid) {
-        console.warn("Token validation failed, logging out");
         handleLogout();
         return;
       }
@@ -163,9 +153,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, validateToken, handleLogout, fetchNotificationCounts]);
 
-  const totalRequests = notifications.trainingRequests + notifications.courseRequests + notifications.orders;
+  const totalRequests = useMemo(() => 
+    notifications.trainingRequests + notifications.courseRequests + notifications.orders,
+    [notifications.trainingRequests, notifications.courseRequests, notifications.orders]
+  );
   // Always render the layout shell so the segment-wide loader can be shown
   return (
     <div className="min-h-screen bg-gray-50 relative flex flex-col">
@@ -184,7 +177,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold text-blue-600">FitPro Admin</h2>
+          <h2 className="text-xl font-bold text-blue-600">FitOrigin Admin</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -280,4 +273,5 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
- 
+export const AdminLayout = memo(AdminLayoutInner);
+AdminLayout.displayName = "AdminLayout";

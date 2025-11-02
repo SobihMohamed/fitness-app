@@ -108,7 +108,7 @@ export function OrdersSection({ orders, isLoading, onRefresh, onViewDetails }: O
                     </div>
                     <p className="text-sm text-gray-600 mb-1">{formatDate(order.created_at)}</p>
                     <p className="text-sm text-gray-800 mb-2">
-                      Total: <span className="font-semibold text-lg">${Number(order.total_price || 0).toFixed(2)}</span>
+                      Total: <span className="font-semibold text-lg">{Number(order.total_price || 0).toFixed(2)} EGP</span>
                     </p>
                     {Array.isArray(order.products) && order.products.length > 0 && (
                       <div className="text-sm text-gray-700">

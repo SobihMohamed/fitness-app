@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   BookOpen, 
   Clock, 
@@ -48,20 +47,10 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 rounded-xl p-8 mb-8 border border-gray-100"
-    >
+    <div className="bg-gradient-to-br from-primary/5 via-background to-secondary/5 rounded-xl p-8 mb-8 border border-gray-100">
       <div className="max-w-4xl">
         {/* Module Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="flex items-center gap-2 mb-4"
-        >
+        <div className="flex items-center gap-2 mb-4">
           <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">
             <BookOpen className="w-3 h-3 mr-1" />
             Module {module.order_number}
@@ -69,35 +58,24 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
           <Badge variant="outline" className="border-gray-200">
             {module.chapters?.length || 0} Chapters
           </Badge>
-        </motion.div>
+        </div>
 
         {/* Module Title */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+        <h1
           className="text-3xl lg:text-4xl font-bold text-foreground mb-4"
         >
           {module.title}
-        </motion.h1>
+        </h1>
 
         {/* Module Description */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
+        <p
           className="text-lg text-muted-foreground mb-8 leading-relaxed"
         >
           {module.description}
-        </motion.p>
+        </p>
 
         {/* Module Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6"
-        >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
               <Play className="w-5 h-5 text-primary" />
@@ -137,9 +115,9 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
               <p className="font-semibold">{formatDate(module.created_at)}</p>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 });
 

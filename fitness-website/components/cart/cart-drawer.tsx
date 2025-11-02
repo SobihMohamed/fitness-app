@@ -64,23 +64,30 @@ export function CartDrawer() {
           </SheetTitle>
         </SheetHeader>
 
-{(!items || items.length === 0) ? (
+        {!items || items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full space-y-4">
             <ShoppingCart className="h-16 w-16 text-muted" />
-            <p className="text-lg font-medium text-foreground">Your cart is empty</p>
-            <p className="text-sm text-center text-muted">Add some products to get started</p>
+            <p className="text-lg font-medium text-foreground">
+              Your cart is empty
+            </p>
+            <p className="text-sm text-center text-muted">
+              Add some products to get started
+            </p>
             {user ? (
               <Button asChild className="bg-primary" onClick={closeCart}>
                 <Link href="/products">Shop Now</Link>
               </Button>
             ) : (
-              <Button onClick={() => {
-                closeCart();
-                if (typeof window !== 'undefined') {
-                  const event = new CustomEvent('open-login-modal');
-                  window.dispatchEvent(event);
-                }
-              }} className="bg-primary">
+              <Button
+                onClick={() => {
+                  closeCart();
+                  if (typeof window !== "undefined") {
+                    const event = new CustomEvent("open-login-modal");
+                    window.dispatchEvent(event);
+                  }
+                }}
+                className="bg-primary"
+              >
                 Shop Now
               </Button>
             )}
@@ -89,7 +96,10 @@ export function CartDrawer() {
           <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto space-y-4 py-4">
               {items.map((item, idx) => (
-                <div key={`${String(item.id ?? "item")}-${idx}`} className="flex items-center space-x-4">
+                <div
+                  key={`${String(item.id ?? "item")}-${idx}`}
+                  className="flex items-center space-x-4"
+                >
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
                     <Image
                       src={getProxyImageUrl(item.image) || "/placeholder.svg"}
@@ -100,25 +110,36 @@ export function CartDrawer() {
                     />
                   </div>
                   <div className="flex-1 space-y-1">
-                    <h4 className="font-medium text-sm text-foreground">{item.name}</h4>
+                    <h4 className="font-medium text-sm text-foreground">
+                      {item.name}
+                    </h4>
                     <p className="text-xs text-muted">{item.category}</p>
-                    <p className="font-bold text-sm text-primary">${Number(item.price ?? 0).toFixed(2)}</p>
+                    <p className="font-bold text-sm text-primary">
+                      {Number(item.price ?? 0).toFixed(2)} EGP
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 bg-transparent"
-                      onClick={() => handleDecrease(item.id, item.quantity, item.name)}
+                      onClick={() =>
+                        handleDecrease(item.id, item.quantity, item.name)
+                      }
                     >
                       <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                    <span className="w-8 text-center text-sm font-medium">
+                      {item.quantity}
+                    </span>
                     <Button
                       variant="outline"
                       size="icon"
                       className="h-8 w-8 bg-transparent"
-                      onClick={() => { updateQuantity(item.id, item.quantity + 1); toast("Quantity increased") }}
+                      onClick={() => {
+                        updateQuantity(item.id, item.quantity + 1);
+                        toast("Quantity increased");
+                      }}
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
@@ -137,8 +158,12 @@ export function CartDrawer() {
 
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center justify-between">
-                <span className="text-lg font-medium text-foreground">Total:</span>
-                <span className="text-xl font-bold text-primary">{total.toFixed(2)} EGP</span>
+                <span className="text-lg font-medium text-foreground">
+                  Total:
+                </span>
+                <span className="text-xl font-bold text-primary">
+                  {total.toFixed(2)} EGP
+                </span>
               </div>
               <div>
                 <Button className="w-full bg-primary" onClick={closeCart}>
@@ -150,5 +175,5 @@ export function CartDrawer() {
         )}
       </SheetContent>
     </Sheet>
-  )
+  );
 }

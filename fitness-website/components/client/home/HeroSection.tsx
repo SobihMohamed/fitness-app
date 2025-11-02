@@ -1,23 +1,18 @@
 "use client";
 
-import React from "react";
+import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { SectionWrapper, PrimaryButton } from "@/components/common";
+import { Button } from "@/components/ui/button";
 import { Play, ArrowRight, TrendingUp } from "lucide-react";
-import { motion } from "framer-motion";
 import type { HeroSectionProps } from "@/types/home";
 
-const HeroSection = React.memo<HeroSectionProps>(({ isVisible, heroImageSrc }) => {
+const HeroSection = React.memo(function HeroSection({ isVisible, heroImageSrc }: HeroSectionProps) {
   return (
-    <SectionWrapper backgroundColor="white" className="relative py-20 lg:py-32">
-        <motion.div 
-          className="grid lg:grid-cols-2 gap-12 items-center" 
-          initial={{ opacity: 0, y: 20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.6 }}
-        >
+    <section className="relative py-20 lg:py-32 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div
             className={`space-y-8 transition-all duration-1000 ${
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
@@ -39,18 +34,18 @@ const HeroSection = React.memo<HeroSectionProps>(({ isVisible, heroImageSrc }) =
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <PrimaryButton asChild size="lg" className="text-lg px-8">
-                <Link href="/courses" className="inline-flex items-center">
+              <Link href="/courses">
+                <Button size="lg" className="text-lg px-8 bg-blue-600 hover:bg-blue-700 text-white inline-flex items-center">
                   Start Your Journey
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </PrimaryButton>
-              <PrimaryButton asChild size="lg" variant="outline" className="text-lg px-8">
-                <Link href="/about" className="inline-flex items-center">
+                </Button>
+              </Link>
+              <Link href="/about">
+                <Button size="lg" variant="outline" className="text-lg px-8 inline-flex items-center">
                   <Play className="mr-2 h-5 w-5" />
                   Watch Demo
-                </Link>
-              </PrimaryButton>
+                </Button>
+              </Link>
             </div>
 
             <div className="flex items-center space-x-8 pt-8">
@@ -117,8 +112,9 @@ const HeroSection = React.memo<HeroSectionProps>(({ isVisible, heroImageSrc }) =
               </div>
             </div>
           </div>
-        </motion.div>
-    </SectionWrapper>
+        </div>
+      </div>
+    </section>
   );
 });
 

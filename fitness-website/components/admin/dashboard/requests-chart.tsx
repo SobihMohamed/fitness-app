@@ -18,7 +18,6 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import { motion } from "framer-motion";
 import { RequestsChartProps } from "@/types";
 
 export const RequestsChart = React.memo<RequestsChartProps>(({ 
@@ -26,11 +25,7 @@ export const RequestsChart = React.memo<RequestsChartProps>(({
   isMounted 
 }) => {
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 8 }} 
-      animate={{ opacity: 1, y: 0 }} 
-      transition={{ duration: 0.4 }}
-    >
+    <div>
       <Card className="bg-white shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
         <CardHeader>
           <CardTitle className="text-gray-900">Requests Over Time</CardTitle>
@@ -66,7 +61,7 @@ export const RequestsChart = React.memo<RequestsChartProps>(({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   TrendingUp, 
   Clock, 
@@ -74,12 +73,7 @@ const ModuleProgressSection = React.memo<ModuleProgressSectionProps>(({
   const status = getProgressStatus();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Progress Overview */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
@@ -226,7 +220,7 @@ const ModuleProgressSection = React.memo<ModuleProgressSectionProps>(({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 
