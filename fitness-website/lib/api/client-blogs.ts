@@ -121,7 +121,23 @@ const normalizeBlog = (raw: any): BlogPost => {
   if (createdAtVal && typeof createdAtVal === "object" && createdAtVal?.date) {
     createdAtVal = createdAtVal.date; // common PHP date object shape
   }
-  const createdAt = String(createdAtVal || new Date().toISOString());
+  
+  // Validate and normalize the date
+  let createdAt = "";
+  if (createdAtVal) {
+    const testDate = new Date(createdAtVal);
+    if (!isNaN(testDate.getTime())) {
+      createdAt = testDate.toISOString();
+    } else {
+      // Invalid date, use current date as fallback
+      createdAt = new Date().toISOString();
+      if (process.env.NODE_ENV !== "production") {
+        devLog("Invalid date value detected:", createdAtVal, "for blog:", id);
+      }
+    }
+  } else {
+    createdAt = new Date().toISOString();
+  }
 
   // Final fallbacks
   // Try to extract first image from HTML content when featured image is missing

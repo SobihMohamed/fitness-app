@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { cachedCoursesApi } from "@/lib/api/cached-courses";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -57,30 +58,50 @@ export function useCourseDetails(courseId: string) {
     error: null,
   });
 
-  // Fetch course details
+  // Fetch course details using cached API for instant loading
   const fetchCourseDetails = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       
-      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.getById(courseId));
-      const data = await response.json();
+      const courseData = await cachedCoursesApi.fetchCourseById(courseId);
       
-      if (data.status === "success") {
+      // Handle null response (authentication required)
+      if (!courseData) {
         setState(prev => ({ 
           ...prev, 
-          course: data.Course,
-          loading: false 
+          course: null,
+          loading: false,
+          error: "Please log in to view course details" 
         }));
-      } else {
-        throw new Error(data.message || "Failed to fetch course details");
+        return;
       }
-    } catch (error: any) {
-      console.error("Error fetching course details:", error);
+      
       setState(prev => ({ 
         ...prev, 
-        loading: false, 
-        error: error.message || "Failed to load course details" 
+        course: courseData.Course || courseData,
+        loading: false 
       }));
+    } catch (error: any) {
+      // Handle authentication errors silently
+      const isAuthError = error?.response?.status === 401 || 
+                          error?.message?.includes("401") || 
+                          error?.message?.includes("Unauthorized");
+      
+      if (isAuthError) {
+        console.info("Course details require authentication");
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: "Please log in to view course details" 
+        }));
+      } else {
+        console.error("Error fetching course details:", error);
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: error.message || "Failed to load course details" 
+        }));
+      }
     }
   }, [courseId]);
 

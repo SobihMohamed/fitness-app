@@ -16,19 +16,19 @@ import type {
 import { Loader2 } from "lucide-react";
 
 // Lazy load heavy components for better performance
-const CourseHeader = dynamic(() => import("@/components/admin/courses/course-header").then(mod => ({ default: mod.CourseHeader })), { 
+const CourseHeader = dynamic(() => import("@/components/admin/courses/course-header").then(mod => mod.CourseHeader), { 
   loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" />
 });
-const ModulesAccordion = dynamic(() => import("@/components/admin/courses/modules-accordion").then(mod => ({ default: mod.ModulesAccordion })), { 
+const ModulesAccordion = dynamic(() => import("@/components/admin/courses/modules-accordion").then(mod => mod.ModulesAccordion), { 
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ModuleForm = dynamic(() => import("@/components/admin/courses/module-form").then(mod => ({ default: mod.ModuleForm })), { 
+const ModuleForm = dynamic(() => import("@/components/admin/courses/module-form").then(mod => mod.ModuleForm), { 
   loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ChapterForm = dynamic(() => import("@/components/admin/courses/chapter-form").then(mod => ({ default: mod.ChapterForm })), { 
+const ChapterForm = dynamic(() => import("@/components/admin/courses/chapter-form").then(mod => mod.ChapterForm), { 
   loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
 });
-const CourseDetailsDeleteConfirmation = dynamic(() => import("@/components/admin/courses/course-details-delete-confirmation").then(mod => ({ default: mod.CourseDetailsDeleteConfirmation })), { 
+const CourseDetailsDeleteConfirmation = dynamic(() => import("@/components/admin/courses/course-details-delete-confirmation").then(mod => mod.CourseDetailsDeleteConfirmation), { 
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
 

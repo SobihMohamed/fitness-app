@@ -4,7 +4,6 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface CoursesFilterSectionProps {
   searchTerm: string;
@@ -20,12 +19,7 @@ const CoursesFilterSection = React.memo<CoursesFilterSectionProps>(({
   onSortChange,
 }) => {
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="py-8 bg-background border-b border-gray-100"
-    >
+    <section className="py-8 bg-gray-50 border-y sticky top-16 z-10 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           {/* Search Input */}
@@ -36,7 +30,7 @@ const CoursesFilterSection = React.memo<CoursesFilterSectionProps>(({
               placeholder="Search courses..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full border-gray-200 focus:border-primary focus:ring-primary"
+              className="pl-10 h-12 bg-white border-gray-200 focus:border-blue-600 focus:ring-blue-600/20 transition-all"
             />
           </div>
 
@@ -47,7 +41,7 @@ const CoursesFilterSection = React.memo<CoursesFilterSectionProps>(({
               <span>Sort by:</span>
             </div>
             <Select value={sortBy} onValueChange={onSortChange}>
-              <SelectTrigger className="w-48 border-gray-200">
+              <SelectTrigger className="w-48 h-12 bg-white border-gray-200 hover:border-gray-300 transition-colors">
                 <SelectValue placeholder="Sort by..." />
               </SelectTrigger>
               <SelectContent>
@@ -61,7 +55,7 @@ const CoursesFilterSection = React.memo<CoursesFilterSectionProps>(({
           </div>
         </div>
       </div>
-    </motion.section>
+    </section>
   );
 });
 

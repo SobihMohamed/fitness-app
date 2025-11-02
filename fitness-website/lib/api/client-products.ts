@@ -64,7 +64,6 @@ export const clientProductsApi = {
 
       return rawData.map(this.normalizeProductData);
     } catch (error: any) {
-      console.error("Error fetching products:", error);
       throw new Error(
         error.response?.data?.message ||
         (params.searchKeyword
@@ -141,7 +140,6 @@ export const clientProductsApi = {
         updated_at: productData.updated_at || "",
       };
     } catch (error: any) {
-      console.error("Error fetching product:", error);
       throw new Error(error.response?.data?.message || "Failed to load product");
     }
   },
@@ -169,7 +167,6 @@ export const clientProductsApi = {
         )
         .slice(0, 4);
     } catch (error) {
-      console.error("Error fetching related products:", error);
       return [];
     }
   },
@@ -184,7 +181,6 @@ export const clientProductsApi = {
       const rawData = result.data || result.categories || result || [];
       return rawData.map(this.normalizeCategoryData);
     } catch (error: any) {
-      console.error("Error fetching categories:", error);
       throw new Error("Failed to load categories");
     }
   },

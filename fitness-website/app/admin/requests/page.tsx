@@ -9,12 +9,12 @@ import type { RequestSection } from "@/types";
 
 // Lazy load heavy components for better performance
 const RequestsHeader = dynamic(
-  () => import("@/components/admin/requests").then((mod) => ({ default: mod.RequestsHeader })),
+  () => import("@/components/admin/requests").then((mod) => mod.RequestsHeader),
   { loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" /> }
 );
 
 const RequestsTable = dynamic(
-  () => import("@/components/admin/requests").then((mod) => ({ default: mod.RequestsTable })),
+  () => import("@/components/admin/requests").then((mod) => mod.RequestsTable),
   { loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" /> }
 );
  

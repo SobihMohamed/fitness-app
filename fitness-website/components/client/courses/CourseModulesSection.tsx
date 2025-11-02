@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { motion } from "framer-motion";
 import { 
   BookOpen, 
   ChevronDown, 
@@ -85,11 +84,7 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.4 }}
-    >
+    <div>
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
@@ -150,11 +145,8 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
             {modules
               .sort((a, b) => a.order_number - b.order_number)
               .map((module, moduleIndex) => (
-                <motion.div
+                <div
                   key={module.module_id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: moduleIndex * 0.1 }}
                 >
                   <Collapsible
                     open={openModules.has(module.module_id)}
@@ -205,11 +197,8 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
                             {module.chapters
                               .sort((a, b) => a.order_number - b.order_number)
                               .map((chapter, chapterIndex) => (
-                                <motion.div
+                                <div
                                   key={chapter.chapter_id}
-                                  initial={{ opacity: 0, x: -20 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ duration: 0.3, delay: chapterIndex * 0.05 }}
                                 >
                                   {isEnrolled && enrollmentStatus === 'approved' ? (
                                     <Link
@@ -257,7 +246,7 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
                                       </div>
                                     </div>
                                   )}
-                                </motion.div>
+                                </div>
                               ))}
                           </div>
                         ) : (
@@ -291,12 +280,12 @@ const CourseModulesSection = React.memo<CourseModulesSectionProps>(({ modules, c
                       </div>
                     </CollapsibleContent>
                   </Collapsible>
-                </motion.div>
+                </div>
               ))}
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

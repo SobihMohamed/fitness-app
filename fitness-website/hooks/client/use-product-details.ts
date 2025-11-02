@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { clientProductsApi } from "@/lib/api/client-products";
+import { cachedProductsApi } from "@/lib/api/cached-client";
 import { toast } from "sonner";
+import { useCart } from "@/contexts/cart-context";
+import { getFullImageUrl } from "@/lib/images";
 import type { 
   ClientProduct, 
   ClientCategory, 
@@ -14,6 +16,7 @@ import type {
 const FAVORITES_KEY = "product_favorites";
 
 export function useProductDetails(productId: string): UseProductDetailsReturn {
+  const { addItem } = useCart();
   const [state, setState] = useState<ProductDetailsState>({
     product: null,
     category: null,
@@ -57,8 +60,8 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
     
     try {
       const [product, categories] = await Promise.all([
-        clientProductsApi.fetchProductById(productId),
-        clientProductsApi.fetchCategories().catch(() => [])
+        cachedProductsApi.fetchProductById(productId),
+        cachedProductsApi.fetchCategories().catch(() => [])
       ]);
 
       const category = categories.find(c => c.category_id === product.category_id) || null;
@@ -67,7 +70,7 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
       let relatedProducts: ClientProduct[] = [];
       if (category) {
         try {
-          relatedProducts = await clientProductsApi.fetchRelatedProducts(
+          relatedProducts = await cachedProductsApi.fetchRelatedProducts(
             category.category_id, 
             product.product_id
           );
@@ -138,40 +141,19 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
   const handleAddToCart = useCallback(() => {
     if (!state.product) return;
 
-    try {
-      // Get existing cart from localStorage
-      const existingCart = localStorage.getItem("cart");
-      let cart: Array<{ product: ClientProduct; quantity: number }> = [];
-      
-      if (existingCart) {
-        const parsed = JSON.parse(existingCart);
-        // Ensure cart is always an array
-        cart = Array.isArray(parsed) ? parsed : [];
-      }
-
-      // Check if product already exists in cart
-      const existingItemIndex = cart.findIndex(item => item.product.product_id === state.product!.product_id);
-      
-      if (existingItemIndex >= 0) {
-        // Update quantity
-        cart[existingItemIndex].quantity += state.quantity;
-      } else {
-        // Add new item
-        cart.push({
-          product: state.product,
-          quantity: state.quantity
-        });
-      }
-
-      // Save to localStorage
-      localStorage.setItem("cart", JSON.stringify(cart));
-      
-      toast.success(`Added ${state.product.name} to cart!`);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-      toast.error("Failed to add item to cart");
+    // Respect selected quantity. Cart addItem adds 1 per call, so call N times.
+    // Toasts in cart-context use stable IDs, so duplicates won't stack.
+    for (let i = 0; i < Math.max(1, state.quantity); i++) {
+      addItem({
+        id: state.product.product_id.toString(),
+        name: state.product.name,
+        price: state.product.price,
+        image: getFullImageUrl(state.product.image_url || ""),
+        stock: state.product.stock_quantity,
+        category: state.category?.name,
+      });
     }
-  }, [state.product, state.quantity]);
+  }, [addItem, state.product, state.quantity, state.category?.name]);
 
   // Toggle favorite
   const toggleFavorite = useCallback(() => {

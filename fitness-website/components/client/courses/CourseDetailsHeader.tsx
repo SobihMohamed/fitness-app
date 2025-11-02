@@ -5,7 +5,6 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { getProxyImageUrl } from "@/lib/images";
 import { formatNumber } from "@/utils/format";
-import { motion } from "framer-motion";
 import { 
   Clock, 
   Users, 
@@ -82,12 +81,7 @@ const CourseDetailsHeader = React.memo<CourseDetailsHeaderProps>(({ course }) =>
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8"
-    >
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Course Image */}
         <div className="relative">
@@ -122,11 +116,7 @@ const CourseDetailsHeader = React.memo<CourseDetailsHeaderProps>(({ course }) =>
 
         {/* Course Info */}
         <div className="p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          <div>
             <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
               {course.title}
             </h1>
@@ -211,10 +201,10 @@ const CourseDetailsHeader = React.memo<CourseDetailsHeaderProps>(({ course }) =>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 });
 

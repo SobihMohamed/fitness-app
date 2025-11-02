@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { cachedProductsApi } from "@/lib/api/cached-client";
+import { cachedCoursesApi } from "@/lib/api/cached-courses";
 import { API_CONFIG } from "@/config/api";
 import { useCart } from "@/contexts/cart-context";
 import { useRouter } from "next/navigation";
@@ -142,55 +144,56 @@ export function useHomeData(params: UseHomeDataParams = {}): UseHomeDataReturn {
   const [isLoadingProducts, setIsLoadingProducts] = useState<boolean>(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(false);
 
-  const productsUrl = API_CONFIG.USER_FUNCTIONS.products.getAll;
-  const coursesUrl = API_CONFIG.USER_FUNCTIONS.courses.getAll;
 
   const fetchFeaturedProducts = useCallback(async () => {
     setIsLoadingProducts(true);
     try {
-      const res = await fetch(productsUrl, { method: "GET" });
-      if (!res.ok) throw new Error(`Products fetch failed: ${res.status}`);
-      const data = await res.json();
-
-      // Support different response shapes: {data: [...]}, {products: [...]}, or array
-      const list: any[] = Array.isArray(data)
-        ? data
-        : (data?.data ?? data?.products ?? []);
-
-      const normalized = list.slice(0, 8).map(normalizeProduct);
+      // Use cached API for instant data access
+      const data = await cachedProductsApi.fetchProducts();
+      const normalized = data.slice(0, 3).map((item: any) => normalizeProduct(item));
       if (normalized.length > 0) setFeaturedProducts(normalized);
     } catch (err) {
       if (process.env.NODE_ENV !== "production") {
         console.info("[Home] Featured products unavailable. Using initial/fallback.", err);
       }
-      if (initialFeaturedProducts.length > 0) setFeaturedProducts(initialFeaturedProducts);
+      if (initialFeaturedProducts.length > 0) setFeaturedProducts(initialFeaturedProducts.slice(0, 3));
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [productsUrl, initialFeaturedProducts]);
+  }, [initialFeaturedProducts]);
 
   const fetchFeaturedCourses = useCallback(async () => {
     setIsLoadingCourses(true);
     try {
-      const res = await fetch(coursesUrl, { method: "GET" });
-      if (!res.ok) throw new Error(`Courses fetch failed: ${res.status}`);
-      const data = await res.json();
-
-      const list: any[] = Array.isArray(data)
-        ? data
-        : (data?.data ?? data?.courses ?? []);
-
-      const normalized = list.slice(0, 8).map(normalizeCourse);
+      // Use cached API for instant data access
+      const data = await cachedCoursesApi.fetchCourses();
+      const normalized = data.slice(0, 3).map((item: any) => normalizeCourse(item));
       if (normalized.length > 0) setFeaturedCourses(normalized);
-    } catch (err) {
-      if (process.env.NODE_ENV !== "production") {
-        console.info("[Home] Featured courses unavailable. Using initial/fallback.", err);
+      else if (initialFeaturedCourses.length > 0) setFeaturedCourses(initialFeaturedCourses.slice(0, 3));
+      else setFeaturedCourses([]); // Set empty array if no courses available
+    } catch (err: any) {
+      // Handle all errors silently for courses - they may require authentication
+      // Don't log errors or show any warnings to users
+      const isAuthError = err?.response?.status === 401 || 
+                          err?.message?.includes("401") || 
+                          err?.message?.includes("Unauthorized");
+      
+      if (isAuthError && process.env.NODE_ENV !== "production") {
+        console.info("[Home] Courses require authentication - showing empty state");
+      } else if (process.env.NODE_ENV !== "production") {
+        console.info("[Home] Featured courses unavailable - showing fallback");
       }
-      if (initialFeaturedCourses.length > 0) setFeaturedCourses(initialFeaturedCourses);
+      
+      // Use fallback or show empty state without errors
+      if (initialFeaturedCourses.length > 0) {
+        setFeaturedCourses(initialFeaturedCourses.slice(0, 3));
+      } else {
+        setFeaturedCourses([]);
+      }
     } finally {
       setIsLoadingCourses(false);
     }
-  }, [coursesUrl, initialFeaturedCourses]);
+  }, [initialFeaturedCourses]);
 
   useEffect(() => {
     // Kick off both fetches in parallel

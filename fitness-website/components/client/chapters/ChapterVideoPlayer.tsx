@@ -4,7 +4,6 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   Play, 
   Pause, 
@@ -135,12 +134,7 @@ const ChapterVideoPlayer = React.memo<ChapterVideoPlayerProps>(({
   }, [onVideoEnd]);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="mb-6"
-    >
+    <div className="mb-6">
       <Card className="border-gray-100 shadow-sm overflow-hidden">
         <CardContent className="p-0">
           {/* Chapter Info Header */}
@@ -301,7 +295,7 @@ const ChapterVideoPlayer = React.memo<ChapterVideoPlayerProps>(({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

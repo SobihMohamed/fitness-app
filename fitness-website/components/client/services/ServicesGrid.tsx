@@ -19,7 +19,7 @@ export const ServicesGrid = memo(function ServicesGrid({ services }: ServicesGri
 
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {list.map((service) => {
+      {list.map((service, index) => {
         const isPopular = !!service.popular
         const n = typeof service.price === "number" ? service.price : Number(service.price)
         const priceText = `${(isNaN(n) ? 0 : n).toFixed(2)} EGP`
@@ -35,11 +35,12 @@ export const ServicesGrid = memo(function ServicesGrid({ services }: ServicesGri
                 {service.image ? (
                   <Image
                     src={getProxyImageUrl(service.image || undefined) || "/placeholder.svg"}
-                    alt={service.title}
+                    alt={service?.title ? `${service.title} service image` : "Service image"}
                     width={800}
                     height={400}
                     className="w-full h-48 object-cover transform transition-transform duration-300 group-hover:scale-[1.03]"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={index < 3}
                   />
                 ) : (
                   <div className="w-full h-48 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">

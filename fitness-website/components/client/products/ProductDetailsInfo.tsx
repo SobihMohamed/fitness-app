@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ShoppingCart, Heart, Star, Share2, Plus, Minus, Truck, Shield, RotateCcw } from "lucide-react";
 import { ProtectedAction } from "@/components/auth/Protected-Route";
-import { PrimaryButton } from "@/components/common";
 import type { ProductDetailsInfoProps } from "@/types";
 
 const ProductDetailsInfo = React.memo<ProductDetailsInfoProps>(({

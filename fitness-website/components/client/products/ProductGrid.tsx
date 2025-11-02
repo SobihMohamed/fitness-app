@@ -3,7 +3,9 @@
 import React from "react";
 import { Search } from "lucide-react";
 import ProductCard from "./ProductCard";
-import { CardSkeleton, PrimaryButton } from "@/components/common";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import type { ProductGridProps } from "@/types";
 
 const ProductGrid = React.memo<ProductGridProps>(({
@@ -24,7 +26,19 @@ const ProductGrid = React.memo<ProductGridProps>(({
         {Array(12)
           .fill(0)
           .map((_, index) => (
-            <CardSkeleton key={`skeleton-${index}`} />
+            <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+              <CardHeader className="p-0">
+                <Skeleton className="w-full h-48 rounded-t-lg" />
+              </CardHeader>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
       </div>
     );
@@ -43,9 +57,9 @@ const ProductGrid = React.memo<ProductGridProps>(({
           <p className="text-muted mb-6">
             Try adjusting your search terms or filters to find what you're looking for.
           </p>
-          <PrimaryButton onClick={handleClearFilters} variant="outline">
+          <Button onClick={handleClearFilters} variant="outline">
             Clear Filters
-          </PrimaryButton>
+          </Button>
         </div>
       </div>
     );

@@ -1,11 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { RequestsChartProps, RolesChartProps, OrderStatisticsProps } from "@/types";
 
-// Dynamic imports for heavy chart components to prevent hydration mismatches
-export const DynamicRequestsChart = dynamic(
-  () => import("./requests-chart").then((mod) => ({ default: mod.RequestsChart })),
+// Simplified dynamic imports for heavy chart components
+// Using standard Next.js dynamic() pattern to avoid webpack module issues
+export const RequestsChartDynamic = dynamic(
+  () => import("./requests-chart").then((mod) => mod.RequestsChart),
   {
     ssr: false,
     loading: () => (
@@ -18,8 +18,8 @@ export const DynamicRequestsChart = dynamic(
   }
 );
 
-export const DynamicRolesChart = dynamic(
-  () => import("./roles-chart").then((mod) => ({ default: mod.RolesChart })),
+export const RolesChartDynamic = dynamic(
+  () => import("./roles-chart").then((mod) => mod.RolesChart),
   {
     ssr: false,
     loading: () => (
@@ -32,8 +32,8 @@ export const DynamicRolesChart = dynamic(
   }
 );
 
-export const DynamicOrderStatistics = dynamic(
-  () => import("./order-statistics").then((mod) => ({ default: mod.OrderStatistics })),
+export const OrderStatisticsDynamic = dynamic(
+  () => import("./order-statistics").then((mod) => mod.OrderStatistics),
   {
     ssr: false,
     loading: () => (
@@ -45,8 +45,3 @@ export const DynamicOrderStatistics = dynamic(
     ),
   }
 );
-
-// Type the dynamic components
-export const RequestsChartDynamic = DynamicRequestsChart as React.ComponentType<RequestsChartProps>;
-export const RolesChartDynamic = DynamicRolesChart as React.ComponentType<RolesChartProps>;
-export const OrderStatisticsDynamic = DynamicOrderStatistics as React.ComponentType<OrderStatisticsProps>;
