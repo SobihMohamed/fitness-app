@@ -106,7 +106,6 @@ const ProductsPage = React.memo(() => {
     filteredCount: filteredProducts?.length || 0,
     favoriteCount: favorites?.size || 0
   }), [products, categories, filteredProducts, favorites]);
-
   // Show loading state with modern design
   if (loading) {
     return (
@@ -118,7 +117,7 @@ const ProductsPage = React.memo(() => {
           </div>
         </div>
       </div>
-    );
+    ); 
   }
 
   return (
