@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -159,12 +158,7 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Price Card */}
       <Card className="border-gray-100 shadow-lg sticky top-24">
         <CardHeader className="text-center pb-4">
@@ -373,7 +367,7 @@ const CourseEnrollmentSection = React.memo<CourseEnrollmentSectionProps>(({ cour
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 });
 

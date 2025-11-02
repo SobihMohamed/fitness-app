@@ -4,13 +4,10 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import axios from "axios"
 import { API_CONFIG } from "@/config/api"
 
-// ────────────────────────────────────────────────────────────────
-// 0) API endpoints
+// API endpoints
 const AUTH_API = API_CONFIG.USER_FUNCTIONS.auth
 
-// ────────────────────────────────────────────────────────────────
-// 1) Shape of user data (returned from your API)
-// ────────────────────────────────────────────────────────────────
+// Shape of user data (returned from your API)
 interface User {
   id: string
   name: string
@@ -24,9 +21,7 @@ interface User {
   // add any other fields your API returns
 }
 
-// ────────────────────────────────────────────────────────────────
-// 2) What the AuthContext provides
-// ────────────────────────────────────────────────────────────────
+// What the AuthContext provides
 interface AuthContextType {
   user: User | null
   isLoading: boolean
@@ -48,15 +43,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// ────────────────────────────────────────────────────────────────
-// 3) Provider component
-// ────────────────────────────────────────────────────────────────
+// Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // On mount, try to load user from sessionStorage or re‑validate session
+  // Local helper for client-side logout (no server call)
+  const performClientLogout = () => {
+    setUser(null)
+    try {
+      sessionStorage.removeItem("user")
+      sessionStorage.removeItem("token")
+      
+      // Clear all cached data to prevent stale data and 401 errors
+      if (typeof window !== 'undefined') {
+        const { dataCache } = require('@/lib/cache')
+        dataCache.clear()
+      }
+    } catch {}
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try { localStorage.removeItem("cart") } catch {}
+    }
+  }
+
+  // On mount, try to load user from sessionStorage or re-validate session
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -76,9 +87,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth()
   }, [])
 
-  // ────────────────────────────────────────────────────────────────
+
   // LOGIN
-  // ────────────────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
     setIsLoading(true)
     try {
@@ -108,6 +118,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.setItem("user", JSON.stringify(normalizedUser))
         sessionStorage.setItem("token", res.data.token)
         
+        // Refresh the page to update all components with new auth state
+        setTimeout(() => {
+          window.location.reload()
+        }, 100)
+        
         return { success: true, message: res.data.message || "Login successful" }
       }
       
@@ -123,9 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
   // REGISTER
-  // ────────────────────────────────────────────────────────────────
   const register = async (
     name: string,
     email: string,
@@ -181,9 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
   // FORGET PASSWORD (send OTP)
-  // ────────────────────────────────────────────────────────────────
   const forgetPassword = async (email: string) => {
     setIsLoading(true)
     try {
@@ -207,9 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
   // VERIFY OTP & RESET PASSWORD
-  // ────────────────────────────────────────────────────────────────
   const verifyOtp = async (email: string, otp: string, newPassword: string) => {
     setIsLoading(true)
     try {
@@ -233,9 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────
   // LOGOUT
-  // ────────────────────────────────────────────────────────────────
   const logout = async () => {
     setIsLoading(true)
     try {
@@ -253,14 +260,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout error:", error)
       // Continue with client-side logout even if server logout fails
     } finally {
-      setUser(null)
-      sessionStorage.removeItem("user")
-      sessionStorage.removeItem("token")
-      // Safely remove cart data if localStorage is available
-      if (typeof window !== 'undefined' && window.localStorage) {
-        localStorage.removeItem("cart")
-      }
+      performClientLogout()
       setIsLoading(false)
+      
+      // Refresh the page to clear all cached data and update components
+      setTimeout(() => {
+        window.location.reload()
+      }, 100)
     }
   }
 
@@ -273,9 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
-// ────────────────────────────────────────────────────────────────
 // Custom hook to consume the AuthContext
-// ────────────────────────────────────────────────────────────────
 export function useAuth(): AuthContextType {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error("useAuth must be used within AuthProvider")

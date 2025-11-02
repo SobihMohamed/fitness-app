@@ -6,11 +6,9 @@ import { useHomeData } from "@/hooks/client/use-home-data";
 import FeaturesSection from "@/components/client/home/FeaturesSection";
 import StatsSection from "@/components/client/home/StatsSection";
 import CTASection from "@/components/client/home/CTASection";
-import { 
-  HeroSectionDynamic, 
-  FeaturedCoursesSectionDynamic, 
-  FeaturedProductsSectionDynamic 
-} from "@/components/client/home/dynamic-components";
+import HeroSection from "@/components/client/home/HeroSection";
+import FeaturedCoursesSection from "@/components/client/home/FeaturedCoursesSection";
+import FeaturedProductsSection from "@/components/client/home/FeaturedProductsSection";
 import type { HomePageProps, Feature, Stat } from "@/types";
 
 
@@ -95,8 +93,8 @@ const HomePage = React.memo<HomePageProps>(({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Hero Section - Dynamic import for performance */}
-      <HeroSectionDynamic 
+      {/* Hero Section - Critical above-the-fold content */}
+      <HeroSection 
         isVisible={isVisible} 
         heroImageSrc={heroImageSrc} 
       />
@@ -107,15 +105,15 @@ const HomePage = React.memo<HomePageProps>(({
       {/* Stats Section - Memoized component */}
       <StatsSection stats={stats} />
 
-      {/* Featured Courses - Dynamic import for performance */}
-      <FeaturedCoursesSectionDynamic 
+      {/* Featured Courses */}
+      <FeaturedCoursesSection 
         courses={featuredCourses}
         isLoading={isLoadingCourses}
         onEnrollment={handleCourseEnrollment}
       />
 
-      {/* Featured Products - Dynamic import for performance */}
-      <FeaturedProductsSectionDynamic 
+      {/* Featured Products */}
+      <FeaturedProductsSection 
         products={featuredProducts}
         isLoading={isLoadingProducts}
         onAddToCart={handleAddToCart}

@@ -1,29 +1,23 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { SectionHeaderSkeleton, GridSkeleton, HeroSkeleton, SectionWrapper } from "@/components/common";
 
 // Loading component for sections
 const SectionLoadingFallback = () => (
-  <SectionWrapper>
-    <SectionHeaderSkeleton />
-    <GridSkeleton count={3} />
-  </SectionWrapper>
-);
-
-// Loading component for hero section
-const HeroLoadingFallback = () => (
-  <SectionWrapper backgroundColor="white" className="relative py-20 lg:py-32">
-    <HeroSkeleton />
-  </SectionWrapper>
+  <div className="py-20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+    </div>
+  </div>
 );
 
 // Dynamic imports for heavy components with SSR disabled
+// Note: Hero section is imported directly in page.tsx as it's critical above-the-fold content
 export const FeaturedCoursesSectionDynamic = dynamic(
   () => import("./FeaturedCoursesSection"),
   {
     ssr: false,
-    loading: SectionLoadingFallback
+    loading: () => <SectionLoadingFallback />
   }
 );
 
@@ -31,15 +25,6 @@ export const FeaturedProductsSectionDynamic = dynamic(
   () => import("./FeaturedProductsSection"),
   {
     ssr: false,
-    loading: SectionLoadingFallback
-  }
-);
-
-// Hero section with motion animations - dynamic import to prevent hydration issues
-export const HeroSectionDynamic = dynamic(
-  () => import("./HeroSection"),
-  {
-    ssr: false,
-    loading: HeroLoadingFallback
+    loading: () => <SectionLoadingFallback />
   }
 );

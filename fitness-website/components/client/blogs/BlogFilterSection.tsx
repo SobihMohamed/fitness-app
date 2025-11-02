@@ -68,9 +68,9 @@ const BlogFilterSection = React.memo<BlogFilterSectionProps>(({
 
         {/* Categories */}
         <div className="flex flex-wrap gap-3 mt-6">
-          {categories.map((category, idx) => (
+          {categories.map((category) => (
             <Button
-              key={`${category.name}-${idx}`}
+              key={category.id || category.name}
               variant={selectedCategory === category.name ? "default" : "outline"}
               onClick={() => onCategoryChange(category.name)}
               className={`rounded-full transition-all duration-200 hover:scale-105 ${

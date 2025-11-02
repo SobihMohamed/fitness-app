@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { SectionWrapper } from "@/components/common";
 import type { StatsSectionProps } from "@/types/home";
 
 const StatsSection = React.memo<StatsSectionProps>(({ stats }) => {
   return (
-    <SectionWrapper backgroundColor="white" padding="md">
+    <section className="py-16 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat) => (
             <div key={stat.label} className="text-center">
@@ -22,8 +22,9 @@ const StatsSection = React.memo<StatsSectionProps>(({ stats }) => {
               <div style={{ color: "#6C757D" }}>{stat.label}</div>
             </div>
           ))}
+        </div>
       </div>
-    </SectionWrapper>
+    </section>
   );
 });
 

@@ -5,7 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CardSkeleton, SectionWrapper, SectionHeader, PrimaryButton } from "@/components/common";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProtectedAction } from "@/components/auth/Protected-Route";
 import { getProxyImageUrl } from "@/lib/images";
 import { formatNumber } from "@/utils/format";
@@ -25,17 +26,34 @@ const FeaturedCoursesSection = React.memo<FeaturedCoursesSectionProps>(({
   };
 
   return (
-    <SectionWrapper backgroundColor="gray">
-      <SectionHeader 
-        title="Featured Courses"
-        description="Expert-led fitness courses and training programs designed for all skill levels"
-      />
+    <section className="py-20 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl lg:text-4xl font-bold mb-4" style={{ color: "#212529" }}>
+            Featured Courses
+          </h2>
+          <p className="text-xl max-w-2xl mx-auto" style={{ color: "#6C757D" }}>
+            Expert-led fitness courses and training programs designed for all skill levels
+          </p>
+        </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {isLoading ? (
           // Loading skeletons using shared component
           Array(3).fill(0).map((_, index) => (
-            <CardSkeleton key={`skeleton-${index}`} />
+            <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+              <CardHeader className="p-0">
+                <Skeleton className="w-full h-48 rounded-t-lg" />
+              </CardHeader>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </CardContent>
+            </Card>
           ))
           ) : courses.length > 0 ? (
             courses.map((course, index) => (
@@ -89,10 +107,10 @@ const FeaturedCoursesSection = React.memo<FeaturedCoursesSectionProps>(({
                       {formatNumber(course.price)} EGP
                     </span>
                     <ProtectedAction onAction={() => onEnrollment(course)}>
-                      <PrimaryButton>
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                         <Play className="h-4 w-4 mr-2" />
                         Enroll Now
-                      </PrimaryButton>
+                      </Button>
                     </ProtectedAction>
                   </div>
                 </CardContent>
@@ -105,15 +123,16 @@ const FeaturedCoursesSection = React.memo<FeaturedCoursesSectionProps>(({
           )}
       </div>
 
-      <div className="text-center mt-12">
-        <PrimaryButton asChild variant="outline" size="lg">
-          <Link href="/courses" className="inline-flex items-center gap-2">
-            View All Courses
-            <ArrowRight className="h-5 w-5" />
+        <div className="text-center mt-12">
+          <Link href="/courses">
+            <Button variant="outline" size="lg" className="inline-flex items-center gap-2">
+              View All Courses
+              <ArrowRight className="h-5 w-5" />
+            </Button>
           </Link>
-        </PrimaryButton>
+        </div>
       </div>
-    </SectionWrapper>
+    </section>
   );
 });
 

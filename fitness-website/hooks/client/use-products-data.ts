@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { clientProductsApi } from "@/lib/api/client-products";
+import { cachedProductsApi } from "@/lib/api/cached-client";
 import type { ClientProduct, ClientCategory } from "@/types";
 
 // Local filter state used only inside this hook
@@ -43,7 +43,7 @@ export function useProductsData(): UseProductsDataReturnShape {
     sortBy: "",
     showFavoritesOnly: false,
     page: 1,
-    pageSize: 12,
+    pageSize: 6,
   });
 
   // Load favorites from localStorage once
@@ -96,8 +96,8 @@ export function useProductsData(): UseProductsDataReturnShape {
     setLoading(true);
     try {
       const [prods, cats] = await Promise.all([
-        clientProductsApi.fetchProducts(),
-        clientProductsApi.fetchCategories(),
+        cachedProductsApi.fetchProducts(),
+        cachedProductsApi.fetchCategories(),
       ]);
       setProducts(prods);
       setCategories(cats);

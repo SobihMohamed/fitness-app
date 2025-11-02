@@ -44,15 +44,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     case "ADD_ITEM": {
       const existingItemIndex = state.items.findIndex((item) => norm(item.id) === norm(action.payload.id))
       const item = action.payload
-      
-      // Check stock if available
-      if (item.stock !== undefined) {
-        const currentQuantity = existingItemIndex > -1 ? state.items[existingItemIndex].quantity : 0
-        if (currentQuantity >= item.stock) {
-          toast.error(`Sorry, only ${item.stock} items available in stock`)
-          return state
-        }
-      }
 
       let updatedItems
       if (existingItemIndex > -1) {
@@ -65,7 +56,6 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       } else {
         // Item doesn't exist, add new item with quantity 1
         updatedItems = [...state.items, { ...item, quantity: 1 }]
-        toast.success(`${item.name} added to cart`)
       }
       
       // Calculate new total
@@ -87,15 +77,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
     case "UPDATE_QUANTITY": {
       const { id, quantity } = action.payload
-      
-      // Find the item to check stock if needed
-      const itemToUpdate = state.items.find(item => norm(item.id) === norm(id))
-      
-      if (itemToUpdate && itemToUpdate.stock !== undefined && quantity > itemToUpdate.stock) {
-        toast.error(`Sorry, only ${itemToUpdate.stock} items available in stock`)
-        return state
-      }
-      
+
       const updatedItems = state.items
         .map((item) => norm(item.id) === norm(id) ? { ...item, quantity } : item)
         .filter((item) => item.quantity > 0)
@@ -190,17 +172,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   useEffect(() => {
-    // Persist only cart items and total, not UI open state
-    if (state.items.length > 0) {
-      localStorage.setItem("cart", JSON.stringify({ items: state.items, total: state.total }))
-    } else {
-      // Clear storage when cart becomes empty
-      localStorage.removeItem("cart")
-    }
-  }, [state])
+    // Debounce cart persistence for better performance
+    const timeoutId = setTimeout(() => {
+      // Persist only cart items and total, not UI open state
+      if (state.items.length > 0) {
+        localStorage.setItem("cart", JSON.stringify({ items: state.items, total: state.total }))
+      } else {
+        // Clear storage when cart becomes empty
+        localStorage.removeItem("cart")
+      }
+    }, 300) // 300ms debounce
+    
+    return () => clearTimeout(timeoutId)
+  }, [state.items, state.total])
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
+    // Check stock and current quantity before dispatching
+    const existing = state.items.find((it) => norm(it.id) === norm(item.id))
+    const currentQty = existing ? existing.quantity : 0
+    const nextQty = currentQty + 1
+
+    if (typeof item.stock === "number" && nextQty > item.stock) {
+      toast.error(`Sorry, only ${item.stock} items available in stock`, { id: `stock-${norm(item.id)}` })
+      return
+    }
+
     dispatch({ type: "ADD_ITEM", payload: item })
+    toast.success(`${item.name} added to cart`, { id: `added-${norm(item.id)}` })
   }
 
   const removeItem = (id: string) => {

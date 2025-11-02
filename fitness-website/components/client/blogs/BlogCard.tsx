@@ -18,6 +18,21 @@ const BlogCard = React.memo<BlogCardProps>(({
   const displayCategoryName = categoryName || blog.categoryName || "General";
   const [imageOk, setImageOk] = React.useState(true);
   const imageSrc = React.useMemo(() => clientBlogApi.getImageUrl(blog.featuredImage) || null, [blog.featuredImage]);
+  const safeDate = React.useMemo(() => {
+    const val = blog.createdAt as any;
+    if (!val) return 'Recently';
+    const tryFmt = (s: string) => {
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d.toLocaleDateString();
+    };
+    // direct
+    let out = tryFmt(String(val));
+    if (out) return out;
+    // try space to T (e.g., '2024-11-02 15:10:00')
+    out = tryFmt(String(val).replace(' ', 'T'));
+    if (out) return out;
+    return 'Recently';
+  }, [blog.createdAt]);
 
   return (
     <Card
@@ -77,7 +92,7 @@ const BlogCard = React.memo<BlogCardProps>(({
                 <Calendar className="h-4 w-4 text-primary" />
               </div>
               <span className="font-medium">
-                {new Date(blog.createdAt).toLocaleDateString()}
+                {safeDate}
               </span>
             </div>
 

@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react"
+import { Facebook, Instagram, Mail, Phone, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
@@ -10,23 +10,33 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-primary">FitPro</h3>
+            <h3 className="text-2xl font-bold text-primary">FitOrigin</h3>
             <p className="text-gray-300">
               Transform your body, mind, and life with our comprehensive fitness programs and expert guidance.
             </p>
             <div className="flex space-x-4">
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
-                <Facebook className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
-                <Twitter className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
-                <Instagram className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
-                <Youtube className="h-5 w-5" />
-              </Button>
+              <Link
+                href="https://www.facebook.com/share/1D2euR9yin/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="FitOrigin on Facebook"
+                className="text-gray-300 hover:text-primary"
+              >
+                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
+                  <Facebook className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Link
+                href="https://www.instagram.com/fitorigin_org?igsh=anI0MjBuemZmdmFw"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="FitOrigin on Instagram"
+                className="text-gray-300 hover:text-primary"
+              >
+                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-primary">
+                  <Instagram className="h-5 w-5" />
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -95,7 +105,7 @@ export function Footer() {
             <div className="space-y-3">
               <div className="flex items-center space-x-3">
                 <Mail className="h-4 w-4 text-primary" />
-                <span className="text-gray-300">info@fitpro.com</span>
+                <span className="text-gray-300">info@fitorigin.org</span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="h-4 w-4 text-primary" />
@@ -119,7 +129,7 @@ export function Footer() {
 
         <div className="border-t border-gray-800 mt-12 pt-8 text-center">
           <p className="text-gray-300">
-            © 2024 FitPro. All rights reserved. |
+            © 2024 FitOrigin. All rights reserved. |
             <Link href="/privacy" prefetch={false} className="text-primary hover:underline ml-1">
               Privacy Policy
             </Link>{" "}

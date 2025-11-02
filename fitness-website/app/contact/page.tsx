@@ -146,7 +146,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <section className="py-20">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div>
             <Badge className="bg-blue-100 text-blue-800 mb-4">Get In Touch</Badge>
@@ -163,7 +163,7 @@ export default function ContactPage() {
       </section>
 
       {/* Quick Actions */}
-      <section className="py-12 bg-background">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-6">
             {quickActions.map((action, index) => (
@@ -190,7 +190,7 @@ export default function ContactPage() {
       </section>
 
       {/* Main Contact Section */}
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12">
             {/* Contact Form */}
@@ -350,7 +350,7 @@ export default function ContactPage() {
       </section>
 
       {/* Map Section */}
-      <section className="py-20 bg-background">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">Find Us</h2>
@@ -373,7 +373,7 @@ export default function ContactPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-primary to-secondary">
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">Ready to Start Your Fitness Journey?</h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">

@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   StickyNote, 
   Plus, 
@@ -94,11 +93,7 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.4 }}
-    >
+    <div>
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -127,12 +122,7 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
 
           {/* Add Note Form */}
           {isAddingNote && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200"
-            >
+            <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
                 <Input
@@ -166,7 +156,7 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
                   Cancel
                 </Button>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Notes List */}
@@ -181,11 +171,8 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
               notes
                 .sort((a, b) => a.timestamp - b.timestamp)
                 .map((note, index) => (
-                  <motion.div
+                  <div
                     key={note.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     className="p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
                   >
                     {/* Note Header */}
@@ -248,7 +235,7 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
                         {note.content}
                       </p>
                     )}
-                  </motion.div>
+                  </div>
                 ))
             )}
           </div>
@@ -264,7 +251,7 @@ const ChapterNotesSection = React.memo<ChapterNotesSectionProps>(({
           )}
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

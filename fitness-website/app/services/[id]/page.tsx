@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, ArrowLeft, Clock, Loader2, Home, ChevronRight, CheckCircle2 } from "lucide-react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import type { ClientService, BookingFormData } from "@/types"
+import { cachedServicesApi } from "@/lib/api/cached-services"
 import { servicesApi } from "@/lib/api/services"
 
 export default function ServiceDetailsPage() {
@@ -52,7 +53,8 @@ export default function ServiceDetailsPage() {
     try {
       setLoading(true)
       setError(null)
-      const srv = await servicesApi.fetchPublicServiceById(params.id as string)
+      // Use cached API for instant data loading
+      const srv = await cachedServicesApi.fetchServiceById(params.id as string)
       if (!srv) throw new Error("Service not found")
       setService(srv)
     } catch (e: any) {
@@ -131,6 +133,11 @@ export default function ServiceDetailsPage() {
     async (e: React.FormEvent) => {
       e.preventDefault()
       if (!service) return
+      // Prevent submitting if an approved request already exists
+      if (requestStatus === "approved") {
+        setSubmitError("You already have an approved training request. You cannot submit another one.")
+        return
+      }
       setSubmitError(null)
       // minimal required fields based on backend table
       if (!form.startDate || !form.goalDescription || !form.age || !form.trainingPerWeek || !form.weight || !form.height || !form.trainingPlace) {
@@ -188,7 +195,7 @@ export default function ServiceDetailsPage() {
         setIsSubmitting(false)
       }
     },
-    [service, form]
+    [service, form, requestStatus]
   )
 
   if (loading) {
@@ -255,10 +262,11 @@ export default function ServiceDetailsPage() {
               <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gray-100">
                 <Image
                   src={getProxyImageUrl(service.image || undefined) || "/placeholder.svg"}
-                  alt={service.title}
+                  alt={service?.title ? `${service.title} service image` : "Service image"}
                   fill
                   style={{ objectFit: "cover" }}
                   sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
                 />
               </div>
             </CardContent>
@@ -331,13 +339,16 @@ export default function ServiceDetailsPage() {
             )}
 
             <div className="pt-2">
-              <ProtectedAction onAction={() => setIsBookingOpen(true)}>
+              <ProtectedAction onAction={() => {
+                if (requestStatus === "approved") return; // block opening
+                setIsBookingOpen(true)
+              }}>
                 <Button
                   size="lg"
                   className="w-full sm:w-auto bg-primary hover:bg-primary/90"
-                  disabled={requestStatus === "pending"}
+                  disabled={requestStatus === "pending" || requestStatus === "approved"}
                 >
-                  {requestStatus === "pending" ? "Request Pending" : "Book this service"}
+                  {requestStatus === "approved" ? "Approved" : requestStatus === "pending" ? "Request Pending" : "Book this service"}
                 </Button>
               </ProtectedAction>
             </div>
