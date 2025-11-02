@@ -23,7 +23,7 @@ const HeroSection = React.memo(function HeroSection({ isVisible, heroImageSrc }:
                 #1 Fitness Platform
               </Badge>
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight" style={{ color: "#212529" }}>
-                Transform Your
+                Transform Your Body,
                 <span style={{ color: "#007BFF" }}> Body</span>,
                 <span style={{ color: "#32CD32" }}> Mind</span> & Life
               </h1>
