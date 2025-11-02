@@ -9,31 +9,31 @@ import { Plus, Package, Loader2 } from "lucide-react";
 import type { Product, ProductFormData, ProductDeleteTarget } from "@/types";
 
 // Lazy load heavy components for better performance
-const StatsCards = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.StatsCards })), { 
+const StatsCards = dynamic(() => import("@/components/admin/products").then(mod => mod.StatsCards), { 
   loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
 });
-const CategoryFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryFilter })), { 
+const CategoryFilter = dynamic(() => import("@/components/admin/products").then(mod => mod.CategoryFilter), { 
   loading: () => <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" />
 });
-const SearchAndFilter = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.SearchAndFilter })), { 
+const SearchAndFilter = dynamic(() => import("@/components/admin/products").then(mod => mod.SearchAndFilter), { 
   loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
 });
-const ProductsTable = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductsTable })), { 
+const ProductsTable = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductsTable), { 
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ProductForm = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductForm })), { 
+const ProductForm = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductForm), { 
   loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ProductDetailsDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ProductDetailsDialog })), { 
+const ProductDetailsDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductDetailsDialog), { 
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
 });
-const CategoryManagementDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.CategoryManagementDialog })), { 
+const CategoryManagementDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.CategoryManagementDialog), { 
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
-const DeleteConfirmationDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.DeleteConfirmationDialog })), { 
+const DeleteConfirmationDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.DeleteConfirmationDialog), { 
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ImagePreviewDialog = dynamic(() => import("@/components/admin/products").then(mod => ({ default: mod.ImagePreviewDialog })), { 
+const ImagePreviewDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.ImagePreviewDialog), { 
   loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
 });
 

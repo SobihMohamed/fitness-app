@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -54,12 +53,7 @@ const ChapterNavigationSection = React.memo<ChapterNavigationSectionProps>(({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.6, delay: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Navigation Controls */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
@@ -126,11 +120,8 @@ const ChapterNavigationSection = React.memo<ChapterNavigationSectionProps>(({
               const isCurrent = chapter.chapter_id === currentChapter.chapter_id;
 
               return (
-                <motion.div
+                <div
                   key={chapter.chapter_id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   {isLocked ? (
                     <div className={`flex items-center gap-3 p-4 border-b border-gray-100 opacity-60 ${
@@ -201,7 +192,7 @@ const ChapterNavigationSection = React.memo<ChapterNavigationSectionProps>(({
                       </div>
                     </Link>
                   )}
-                </motion.div>
+                </div>
               );
             })}
           </div>
@@ -229,7 +220,7 @@ const ChapterNavigationSection = React.memo<ChapterNavigationSectionProps>(({
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

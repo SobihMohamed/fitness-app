@@ -10,7 +10,20 @@ const nextConfig = {
   },
   // Performance optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    // Remove all console statements in production for better performance
+    removeConsole: process.env.NODE_ENV === 'production' 
+      ? { exclude: ['error'] } // Keep console.error for critical issues
+      : false,
+  },
+  // Enable compression for faster page loads
+  compress: true,
+  // Optimize production builds
+  productionBrowserSourceMaps: false,
+  // Remove X-Powered-By header for security and performance
+  poweredByHeader: false,
+  onDemandEntries: {
+    maxInactiveAge: 60 * 60 * 1000,
+    pagesBufferLength: 5,
   },
   // Enable Next.js Image Optimization (do not disable globally)
   images: {
@@ -50,9 +63,7 @@ const nextConfig = {
   experimental: {
     // Reduce bundle size by optimizing common package imports
     optimizePackageImports: [
-      "lucide-react",
       "date-fns",
-      "framer-motion",
       "clsx",
       "@radix-ui/react-dialog",
       "@radix-ui/react-dropdown-menu",
@@ -60,15 +71,33 @@ const nextConfig = {
       "@radix-ui/react-tabs",
       "recharts",
     ],
-    // Enable modern bundling optimizations
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
+    // Enable aggressive caching
+    optimisticClientCache: true,
+    // Optimize CSS for better performance
+    optimizeCss: true,
+  },
+  // Add cache headers for static assets
+  async headers() {
+    return [
+      {
+        source: '/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
       },
-    },
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
   },
   async rewrites() {
     // Keep env handling consistent with lib/env.ts: prefer TARGET over BASE, fallback to localhost

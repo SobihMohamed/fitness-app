@@ -3,23 +3,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Download } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
 interface RequestsHeaderProps {
   onExport?: () => void;
 }
 
 export const RequestsHeader = React.memo<RequestsHeaderProps>(({ onExport }) => {
-  const handleExport = () => {
-    if (onExport) {
-      onExport();
-    } else {
-      toast({
-        title: "Export Started",
-        description: "Preparing data for export...",
-      });
-    }
-  };
 
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">

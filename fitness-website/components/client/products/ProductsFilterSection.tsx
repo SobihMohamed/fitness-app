@@ -25,22 +25,22 @@ const ProductsFilterSection = React.memo<ProductsFilterSectionProps>(({
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <Input
-              placeholder="Search products..."
+              placeholder="Search Products With Name"
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pl-10 h-12 bg-white border-gray-200 focus:border-primary focus:ring-primary/20 transition-all"
             />
           </div>
           <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-            <Select value={selectedCategory} onValueChange={onCategoryChange}>
+            <Select value={selectedCategory || "all"} onValueChange={(v) => onCategoryChange(v === "all" ? "" : v)}>
               <SelectTrigger className="w-full sm:w-56 h-12 bg-white border-gray-200 hover:border-gray-300 transition-colors">
                 <Filter className="h-4 w-4 mr-2 text-primary" />
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="All">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map((category) => (
-                  <SelectItem key={category.category_id} value={category.name}>
+                  <SelectItem key={category.category_id} value={String(category.category_id)}>
                     {category.name}
                   </SelectItem>
                 ))}
@@ -51,9 +51,9 @@ const ProductsFilterSection = React.memo<ProductsFilterSectionProps>(({
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Name A-Z</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
+                <SelectItem value="name-asc">Name A-Z</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
               </SelectContent>
             </Select>
             <Button

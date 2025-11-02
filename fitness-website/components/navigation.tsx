@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo, useState, memo } from "react";
+import { useMemo, useState, memo, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { cachedProductsApi } from "@/lib/api/cached-client";
+import { cachedCoursesApi } from "@/lib/api/cached-courses";
+import { cachedBlogsApi } from "@/lib/api/cached-blogs";
+import { cachedServicesApi } from "@/lib/api/cached-services";
 import { Menu } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -35,6 +39,7 @@ const staticNavigation = Object.freeze([
 
 function NavigationInner() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
 
@@ -42,6 +47,31 @@ function NavigationInner() {
 
   // memoize to avoid re-creating array every render
   const navigation = useMemo(() => staticNavigation, []);
+
+  // Optimized prefetching strategy for better initial load performance
+  useEffect(() => {
+    // Prefetch critical data immediately (products and courses are most accessed)
+    Promise.all([
+      cachedProductsApi.prefetchProducts(),
+      cachedCoursesApi.prefetchCourses(),
+    ]).catch(() => {});
+    
+    // Defer less critical data to avoid blocking initial load
+    const deferredTimeout = setTimeout(() => {
+      Promise.all([
+        cachedProductsApi.prefetchCategories(),
+        cachedBlogsApi.prefetchBlogs(),
+        cachedServicesApi.prefetchServices(),
+      ]).catch(() => {});
+    }, 1000);
+    
+    // Prefetch navigation routes
+    navigation.forEach(item => {
+      router.prefetch(item.href);
+    });
+    
+    return () => clearTimeout(deferredTimeout);
+  }, [router, navigation]);
 
   // Navbar should be hidden on all admin pages
   if (pathname.startsWith("/admin")) return null;
@@ -53,7 +83,7 @@ function NavigationInner() {
           {/* Logo */}
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5">
-              <span className="text-2xl font-bold text-blue-600">FitPro</span>
+              <span className="text-2xl font-bold text-blue-600">FitOrigin</span>
             </Link>
           </div>
 
@@ -71,7 +101,7 @@ function NavigationInner() {
                 <div className="flex items-center justify-between">
                   <Link href="/" className="-m-1.5 p-1.5">
                     <span className="text-2xl font-bold text-blue-600">
-                      FitPro
+                      FitOrigin
                     </span>
                   </Link>
                 </div>
@@ -84,6 +114,7 @@ function NavigationInner() {
                         <Link
                           key={item.name}
                           href={item.href}
+                          prefetch={true}
                           className={`block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
                             pathname === item.href
                               ? "text-blue-600 bg-gray-100"
@@ -122,6 +153,7 @@ function NavigationInner() {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch={true}
                 className={`text-sm font-semibold leading-6 ${
                   pathname === item.href
                     ? "text-blue-600 border-b-2 border-blue-600 pb-1"

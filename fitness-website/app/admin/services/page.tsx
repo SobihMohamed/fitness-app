@@ -9,19 +9,19 @@ import { useServiceManagement } from "@/hooks/admin/use-service-management";
 import type { Service, ServiceFormData, ServiceDeleteTarget } from "@/types";
 
 // Lazy load heavy components for better performance
-const StatsCards = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.StatsCards })), { 
+const StatsCards = dynamic(() => import("@/components/admin/services").then(mod => mod.StatsCards), { 
   loading: () => <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
 });
-const SearchAndFilter = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.SearchAndFilter })), { 
+const SearchAndFilter = dynamic(() => import("@/components/admin/services").then(mod => mod.SearchAndFilter), { 
   loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
 });
-const ServiceTable = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceTable })), { 
+const ServiceTable = dynamic(() => import("@/components/admin/services").then(mod => mod.ServiceTable), { 
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
-const ServiceForm = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.ServiceForm })), { 
+const ServiceForm = dynamic(() => import("@/components/admin/services").then(mod => mod.ServiceForm), { 
   loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
 });
-const DeleteConfirmation = dynamic(() => import("@/components/admin/services").then(mod => ({ default: mod.DeleteConfirmation })), { 
+const DeleteConfirmation = dynamic(() => import("@/components/admin/services").then(mod => mod.DeleteConfirmation), { 
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
 

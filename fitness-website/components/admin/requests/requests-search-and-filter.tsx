@@ -9,7 +9,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Search, Calendar, Download } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import type { SearchFilters, RequestSection } from "@/types";
 
 interface RequestsSearchAndFilterProps {
@@ -106,8 +106,7 @@ export const RequestsSearchAndFilter = React.memo<RequestsSearchAndFilterProps>(
       link.click();
       document.body.removeChild(link);
       
-      toast({
-        title: "Export Complete",
+      toast("Export Complete", {
         description: `Exported ${filteredData.length} ${section} requests to CSV`,
       });
     }

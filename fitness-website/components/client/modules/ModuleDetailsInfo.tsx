@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { motion } from "framer-motion";
 import { 
   Target, 
   CheckCircle, 
@@ -44,12 +43,7 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Module Overview */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
@@ -83,16 +77,13 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
         <CardContent>
           <div className="space-y-3">
             {learningObjectives.map((objective, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
                 className="flex items-start gap-3"
               >
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">{objective}</span>
-              </motion.div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -109,16 +100,13 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
             {keyTopics.map((topic, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
                 className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
               >
                 <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                 <span className="text-muted-foreground text-sm">{topic}</span>
-              </motion.div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -143,7 +131,7 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

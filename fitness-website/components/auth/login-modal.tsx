@@ -335,7 +335,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               {activeTab === "login" &&
                 "Sign in to continue your fitness journey."}
               {activeTab === "register" &&
-                "Join FitPro and start achieving your goals."}
+                "Join FitOrigin and start achieving your goals."}
               {activeTab === "forgot-password" &&
                 "Enter your email to receive a reset code."}
             </DialogDescription>

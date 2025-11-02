@@ -1,11 +1,10 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, ArrowRight, BookOpen, Sparkles } from "lucide-react";
+import { Calendar, ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import type { BlogHeroSectionProps } from "@/types";
 import { clientBlogApi } from "@/lib/api/client-blogs";
@@ -24,24 +23,18 @@ const BlogHeroSection = React.memo<BlogHeroSectionProps>(({
       {/* Hero Section */}
       <section className="py-12 lg:py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 mb-6 border border-primary/20">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-primary">
-                Latest insights & updates
-              </span>
-            </div>
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-foreground">
-              Fitness <span className="text-primary bg-clip-text bg-gradient-to-r from-primary to-primary/80">Blog</span>
-            </h1>
-            <p className="text-xl max-w-3xl mx-auto text-muted leading-relaxed">
-              Discover expert insights, industry trends, and practical guides to help you stay ahead
-            </p>
-          </motion.div>
+          <Badge className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors mb-4 px-4 py-1 text-sm font-medium">
+            Latest Insights
+          </Badge>
+          <h1 className="text-4xl lg:text-6xl font-bold mb-6 text-foreground">
+            Fitness{" "}
+            <span className="text-primary bg-clip-text bg-gradient-to-r from-primary to-primary/80">
+              Blog
+            </span>
+          </h1>
+          <p className="text-xl max-w-3xl mx-auto text-muted leading-relaxed">
+            Discover expert insights, industry trends, and practical guides to help you stay ahead
+          </p>
         </div>
       </section>
 
@@ -100,7 +93,9 @@ const BlogHeroSection = React.memo<BlogHeroSectionProps>(({
                         <Calendar className="h-5 w-5 text-primary" />
                       </div>
                       <span className="font-medium">
-                        {new Date(featuredPost.createdAt).toLocaleDateString()}
+                        {featuredPost.createdAt && !isNaN(new Date(featuredPost.createdAt).getTime())
+                          ? new Date(featuredPost.createdAt).toLocaleDateString()
+                          : 'Recently'}
                       </span>
                     </div>
                   </div>

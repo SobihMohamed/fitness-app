@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Users, Award, Target, Heart, Trophy, Zap } from "lucide-react"
+import Link from "next/link";
 
 const teamMembers = [
   {
@@ -61,7 +62,7 @@ const values = [
 const milestones = [
   {
     year: "2018",
-    title: "FitPro Founded",
+    title: "FitOrigin Founded",
     description: "Started with a vision to make fitness accessible to everyone",
     icon: Trophy,
   },
@@ -98,7 +99,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section */}
-      <section className="py-20 lg:py-32">
+      <section className="py-16 lg:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-8">
@@ -109,20 +110,31 @@ export default function AboutPage() {
                   <span className="text-blue-600"> Fitness</span>
                 </h1>
                 <p className="text-xl text-gray-600">
-                  Founded in {aboutStats.foundedYear}, FitPro has been dedicated to helping individuals achieve their fitness goals through
-                  personalized training, expert guidance, and a supportive community that celebrates every victory.
+                  Founded in {aboutStats.foundedYear}, FitOrigin has been dedicated
+                  to helping individuals achieve their fitness goals through
+                  personalized training, expert guidance, and a supportive
+                  community that celebrates every victory.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button className="bg-blue-600 hover:bg-blue-700">Join Our Community</Button>
-                <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-50">Meet Our Team</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Join Our Community
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                >
+                  Meet Our Team
+                </Button>
               </div>
             </div>
             <div className="relative">
               <div className="w-full h-96 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl flex items-center justify-center shadow-lg">
                 <div className="text-center">
                   <Users className="h-24 w-24 text-blue-600 mx-auto mb-4" />
-                  <p className="text-lg font-semibold text-gray-900">{aboutStats.memberCount} Happy Members</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {aboutStats.memberCount} Happy Members
+                  </p>
                 </div>
               </div>
             </div>
@@ -131,19 +143,22 @@ export default function AboutPage() {
       </section>
 
       {/* Mission & Vision */}
-      <section className="py-20 bg-background">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12">
             <Card className="p-8 border-0 shadow-lg">
               <CardContent className="p-0">
                 <div className="flex items-center mb-6">
                   <Target className="h-8 w-8 text-primary mr-3" />
-                  <h2 className="text-3xl font-bold text-foreground">Our Mission</h2>
+                  <h2 className="text-3xl font-bold text-foreground">
+                    Our Mission
+                  </h2>
                 </div>
                 <p className="text-lg leading-relaxed text-muted">
-                  To empower individuals to transform their lives through fitness, providing accessible, effective, and
-                  enjoyable fitness solutions that promote long-term health and wellness for people of all backgrounds
-                  and fitness levels.
+                  To empower individuals to transform their lives through
+                  fitness, providing accessible, effective, and enjoyable
+                  fitness solutions that promote long-term health and wellness
+                  for people of all backgrounds and fitness levels.
                 </p>
               </CardContent>
             </Card>
@@ -152,11 +167,15 @@ export default function AboutPage() {
               <CardContent className="p-0">
                 <div className="flex items-center mb-6">
                   <Heart className="h-8 w-8 text-secondary mr-3" />
-                  <h2 className="text-3xl font-bold text-foreground">Our Vision</h2>
+                  <h2 className="text-3xl font-bold text-foreground">
+                    Our Vision
+                  </h2>
                 </div>
                 <p className="text-lg leading-relaxed text-muted">
-                  To become the world's leading fitness platform, creating a global community where everyone has the
-                  tools, knowledge, and support to live their healthiest life and achieve their personal best.
+                  To become the world's leading fitness platform, creating a
+                  global community where everyone has the tools, knowledge, and
+                  support to live their healthiest life and achieve their
+                  personal best.
                 </p>
               </CardContent>
             </Card>
@@ -165,21 +184,30 @@ export default function AboutPage() {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">Our Core Values</h2>
-            <p className="text-xl max-w-2xl mx-auto text-muted">The principles that guide everything we do</p>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+              Our Core Values
+            </h2>
+            <p className="text-xl max-w-2xl mx-auto text-muted">
+              The principles that guide everything we do
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <Card key={index} className="text-center p-8 border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <Card
+                key={index}
+                className="text-center p-8 border-0 shadow-lg hover:shadow-xl transition-shadow"
+              >
                 <CardContent className="p-0">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-primary/10">
                     <value.icon className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-bold mb-4 text-foreground">{value.title}</h3>
+                  <h3 className="text-xl font-bold mb-4 text-foreground">
+                    {value.title}
+                  </h3>
                   <p className="text-muted">{value.description}</p>
                 </CardContent>
               </Card>
@@ -189,24 +217,35 @@ export default function AboutPage() {
       </section>
 
       {/* Timeline */}
-      <section className="py-20 bg-background">
+      <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">Our Journey</h2>
-            <p className="text-xl max-w-2xl mx-auto text-muted">Key milestones in our mission to transform lives</p>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+              Our Journey
+            </h2>
+            <p className="text-xl max-w-2xl mx-auto text-muted">
+              Key milestones in our mission to transform lives
+            </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {milestones.map((milestone, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <Card
+                key={index}
+                className="border-0 shadow-lg hover:shadow-xl transition-shadow"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
                       <milestone.icon className="h-6 w-6 text-primary" />
                     </div>
-                    <Badge className="bg-secondary text-secondary-foreground">{milestone.year}</Badge>
+                    <Badge className="bg-secondary text-secondary-foreground">
+                      {milestone.year}
+                    </Badge>
                   </div>
-                  <h3 className="text-lg font-bold mb-2 text-foreground">{milestone.title}</h3>
+                  <h3 className="text-lg font-bold mb-2 text-foreground">
+                    {milestone.title}
+                  </h3>
                   <p className="text-sm text-muted">{milestone.description}</p>
                 </CardContent>
               </Card>
@@ -215,11 +254,13 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-20 bg-white">
+      {/* Team - Dynamic Content Coming Soon */}
+      <section className="py-16 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">Meet Our Expert Team</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-foreground">
+              Meet Our Expert Team
+            </h2>
             <p className="text-xl max-w-2xl mx-auto text-muted">
               Certified professionals dedicated to your fitness journey
             </p>
@@ -227,14 +268,21 @@ export default function AboutPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {teamMembers.map((member, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <Card
+                key={index}
+                className="border-0 shadow-lg hover:shadow-xl transition-shadow"
+              >
                 <CardContent className="p-6">
                   <div className="text-center">
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 mx-auto mb-4 flex items-center justify-center">
                       <Users className="h-12 w-12 text-primary" />
                     </div>
-                    <h3 className="text-xl font-bold mb-2 text-foreground">{member.name}</h3>
-                    <p className="font-medium mb-4 text-secondary">{member.role}</p>
+                    <h3 className="text-xl font-bold mb-2 text-foreground">
+                      {member.name}
+                    </h3>
+                    <p className="font-medium mb-4 text-secondary">
+                      {member.role}
+                    </p>
                     <p className="text-sm text-muted mb-4">{member.bio}</p>
                     <div className="flex flex-wrap gap-1 justify-center">
                       {member.specialties.map((specialty, idx) => (
@@ -252,11 +300,15 @@ export default function AboutPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-20 bg-gradient-to-r from-primary to-secondary">
+      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-white">Our Impact</h2>
-            <p className="text-xl text-white/90">Numbers that speak to our commitment</p>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-white">
+              Our Impact
+            </h2>
+            <p className="text-xl text-white/90">
+              Numbers that speak to our commitment
+            </p>
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
@@ -267,7 +319,9 @@ export default function AboutPage() {
               { number: aboutStats.averageRating, label: "Average Rating" },
             ].map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="text-4xl lg:text-5xl font-bold text-white mb-2">{stat.number}</div>
+                <div className="text-4xl lg:text-5xl font-bold text-white mb-2">
+                  {stat.number}
+                </div>
                 <div className="text-white/90">{stat.label}</div>
               </div>
             ))}
@@ -276,22 +330,30 @@ export default function AboutPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-background">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-6 text-foreground">Ready to Join Our Community?</h2>
-          <p className="text-xl text-muted mb-8">
-            Become part of a supportive community that's committed to helping you achieve your fitness goals.
+
+      <section className="py-16 mt-4 text-center bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
+            Ready to Join Our Community?
+          </h2>
+          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+            Become part of a supportive community that's committed to helping you
+            achieve your fitness goals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
-              Start Your Journey
-            </Button>
-            <Button size="lg" variant="outline">
-              Contact Our Team
-            </Button>
+            <Link href="/courses">
+              <Button size="lg" className="text-lg px-8 bg-white text-black hover:bg-gray-100">
+                Start Your Journey
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button size="lg" variant="outline" className="text-lg px-8 text-white border-white hover:bg-white hover:text-black bg-transparent">
+                Contact Our Team
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
     </div>
-  )
+  );
 }

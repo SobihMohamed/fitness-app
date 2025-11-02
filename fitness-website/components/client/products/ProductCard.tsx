@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Heart } from "lucide-react";
 import { ProtectedAction } from "@/components/auth/Protected-Route";
-import { PrimaryButton } from "@/components/common";
 import { getProxyImageUrl } from "@/lib/images";
 import type { ProductCardProps } from "@/types";
 
@@ -108,7 +107,7 @@ const ProductCard = React.memo<ProductCardProps>(({
               }`}
             >
               {product.stock_quantity > 0
-                ? `${product.stock_quantity} left`
+                ? "In stock"
                 : "Out of stock"}
             </Badge>
           </div>
@@ -116,24 +115,23 @@ const ProductCard = React.memo<ProductCardProps>(({
         
         <div className="grid grid-cols-2 gap-3 mt-4">
           <Link href={`/products/${product.product_id}`} className="col-span-2">
-            <PrimaryButton
-              className="w-full transition-all duration-300 font-medium"
+            <Button
+              className="w-full transition-all duration-300 font-medium bg-blue-600 hover:bg-blue-700 text-white"
               size="lg"
-              variant="primary"
             >
               View Details
-            </PrimaryButton>
+            </Button>
           </Link>
 
           <ProtectedAction onAction={handleAddToCart}>
-            <PrimaryButton
+            <Button
               disabled={product.stock_quantity === 0}
-              className="w-full transition-all duration-300 font-medium"
+              className="w-full transition-all duration-300 font-medium bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
               size="lg"
             >
               <ShoppingCart className="w-5 h-5 mr-2" />
               {product.stock_quantity > 0 ? "Add to Cart" : "Out of Stock"}
-            </PrimaryButton>
+            </Button>
           </ProtectedAction>
         </div>
       </CardContent>

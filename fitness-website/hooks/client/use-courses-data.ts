@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { cachedCoursesApi } from "@/lib/api/cached-courses";
 import { API_CONFIG } from "@/config/api";
 import { toast } from "sonner";
 import { useUserApi } from "./use-user-api";
@@ -48,94 +49,39 @@ export function useCoursesData() {
       searchTerm: "",
       sortBy: "newest",
       page: 1,
-      pageSize: 12,
+      pageSize: 6,
     },
   });
 
-  // Fetch all courses - try authenticated first, fallback to unauthenticated
+  // Fetch all courses - uses cached API for instant loading
   const fetchCourses = useCallback(async () => {
     try {
       setState(prev => ({ ...prev, loading: true }));
       
-      // Check if user is logged in
-      const token = typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+      // Use cached API for instant data access
+      const coursesData = await cachedCoursesApi.fetchCourses();
       
-      if (token) {
-        // User is logged in - make authenticated request
-        try {
-          const data = await makeAuthenticatedRequest(API_CONFIG.USER_FUNCTIONS.courses.getAll);
-          console.log(data)
-
-          if (data.status === "success") {
-            setState(prev => ({ 
-              ...prev, 
-              courses: data.data || [],
-              loading: false 
-            }));
-            return;
-          } else {
-            throw new Error(data.message || "Failed to fetch courses");
-          }
-        } catch (authError: any) {
-          console.error("Authenticated request failed:", authError);
-          // If authenticated request fails, fall through to unauthenticated request
-        }
-      }
-      
-      // User is not logged in OR authenticated request failed - make unauthenticated request
-      const response = await fetch(API_CONFIG.USER_FUNCTIONS.courses.getAll, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      // Handle 401 Unauthorized silently - just show empty state
-      if (response.status === 401) {
-        setState(prev => ({ 
-          ...prev, 
-          courses: [],
-          loading: false 
-        }));
-        return;
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      
-      const text = await response.text();
-      let data;
-      
-      if (!text || text.trim() === "") {
-        data = { status: "success", data: [] };
-      } else {
-        try {
-          data = JSON.parse(text);
-        } catch {
-          throw new Error("Invalid response format");
-        }
-      }
-      
-      if (data.status === "success") {
-        setState(prev => ({ 
-          ...prev, 
-          courses: data.data || [],
-          loading: false 
-        }));
-      } else {
-        throw new Error(data.message || "Failed to fetch courses");
-      }
+      setState(prev => ({ 
+        ...prev, 
+        courses: coursesData || [],
+        loading: false 
+      }));
     } catch (error: any) {
-      console.error("Error fetching courses:", error);
-      // Don't show error toast for authentication issues
-      if (!error.message?.includes("401") && !error.message?.includes("Unauthorized")) {
+      // Handle authentication errors silently - don't show errors for unauthenticated users
+      const isAuthError = error?.response?.status === 401 || 
+                          error?.message?.includes("401") || 
+                          error?.message?.includes("Unauthorized");
+      
+      if (!isAuthError) {
+        console.error("Error fetching courses:", error);
         toast.error(error.message || "Failed to load courses");
+      } else {
+        console.info("Courses require authentication - showing empty state");
       }
+      
       setState(prev => ({ ...prev, courses: [], loading: false }));
     }
-  }, [makeAuthenticatedRequest]);
+  }, []);
 
   // Search courses - try authenticated first, fallback to unauthenticated
   const searchCourses = useCallback(async (keyword: string) => {

@@ -122,7 +122,7 @@ export function NotificationDropdown() {
         setUnreadCount(unread);
       }
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      // Error handled silently in production
     }
   };
 
@@ -133,7 +133,6 @@ export function NotificationDropdown() {
       setMarkingIds((prev) => ({ ...prev, [notificationId]: true }));
 
       const url = API_CONFIG.ADMIN_FUNCTIONS.notifications.markAsRead(notificationId);
-      console.log("[AdminNotifications] MarkAsRead:", url, notificationId);
 
       // OPTIMISTIC UPDATE: flip to read immediately
       setNotifications((prev) => {
@@ -156,7 +155,6 @@ export function NotificationDropdown() {
 
       // Attempt 2: Some servers reject body for PUT (400/415) -> retry with no body
       if (!response.ok && (response.status === 400 || response.status === 415)) {
-        console.warn("MarkAsRead PUT with body failed, retrying without body. Status:", response.status);
         response = await fetch(url, {
           method: "PUT",
           headers: getAuthHeaders(),
@@ -165,7 +163,6 @@ export function NotificationDropdown() {
 
       // Attempt 3: If method not allowed (405), fallback to POST
       if (!response.ok && response.status === 405) {
-        console.warn("MarkAsRead PUT not allowed, retrying with POST");
         response = await fetch(url, {
           method: "POST",
           headers: getAuthHeaders(),
@@ -174,12 +171,10 @@ export function NotificationDropdown() {
       }
 
       if (response.ok) {
-        console.log("Mark as read confirmed by server:", notificationId);
         // Do not refetch immediately; rely on polling to avoid stale overrides
         addLocalReadId(notificationId);
       } else {
         const text = await response.text();
-        console.error("Mark as read failed:", response.status, text);
         // REVERT optimistic update on failure
         setNotifications((prev) => {
           const next = prev.map((n) =>
@@ -193,7 +188,6 @@ export function NotificationDropdown() {
         });
       }
     } catch (error) {
-      console.error("Error marking notification as read:", error);
       // REVERT optimistic update on exception
       setNotifications((prev) => {
         const next = prev.map((n) =>
@@ -226,7 +220,6 @@ export function NotificationDropdown() {
       }
 
       const url = API_CONFIG.ADMIN_FUNCTIONS.notifications.delete(notificationId);
-      console.log("[AdminNotifications] Delete:", url, notificationId);
 
       let response = await fetch(url, {
         method: "DELETE",
@@ -234,7 +227,6 @@ export function NotificationDropdown() {
       });
 
       if (!response.ok && response.status === 405) {
-        console.warn("Delete with DELETE not allowed, retrying with POST");
         response = await fetch(url, {
           method: "POST",
           headers: getAuthHeaders(),
@@ -246,9 +238,7 @@ export function NotificationDropdown() {
         setNotifications(prev =>
           prev.filter(notif => notif.notification_id !== notificationId)
         );
-        // Maintain local overlay
         removeLocalReadId(notificationId);
-        // Update unread count if the deleted notification was unread
         const deletedNotification = notifications.find(
           notif => notif.notification_id === notificationId
         );
@@ -257,12 +247,10 @@ export function NotificationDropdown() {
         }
       } else {
         const text = await response.text();
-        console.error("Delete notification failed:", response.status, text);
-        // Re-sync from server to reconcile any mismatch
         fetchNotifications();
       }
     } catch (error) {
-      console.error("Error deleting notification:", error);
+      // Error handled silently in production
     } finally {
       setDeletingIds((prev) => {
         const { [notificationId]: _, ...rest } = prev;

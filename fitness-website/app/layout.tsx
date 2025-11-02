@@ -9,34 +9,34 @@ import { Providers } from "@/components/providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "FitPro - Your Ultimate Fitness Destination",
+  title: "FitOrigin - Your Ultimate Fitness Destination",
   description:
-    "Transform your fitness journey with FitPro's comprehensive courses, expert guidance, and premium equipment.",
+    "Transform your fitness journey with FitOrigin's comprehensive courses, expert guidance, and premium equipment.",
   keywords: "fitness, workout, training, courses, equipment, health, wellness",
-  authors: [{ name: "FitPro Team" }],
-  creator: "FitPro",
-  publisher: "FitPro",
+  authors: [{ name: "FitOrigin Team" }],
+  creator: "FitOrigin",
+  publisher: "FitOrigin",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://fitpro.com"),
+  metadataBase: new URL("https://fitorigin.org"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "FitPro - Your Ultimate Fitness Destination",
+    title: "FitOrigin - Your Ultimate Fitness Destination",
     description:
-      "Transform your fitness journey with FitPro's comprehensive courses, expert guidance, and premium equipment.",
-    url: "https://fitpro.com",
-    siteName: "FitPro",
+      "Transform your fitness journey with FitOrigin's comprehensive courses, expert guidance, and premium equipment.",
+    url: "https://fitorigin.org",
+    siteName: "FitOrigin",
     images: [
       {
         url: "/placeholder.jpg",
         width: 1200,
         height: 630,
-        alt: "FitPro - Your Ultimate Fitness Destination",
+        alt: "FitOrigin - Your Ultimate Fitness Destination",
       },
     ],
     locale: "en_US",
@@ -44,11 +44,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "FitPro - Your Ultimate Fitness Destination",
+    title: "FitOrigin - Your Ultimate Fitness Destination",
     description:
-      "Transform your fitness journey with FitPro's comprehensive courses, expert guidance, and premium equipment.",
+      "Transform your fitness journey with FitOrigin's comprehensive courses, expert guidance, and premium equipment.",
     images: ["/placeholder.jpg"],
-    creator: "@fitpro",
+    creator: "@fitorigin",
   },
   robots: {
     index: true,
@@ -63,14 +63,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/placeholder-logo.png", sizes: "16x16", type: "image/png" },
+      { url: "/placeholder-logo.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [{ url: "/placeholder-logo.png", sizes: "180x180", type: "image/png" }],
     other: [
       {
         rel: "mask-icon",
-        url: "/safari-pinned-tab.svg",
+        url: "/grid-pattern.svg",
         color: "#007BFF",
       },
     ],
@@ -91,7 +91,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <Providers>
           <Navigation />
             <main>{children}</main>

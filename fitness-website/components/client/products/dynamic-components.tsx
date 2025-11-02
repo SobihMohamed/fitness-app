@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { CardSkeleton } from "@/components/common/LoadingSkeletons";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Dynamic imports with SSR disabled to prevent hydration mismatches
 export const ProductsHeroSectionDynamic = dynamic(
@@ -54,31 +55,23 @@ export const ProductGridDynamic = dynamic(
         {Array(12)
           .fill(0)
           .map((_, index) => (
-            <CardSkeleton key={`skeleton-${index}`} />
+            <Card key={`skeleton-${index}`} className="border-0 shadow-md bg-white">
+              <CardHeader className="p-0">
+                <Skeleton className="w-full h-48 rounded-t-lg" />
+              </CardHeader>
+              <CardContent className="p-6">
+                <Skeleton className="h-6 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2 mb-4" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-16" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
       </div>
     ),
   }
 );
 
-export const ProductPaginationDynamic = dynamic(
-  () => import("./ProductPagination"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="mt-16 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="animate-pulse">
-          <div className="flex justify-between items-center">
-            <div className="h-5 w-32 bg-gray-200 rounded" />
-            <div className="flex gap-2">
-              <div className="h-9 w-16 bg-gray-200 rounded" />
-              <div className="h-9 w-12 bg-gray-200 rounded" />
-              <div className="h-9 w-16 bg-gray-200 rounded" />
-              <div className="h-9 w-28 bg-gray-200 rounded ml-4" />
-            </div>
-          </div>
-        </div>
-      </div>
-    ),
-  }
-);
+// Pagination is now handled inline in page components

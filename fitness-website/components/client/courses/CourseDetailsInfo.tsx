@@ -2,8 +2,6 @@
 
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { 
   Target, 
   CheckCircle, 
@@ -53,12 +51,7 @@ const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2 }}
-      className="space-y-8"
-    >
+    <div className="space-y-8">
       {/* What You'll Learn */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
@@ -70,16 +63,10 @@ const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
             {learningOutcomes.map((outcome, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="flex items-start gap-3"
-              >
+              <div key={index} className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">{outcome}</span>
-              </motion.div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -93,13 +80,7 @@ const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
             {courseFeatures.map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 * index }}
-                className="flex items-center gap-4"
-              >
+              <div key={index} className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                   <feature.icon className="w-6 h-6 text-primary" />
                 </div>
@@ -107,7 +88,7 @@ const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
                   <h4 className="font-semibold text-foreground">{feature.label}</h4>
                   <p className="text-sm text-muted-foreground">{feature.value}</p>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </CardContent>
@@ -139,7 +120,7 @@ const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
           </div>
         </CardContent>
       </Card>
-    </motion.div>
+    </div>
   );
 });
 

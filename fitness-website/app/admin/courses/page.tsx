@@ -10,19 +10,19 @@ import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import { Plus, BookOpen, Loader2 } from "lucide-react";
 
 // Lazy load heavy components for better performance
-const StatsCards = dynamic(() => import("@/components/admin/courses/stats-cards").then(mod => ({ default: mod.StatsCards })), { 
+const StatsCards = dynamic(() => import("@/components/admin/courses/stats-cards").then(mod => mod.StatsCards), { 
   loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
 });
-const SearchAndFilter = dynamic(() => import("@/components/admin/courses/search-and-filter").then(mod => ({ default: mod.SearchAndFilter })), { 
+const SearchAndFilter = dynamic(() => import("@/components/admin/courses/search-and-filter").then(mod => mod.SearchAndFilter), { 
   loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
 });
-const CourseTable = dynamic(() => import("@/components/admin/courses/course-table").then(mod => ({ default: mod.CourseTable })), { 
+const CourseTable = dynamic(() => import("@/components/admin/courses/course-table").then(mod => mod.CourseTable), { 
   loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
 });
-const CourseForm = dynamic(() => import("@/components/admin/courses/course-form").then(mod => ({ default: mod.CourseForm })), { 
+const CourseForm = dynamic(() => import("@/components/admin/courses/course-form").then(mod => mod.CourseForm), { 
   loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
 });
-const DeleteConfirmation = dynamic(() => import("@/components/admin/courses/delete-confirmation").then(mod => ({ default: mod.DeleteConfirmation })), { 
+const DeleteConfirmation = dynamic(() => import("@/components/admin/courses/delete-confirmation").then(mod => mod.DeleteConfirmation), { 
   loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
 });
 
