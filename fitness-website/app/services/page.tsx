@@ -374,7 +374,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Call To Action */}
-      <section
+      {/* <section
         className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600"
         aria-labelledby="cta-heading"
       >
@@ -402,7 +402,7 @@ export default function ServicesPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }

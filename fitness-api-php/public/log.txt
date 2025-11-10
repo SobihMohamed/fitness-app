@@ -1,1 +1,1 @@
-URL Detected: Category/getAll
+URL Detected: AdminNotifications/getAdminNotifications
