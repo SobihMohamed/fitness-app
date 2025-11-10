@@ -299,7 +299,8 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* removed  */}
+      {/* Stats
       <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
@@ -327,11 +328,11 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* CTA */}
 
-      <section className="py-16 mt-4 text-center bg-gradient-to-r from-blue-600 to-indigo-600">
+      {/* <section className="py-16 mt-4 text-center bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-6">
             Ready to Join Our Community?
@@ -353,7 +354,7 @@ export default function AboutPage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
