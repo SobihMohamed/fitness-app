@@ -14,3 +14,6 @@ fitness-api-php/.env
 
 # (Optional) You can leave the frontend one as is, 
 # it will still work for the fitness-website folder.
+# Uploads and Debug files
+fitness-api-php/public/uploads/
+fitness-api-php/public/debug.txt
