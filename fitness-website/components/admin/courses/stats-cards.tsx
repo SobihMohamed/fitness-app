@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { BookOpen, DollarSign, TrendingUp } from "lucide-react";
 import type { Course } from "@/types";
@@ -9,12 +6,18 @@ interface StatsCardsProps {
   courses: Course[];
 }
 
-export const StatsCards = React.memo<StatsCardsProps>(({ courses }) => {
+export function StatsCards({ courses }: StatsCardsProps) {
   const totalCourses = courses.length;
-  const premiumCourses = courses.filter((c) => Number.parseFloat(c.price) > 0).length;
-  const avgPrice = totalCourses > 0
-    ? (courses.reduce((sum, c) => sum + Number.parseFloat(c.price), 0) / totalCourses).toFixed(0)
-    : "0";
+  const premiumCourses = courses.filter(
+    (c) => Number.parseFloat(c.price) > 0,
+  ).length;
+  const avgPrice =
+    totalCourses > 0
+      ? (
+          courses.reduce((sum, c) => sum + Number.parseFloat(c.price), 0) /
+          totalCourses
+        ).toFixed(0)
+      : "0";
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -74,6 +77,4 @@ export const StatsCards = React.memo<StatsCardsProps>(({ courses }) => {
       </Card>
     </div>
   );
-});
-
-StatsCards.displayName = "StatsCards";
+}

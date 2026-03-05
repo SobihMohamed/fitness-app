@@ -25,7 +25,8 @@ interface CourseManagementActions {
   setFilters: (filters: { searchTerm: string }) => void;
 }
 
-interface CourseManagementReturn extends CourseManagementState, CourseManagementActions {
+interface CourseManagementReturn
+  extends CourseManagementState, CourseManagementActions {
   filteredCourses: Course[];
   sortedCourses: Course[];
   totalPages: number;
@@ -34,11 +35,13 @@ interface CourseManagementReturn extends CourseManagementState, CourseManagement
 }
 
 export function useCourseManagement(): CourseManagementReturn {
-  const { getAuthHeaders, showErrorToast } = useAdminApi();
-  
+  const { showErrorToast } = useAdminApi();
+
   // State
   const [courses, setCourses] = useState<Course[]>([]);
-  const [remoteSearchCourses, setRemoteSearchCourses] = useState<Course[] | null>(null);
+  const [remoteSearchCourses, setRemoteSearchCourses] = useState<
+    Course[] | null
+  >(null);
   const [loading, setLoading] = useState({
     initial: true,
     courses: false,
@@ -46,7 +49,7 @@ export function useCourseManagement(): CourseManagementReturn {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   const pagination = { itemsPerPage: 10 };
 
   // Note: Auth headers are now handled directly in the API
@@ -83,13 +86,15 @@ export function useCourseManagement(): CourseManagementReturn {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [debouncedSearchTerm]);
 
   // Fetch courses
   const fetchCourses = useCallback(async () => {
     try {
-      setLoading(prev => ({ ...prev, courses: true }));
+      setLoading((prev) => ({ ...prev, courses: true }));
       const coursesData = await courseApi.fetchCourses();
       setCourses(coursesData);
     } catch (error: any) {
@@ -99,7 +104,7 @@ export function useCourseManagement(): CourseManagementReturn {
       }
       showErrorToast(error?.message || "Failed to load courses");
     } finally {
-      setLoading(prev => ({ ...prev, courses: false, initial: false }));
+      setLoading((prev) => ({ ...prev, courses: false, initial: false }));
     }
   }, [showErrorToast]);
 
@@ -115,7 +120,7 @@ export function useCourseManagement(): CourseManagementReturn {
         }
         await fetchCourses();
       } catch (error) {
-        setLoading(prev => ({ ...prev, initial: false }));
+        setLoading((prev) => ({ ...prev, initial: false }));
       }
     };
     init();
@@ -135,7 +140,9 @@ export function useCourseManagement(): CourseManagementReturn {
   }, [filteredCourses, currentPage, pagination.itemsPerPage]);
 
   // Total pages
-  const totalPages = Math.ceil(filteredCourses.length / pagination.itemsPerPage);
+  const totalPages = Math.ceil(
+    filteredCourses.length / pagination.itemsPerPage,
+  );
 
   // Actions
   const setFilters = useCallback((filters: { searchTerm: string }) => {
@@ -150,14 +157,14 @@ export function useCourseManagement(): CourseManagementReturn {
     searchTerm,
     currentPage,
     pagination,
-    
+
     // Computed
     filteredCourses,
     sortedCourses,
     totalPages,
     debouncedSearchTerm,
     remoteSearchCourses,
-    
+
     // Actions
     fetchCourses,
     setSearchTerm,

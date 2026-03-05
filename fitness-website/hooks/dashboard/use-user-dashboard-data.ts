@@ -98,7 +98,12 @@ export function useDashboardData(user: any) {
   };
 
   const getAuthHeaders = useCallback(() => {
-    const token = sessionStorage.getItem("token");
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    } catch {
+      token = null;
+    }
     if (!token) throw new Error("No authentication token found");
     return { Authorization: `Bearer ${token}` };
   }, []);

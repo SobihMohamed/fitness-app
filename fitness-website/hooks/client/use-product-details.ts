@@ -1,31 +1,48 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { cachedProductsApi } from "@/lib/api/cached-client";
+import {
+  useProductDetail,
+  useCategories,
+  useRelatedProducts,
+} from "@/hooks/queries";
 import { toast } from "sonner";
 import { useCart } from "@/contexts/cart-context";
 import { getFullImageUrl } from "@/lib/images";
-import type { 
-  ClientProduct, 
-  ClientCategory, 
-  ProductDetailsState, 
-  ProductDetailsActions, 
-  UseProductDetailsReturn 
+import type {
+  ClientProduct,
+  ClientCategory,
+  ProductDetailsState,
+  ProductDetailsActions,
+  UseProductDetailsReturn,
 } from "@/types/product";
 
 const FAVORITES_KEY = "product_favorites";
 
 export function useProductDetails(productId: string): UseProductDetailsReturn {
   const { addItem } = useCart();
-  const [state, setState] = useState<ProductDetailsState>({
-    product: null,
-    category: null,
-    relatedProducts: [],
-    loading: true,
-    quantity: 1,
-    isFavorite: false,
-    activeImage: null,
-  });
+
+  // React Query handles fetching + caching
+  const {
+    data: product,
+    isLoading: productLoading,
+    error: productError,
+  } = useProductDetail(productId);
+  const { data: categories = [] } = useCategories();
+
+  const category = useMemo(
+    () =>
+      product
+        ? (categories.find((c) => c.category_id === product.category_id) ??
+          null)
+        : null,
+    [product, categories],
+  );
+
+  const { data: relatedProducts = [] } = useRelatedProducts(
+    category?.category_id ?? 0,
+    product?.product_id,
+  );
 
   // Load favorites from localStorage
   const loadFavorites = useCallback((): Set<number> => {
@@ -34,7 +51,11 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          return new Set(parsed.filter((n: any) => Number.isFinite(n)).map((n: any) => Number(n)));
+          return new Set(
+            parsed
+              .filter((n: any) => Number.isFinite(n))
+              .map((n: any) => Number(n)),
+          );
         }
       }
     } catch (e) {
@@ -46,141 +67,118 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
   // Save favorites to localStorage
   const saveFavorites = useCallback((favorites: Set<number>) => {
     try {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(favorites)));
+      localStorage.setItem(
+        FAVORITES_KEY,
+        JSON.stringify(Array.from(favorites)),
+      );
     } catch (e) {
       // ignore
     }
   }, []);
 
-  // Fetch product details
-  const fetchProduct = useCallback(async () => {
-    if (!productId) return;
+  // Local UI state (quantity, favorite, active image)
+  const [quantity, setLocalQuantity] = useState(1);
+  const [isFavorite, setLocalFavorite] = useState(false);
+  const [activeImage, setLocalActiveImage] = useState<string | null>(null);
 
-    setState(prev => ({ ...prev, loading: true }));
-    
-    try {
-      const [product, categories] = await Promise.all([
-        cachedProductsApi.fetchProductById(productId),
-        cachedProductsApi.fetchCategories().catch(() => [])
-      ]);
-
-      const category = categories.find(c => c.category_id === product.category_id) || null;
-      
-      // Load related products
-      let relatedProducts: ClientProduct[] = [];
-      if (category) {
-        try {
-          relatedProducts = await cachedProductsApi.fetchRelatedProducts(
-            category.category_id, 
-            product.product_id
-          );
-        } catch (e) {
-          // ignore related products error
-        }
-      }
-
-      // Check if product is in favorites
-      const favorites = loadFavorites();
-      const isFavorite = favorites.has(product.product_id);
-
-      // Set active image to main image or first sub image
-      const activeImage = product.image_url || 
-        (product.sub_images && product.sub_images.length > 0 ? product.sub_images[0] : null);
-
-      setState(prev => ({
-        ...prev,
-        product,
-        category,
-        relatedProducts,
-        loading: false,
-        isFavorite,
-        activeImage,
-      }));
-    } catch (error: any) {
-      console.error("Error fetching product details:", error);
-      setState(prev => ({
-        ...prev,
-        product: null,
-        loading: false,
-      }));
-      toast.error("Failed to load product details");
-    }
-  }, [productId, loadFavorites]);
-
-  // Load product on mount or when productId changes
+  // Sync favourite + image when product data arrives
   useEffect(() => {
-    fetchProduct();
-  }, [fetchProduct]);
+    if (product) {
+      const favs = loadFavorites();
+      setLocalFavorite(favs.has(product.product_id));
+      setLocalActiveImage(
+        product.image_url ||
+          (product.sub_images && product.sub_images.length > 0
+            ? product.sub_images[0]
+            : null),
+      );
+    }
+  }, [product, loadFavorites]);
 
-  // Actions
-  const actions: ProductDetailsActions = useMemo(() => ({
-    setProduct: (product: ClientProduct | null) => {
-      setState(prev => ({ ...prev, product }));
-    },
-    setCategory: (category: ClientCategory | null) => {
-      setState(prev => ({ ...prev, category }));
-    },
-    setRelatedProducts: (relatedProducts: ClientProduct[]) => {
-      setState(prev => ({ ...prev, relatedProducts }));
-    },
-    setLoading: (loading: boolean) => {
-      setState(prev => ({ ...prev, loading }));
-    },
-    setQuantity: (quantity: number) => {
-      setState(prev => ({ ...prev, quantity: Math.max(1, quantity) }));
-    },
-    setIsFavorite: (isFavorite: boolean) => {
-      setState(prev => ({ ...prev, isFavorite }));
-    },
-    setActiveImage: (activeImage: string | null) => {
-      setState(prev => ({ ...prev, activeImage }));
-    },
-  }), []);
+  // Show error toast on failure
+  useEffect(() => {
+    if (productError) toast.error("Failed to load product details");
+  }, [productError]);
+
+  const loading = productLoading;
+
+  const state: ProductDetailsState = useMemo(
+    () => ({
+      product: product ?? null,
+      category,
+      relatedProducts,
+      loading,
+      quantity,
+      isFavorite,
+      activeImage,
+    }),
+    [
+      product,
+      category,
+      relatedProducts,
+      loading,
+      quantity,
+      isFavorite,
+      activeImage,
+    ],
+  );
+
+  // Actions — use local setters for UI-only fields; data fields are read-only from the query
+  const actions: ProductDetailsActions = useMemo(
+    () => ({
+      setProduct: () => {}, // managed by React Query
+      setCategory: () => {}, // derived
+      setRelatedProducts: () => {}, // managed by React Query
+      setLoading: () => {}, // managed by React Query
+      setQuantity: (q: number) => setLocalQuantity(Math.max(1, q)),
+      setIsFavorite: (v: boolean) => setLocalFavorite(v),
+      setActiveImage: (img: string | null) => setLocalActiveImage(img),
+    }),
+    [],
+  );
 
   // Handle add to cart
   const handleAddToCart = useCallback(() => {
-    if (!state.product) return;
+    if (!product) return;
 
-    // Respect selected quantity. Cart addItem adds 1 per call, so call N times.
-    // Toasts in cart-context use stable IDs, so duplicates won't stack.
-    for (let i = 0; i < Math.max(1, state.quantity); i++) {
+    for (let i = 0; i < Math.max(1, quantity); i++) {
       addItem({
-        id: state.product.product_id.toString(),
-        name: state.product.name,
-        price: state.product.price,
-        image: getFullImageUrl(state.product.image_url || ""),
-        stock: state.product.stock_quantity,
-        category: state.category?.name,
+        id: product.product_id.toString(),
+        name: product.name,
+        price: product.price,
+        image: getFullImageUrl(product.image_url || ""),
+        stock: product.stock_quantity,
+        category: category?.name,
       });
     }
-  }, [addItem, state.product, state.quantity, state.category?.name]);
+  }, [addItem, product, quantity, category?.name]);
 
   // Toggle favorite
   const toggleFavorite = useCallback(() => {
-    if (!state.product) return;
+    if (!product) return;
 
     const favorites = loadFavorites();
-    const productId = state.product.product_id;
-    
-    if (favorites.has(productId)) {
-      favorites.delete(productId);
+    const pid = product.product_id;
+
+    if (favorites.has(pid)) {
+      favorites.delete(pid);
       toast.success("Removed from favorites");
     } else {
-      favorites.add(productId);
+      favorites.add(pid);
       toast.success("Added to favorites");
     }
-    
+
     saveFavorites(favorites);
-    actions.setIsFavorite(favorites.has(productId));
-  }, [state.product, loadFavorites, saveFavorites, actions]);
+    setLocalFavorite(favorites.has(pid));
+  }, [product, loadFavorites, saveFavorites]);
 
   // Handle share
   const handleShare = useCallback(async () => {
-    if (!state.product) return;
+    if (!product) return;
 
     const shareData = {
-      title: state.product.name,
-      text: state.product.description,
+      title: product.name,
+      text: product.description,
       url: window.location.href,
     };
 
@@ -188,15 +186,13 @@ export function useProductDetails(productId: string): UseProductDetailsReturn {
       if (navigator.share && navigator.canShare(shareData)) {
         await navigator.share(shareData);
       } else {
-        // Fallback: copy to clipboard
         await navigator.clipboard.writeText(window.location.href);
         toast.success("Product link copied to clipboard!");
       }
     } catch (error) {
-      console.error("Error sharing:", error);
       toast.error("Failed to share product");
     }
-  }, [state.product]);
+  }, [product]);
 
   return {
     state,

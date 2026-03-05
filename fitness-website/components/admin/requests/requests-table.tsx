@@ -1,30 +1,37 @@
 "use client";
 
 import React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Trash2, 
-  BookOpen, 
-  DollarSign, 
-  ChevronLeft, 
+import {
+  Eye,
+  CheckCircle,
+  XCircle,
+  Trash2,
+  BookOpen,
+  DollarSign,
+  ChevronLeft,
   ChevronRight,
   User,
   Clock,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
-import { formatDateUTC } from "@/utils/format";
+import { formatDateUTC } from "@/lib/utils/format";
+import { toast } from "sonner";
 import { useRequestManagement } from "@/hooks/admin/use-request-management";
-import { 
+import {
   RequestsSearchAndFilter,
   RequestsBulkActions,
   RequestsStatusCounts,
   RequestsConfirmDialog,
-  RequestsDetailsDialog
+  RequestsDetailsDialog,
 } from "./index";
 import type { RequestSection } from "@/types";
 
@@ -33,17 +40,19 @@ interface RequestsTableProps {
 }
 
 // Memoized component to display the username as the user's ID
-const UserDisplay = React.memo<{ userId?: string; fallbackName?: string }>(({ userId, fallbackName }) => {
-  if (userId) {
-    return <span className="font-medium text-slate-900">{userId}</span>;
-  }
-  if (fallbackName && fallbackName !== "N/A") {
-    return <span className="font-medium text-slate-900">{fallbackName}</span>;
-  }
-  return <span className="text-slate-500">N/A</span>;
-});
+const UserDisplay = React.memo<{ userId?: string; fallbackName?: string }>(
+  ({ userId, fallbackName }) => {
+    if (userId) {
+      return <span className="font-medium text-slate-900">{userId}</span>;
+    }
+    if (fallbackName && fallbackName !== "N/A") {
+      return <span className="font-medium text-slate-900">{fallbackName}</span>;
+    }
+    return <span className="text-slate-500">N/A</span>;
+  },
+);
 
-UserDisplay.displayName = 'UserDisplay';
+UserDisplay.displayName = "UserDisplay";
 
 export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
   const {
@@ -83,8 +92,36 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
     await fetchDetails(section, itemId);
   };
 
-  const handleActionClick = async (type: "approve" | "cancel" | "delete", id: string) => {
+  const handleActionClick = async (
+    type: "approve" | "cancel" | "delete",
+    id: string,
+  ) => {
     await handleAction(type, id, section);
+  };
+
+  const handleBulkActionRequest = (action: any) => {
+    if (action.type === "delete") {
+      setBulkAction(action);
+      return;
+    }
+
+    const pendingIds = selectedItems.filter((id) => {
+      const item = filtered.find(
+        (i: any) => (i.id || i.request_id || i.order_id) === id,
+      );
+      return item && item.status === "pending";
+    });
+
+    if (pendingIds.length === 0) {
+      toast.error(`No pending requests selected to ${action.type}`);
+      return;
+    }
+
+    if (pendingIds.length < selectedItems.length) {
+      toast.info(`Only pending requests will be ${action.type}ed`);
+    }
+
+    setBulkAction({ ...action, ids: pendingIds });
   };
 
   const handleBulkActionClick = async (action: any) => {
@@ -107,18 +144,18 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
           {section === "training"
             ? "Training Requests"
             : section === "courses"
-            ? "Course Requests"
-            : "Orders"}
+              ? "Course Requests"
+              : "Orders"}
         </CardTitle>
         <CardDescription>
           {section === "training"
             ? "Manage personal training requests from users"
             : section === "courses"
-            ? "Manage course enrollment requests"
-            : "Manage product and service orders"}
+              ? "Manage course enrollment requests"
+              : "Manage product and service orders"}
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="p-0">
         {/* Search and Filter Controls */}
         <RequestsSearchAndFilter
@@ -153,10 +190,20 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                 <th className="px-4 py-3 font-semibold text-left text-slate-700 w-12">
                   <input
                     type="checkbox"
-                    checked={selectedItems.length === paginated.length && paginated.length > 0}
+                    checked={
+                      selectedItems.length === paginated.length &&
+                      paginated.length > 0
+                    }
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedItems(paginated.map(item => item.id || (item as any).request_id || (item as any).order_id));
+                        setSelectedItems(
+                          paginated.map(
+                            (item) =>
+                              item.id ||
+                              (item as any).request_id ||
+                              (item as any).order_id,
+                          ),
+                        );
                       } else {
                         setSelectedItems([]);
                       }
@@ -165,7 +212,7 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                   />
                 </th>
                 <th className="px-4 py-3 font-semibold text-left text-slate-700">
-                  # 
+                  ID
                 </th>
                 <th className="px-4 py-3 font-semibold text-left text-slate-700">
                   <div className="flex items-center gap-2">
@@ -188,7 +235,7 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
               </tr>
             </thead>
             <tbody>
-              {(!loading && paginated.length === 0) ? (
+              {!loading && paginated.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-16">
                     <div className="flex flex-col items-center justify-center gap-2">
@@ -216,12 +263,12 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                 paginated.map((item: any, idx: number) => {
                   const itemId = item.id || item.request_id || item.order_id;
                   const isSelected = selectedItems.includes(itemId);
-                  
+
                   return (
                     <tr
                       key={itemId || idx}
                       className={`hover:bg-slate-50 transition-colors duration-150 border-b border-slate-100 ${
-                        isSelected ? 'bg-indigo-50' : ''
+                        isSelected ? "bg-indigo-50" : ""
                       }`}
                     >
                       <td className="px-4 py-3">
@@ -230,20 +277,24 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                           checked={isSelected}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedItems(prev => [...prev, itemId]);
+                              setSelectedItems((prev) => [...prev, itemId]);
                             } else {
-                              setSelectedItems(prev => prev.filter(id => id !== itemId));
+                              setSelectedItems((prev) =>
+                                prev.filter((id) => id !== itemId),
+                              );
                             }
                           }}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                         />
                       </td>
                       <td className="px-4 py-3 text-slate-700 font-medium">
-                        {(page - 1) * rowsPerPage + idx + 1}
+                        {itemId}
                       </td>
                       <td className="px-4 py-3 font-medium text-slate-900">
                         <UserDisplay
-                          userId={item.user_id || item.userId || item.user?.user_id}
+                          userId={
+                            item.user_id || item.userId || item.user?.user_id
+                          }
                           fallbackName={
                             item.user?.name ||
                             item.user_name ||
@@ -256,19 +307,20 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                       <td className="px-4 py-3">
                         <Badge
                           className={`capitalize ${
-                            item.status === 'approved'
-                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                              : item.status === 'cancelled'
-                              ? 'bg-red-100 text-red-800 hover:bg-red-200'
-                              : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                            item.status === "approved"
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : item.status === "cancelled"
+                                ? "bg-red-100 text-red-800 hover:bg-red-200"
+                                : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                           }`}
                         >
-                          {item.status || 'pending'}
+                          {item.status || "pending"}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-slate-700">
                         {(() => {
-                          const dt = item?.created_at ||
+                          const dt =
+                            item?.created_at ||
                             item?.createdAt ||
                             item?.purchase_date ||
                             item?.order_date ||
@@ -304,7 +356,7 @@ export const RequestsTable = React.memo<RequestsTableProps>(({ section }) => {
                           </Button>
 
                           {/* Show action buttons only for pending items */}
-                          {item.status === 'pending' && (
+                          {item.status === "pending" && (
                             <>
                               {/* Approve button */}
                               <Button

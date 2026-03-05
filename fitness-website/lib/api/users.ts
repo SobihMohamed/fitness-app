@@ -180,7 +180,7 @@ export const usersApi = {
   },
 
   // Get auth headers (will be overridden in component context)
-  getAuthHeaders(includeContentType: boolean = true): Record<string, string> {
+  getAuthHeaders: (includeContentType: boolean = true): Record<string, string> => {
     return {};
   }
 };

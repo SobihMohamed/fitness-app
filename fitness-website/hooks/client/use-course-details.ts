@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { cachedCoursesApi } from "@/lib/api/cached-courses";
-import { API_CONFIG } from "@/config/api";
+import { useMemo, useCallback } from "react";
+import { useCourseDetail } from "@/hooks/queries";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useUserApi } from "./use-user-api";
 
 interface Module {
   module_id: number;
@@ -51,88 +49,51 @@ interface CourseDetailsState {
 
 export function useCourseDetails(courseId: string) {
   const router = useRouter();
-  const { makeAuthenticatedRequest } = useUserApi();
-  const [state, setState] = useState<CourseDetailsState>({
-    course: null,
-    loading: true,
-    error: null,
-  });
 
-  // Fetch course details using cached API for instant loading
-  const fetchCourseDetails = useCallback(async () => {
-    try {
-      setState(prev => ({ ...prev, loading: true, error: null }));
-      
-      const courseData = await cachedCoursesApi.fetchCourseById(courseId);
-      
-      // Handle null response (authentication required)
-      if (!courseData) {
-        setState(prev => ({ 
-          ...prev, 
-          course: null,
-          loading: false,
-          error: "Please log in to view course details" 
-        }));
-        return;
-      }
-      
-      setState(prev => ({ 
-        ...prev, 
-        course: courseData.Course || courseData,
-        loading: false 
-      }));
-    } catch (error: any) {
-      // Handle authentication errors silently
-      const isAuthError = error?.response?.status === 401 || 
-                          error?.message?.includes("401") || 
-                          error?.message?.includes("Unauthorized");
-      
-      if (isAuthError) {
-        console.info("Course details require authentication");
-        setState(prev => ({ 
-          ...prev, 
-          loading: false, 
-          error: "Please log in to view course details" 
-        }));
-      } else {
-        console.error("Error fetching course details:", error);
-        setState(prev => ({ 
-          ...prev, 
-          loading: false, 
-          error: error.message || "Failed to load course details" 
-        }));
-      }
-    }
-  }, [courseId]);
+  const {
+    data,
+    isLoading,
+    error: queryError,
+    refetch,
+  } = useCourseDetail(courseId);
+
+  const state: CourseDetailsState = useMemo(() => {
+    const isAuthError =
+      queryError &&
+      (String((queryError as any)?.response?.status) === "401" ||
+        String(queryError?.message).includes("401") ||
+        String(queryError?.message).includes("Unauthorized"));
+
+    const errorMsg = queryError
+      ? isAuthError
+        ? "Please log in to view course details"
+        : (queryError as Error).message || "Failed to load course details"
+      : null;
+
+    const course = data ? data.Course || data : null;
+
+    return { course, loading: isLoading, error: errorMsg };
+  }, [data, isLoading, queryError]);
 
   // Handle course enrollment
-  const handleEnrollment = useCallback(async (course: Course) => {
-    try {
-      const token = localStorage.getItem("userAuth");
-      if (!token) {
-        toast.error("Please login to enroll in courses");
-        router.push("/auth/login");
-        return;
+  const handleEnrollment = useCallback(
+    async (course: Course) => {
+      try {
+        const token = localStorage.getItem("userAuth");
+        if (!token) {
+          toast.error("Please login to enroll in courses");
+          router.push("/auth/login");
+          return;
+        }
+        router.push(`/courses/${course.course_id}/enroll`);
+      } catch (error) {
+        toast.error("Failed to process enrollment");
       }
+    },
+    [router],
+  );
 
-      // Navigate to enrollment form or process
-      router.push(`/courses/${course.course_id}/enroll`);
-    } catch (error: any) {
-      console.error("Error handling enrollment:", error);
-      toast.error("Failed to process enrollment");
-    }
-  }, [router]);
-
-  // Load course details on mount
-  useEffect(() => {
-    if (courseId) {
-      fetchCourseDetails();
-    }
-  }, [courseId, fetchCourseDetails]);
-
-  const actions = {
-    refetch: fetchCourseDetails,
-  };
+  const actions = useMemo(() => ({ refetch }), [refetch]);
 
   return {
     state,

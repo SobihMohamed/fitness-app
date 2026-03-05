@@ -1,12 +1,17 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { Navigation } from "@/components/navigation"
-import { Footer } from "@/components/footer"
-import { Providers } from "@/components/providers"
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Navigation } from "@/components/navigation";
+import { Footer } from "@/components/footer";
+import { Providers } from "@/components/providers";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  adjustFontFallback: true,
+});
 
 export const metadata: Metadata = {
   title: "FitOrigin - Your Ultimate Fitness Destination",
@@ -66,7 +71,9 @@ export const metadata: Metadata = {
       { url: "/placeholder-logo.png", sizes: "16x16", type: "image/png" },
       { url: "/placeholder-logo.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/placeholder-logo.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      { url: "/placeholder-logo.png", sizes: "180x180", type: "image/png" },
+    ],
     other: [
       {
         rel: "mask-icon",
@@ -81,20 +88,24 @@ export const metadata: Metadata = {
     "msapplication-config": "/browserconfig.xml",
     "theme-color": "#ffffff",
   },
-    
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className="scroll-smooth"
+      data-scroll-behavior="smooth"
+    >
+      <body className={inter.className}>
         <Providers>
           <Navigation />
-            <main>{children}</main>
+          <main>{children}</main>
           <Footer />
         </Providers>
       </body>

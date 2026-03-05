@@ -43,8 +43,17 @@ export const CourseTable = React.memo<CourseTableProps>(({
   searchTerm
 }) => {
   const formatPrice = (price: string) => {
-    const numPrice = Number.parseFloat(price);
-    return numPrice === 0 ? "Free" : `${numPrice.toFixed(1)}EGP`;
+    const s = String(price ?? "").trim();
+    const normalized = s.replace(/,/g, "");
+    const numPrice = Number(normalized);
+    if (!Number.isFinite(numPrice)) return "Invalid";
+    if (numPrice === 0) return "Free";
+    if (numPrice < 0 || numPrice > 1000000) return "Invalid";
+    const formatter = new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: Number.isInteger(numPrice) ? 0 : 1,
+      maximumFractionDigits: 1,
+    });
+    return `${formatter.format(numPrice)}EGP`;
   };
 
   if (courses.length === 0) {
@@ -63,15 +72,6 @@ export const CourseTable = React.memo<CourseTableProps>(({
                 ? "Try adjusting your search criteria to find what you're looking for"
                 : "Get started by adding your first course to the platform"}
             </p>
-            {!searchTerm && (
-              <Button
-                onClick={onOpenCreate}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700"
-              >
-                <Plus className="h-4 w-4" />
-                Add Your First Course
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>

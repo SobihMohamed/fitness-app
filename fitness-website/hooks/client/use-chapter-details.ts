@@ -60,7 +60,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
         // Fallback: use CoursePage if available
         if (!courseId) {
           const message = "Unauthorized – please login to view this chapter.";
-          console.error("Chapter details 401 or failed and no courseId for fallback");
+          // Silent error - no courseId for fallback
           setState(prev => ({ ...prev, loading: false, error: message }));
           toast.error(message);
           return;
@@ -111,7 +111,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
         throw new Error(data.message || "Failed to fetch chapter details");
       }
     } catch (error: any) {
-      console.error("Error fetching chapter details:", error);
+      // Silent error handling
       setState(prev => ({ 
         ...prev, 
         loading: false, 
@@ -136,7 +136,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
       );
 
       if (response.status === 401) {
-        console.error("Module chapters 401 Unauthorized");
+        // Silent - unauthorized
         return;
       }
       const data = await response.json();
@@ -148,7 +148,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
         }));
       }
     } catch (error: any) {
-      console.error("Error fetching module chapters:", error);
+      // Silent error handling
     }
   }, []);
 
@@ -158,7 +158,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
       // This would typically call an API to mark progress
       toast.success("Chapter completed!");
     } catch (error: any) {
-      console.error("Error marking chapter as completed:", error);
+      // Silent error handling
       toast.error("Failed to mark chapter as completed");
     }
   }, []);
@@ -180,7 +180,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
       
       toast.success("Note added successfully");
     } catch (error: any) {
-      console.error("Error adding note:", error);
+      // Silent error handling
       toast.error("Failed to add note");
     }
   }, []);
@@ -197,7 +197,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
       
       toast.success("Note updated successfully");
     } catch (error: any) {
-      console.error("Error updating note:", error);
+      // Silent error handling
       toast.error("Failed to update note");
     }
   }, []);
@@ -212,7 +212,7 @@ export function useChapterDetails(chapterId: string, courseId?: string) {
       
       toast.success("Note deleted successfully");
     } catch (error: any) {
-      console.error("Error deleting note:", error);
+      // Silent error handling
       toast.error("Failed to delete note");
     }
   }, []);

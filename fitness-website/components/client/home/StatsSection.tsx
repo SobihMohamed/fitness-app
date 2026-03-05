@@ -1,9 +1,14 @@
-"use client";
+import { Users, Award, TrendingUp, Star } from "lucide-react";
+import type { Stat } from "@/types";
 
-import React from "react";
-import type { StatsSectionProps } from "@/types/home";
+const stats: Stat[] = [
+  { icon: Users, label: "Active Members", value: "50K+" },
+  { icon: Award, label: "Certified Trainers", value: "200+" },
+  { icon: TrendingUp, label: "Success Stories", value: "10K+" },
+  { icon: Star, label: "Programs Launched", value: "120+" },
+];
 
-const StatsSection = React.memo<StatsSectionProps>(({ stats }) => {
+export default function StatsSection() {
   return (
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -16,7 +21,10 @@ const StatsSection = React.memo<StatsSectionProps>(({ stats }) => {
               >
                 <stat.icon className="h-8 w-8" style={{ color: "#007BFF" }} />
               </div>
-              <div className="text-3xl font-bold mb-2" style={{ color: "#212529" }}>
+              <div
+                className="text-3xl font-bold mb-2"
+                style={{ color: "#212529" }}
+              >
                 {stat.value}
               </div>
               <div style={{ color: "#6C757D" }}>{stat.label}</div>
@@ -26,8 +34,4 @@ const StatsSection = React.memo<StatsSectionProps>(({ stats }) => {
       </div>
     </section>
   );
-});
-
-StatsSection.displayName = "StatsSection";
-
-export default StatsSection;
+}

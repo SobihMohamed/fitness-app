@@ -1,30 +1,44 @@
 "use client";
 
-import { useMemo, useState, memo, useEffect } from "react";
+import { useState, memo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { cachedProductsApi } from "@/lib/api/cached-client";
-import { cachedCoursesApi } from "@/lib/api/cached-courses";
-import { cachedBlogsApi } from "@/lib/api/cached-blogs";
-import { cachedServicesApi } from "@/lib/api/cached-services";
-import { Menu } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Menu, Heart } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Dynamically import client-only heavy components to reduce initial bundle size
-const CartDrawer = dynamic(() => import("@/components/cart/cart-drawer").then(m => m.CartDrawer), {
-  ssr: false,
-  loading: () => <div className="w-6 h-6 animate-pulse bg-gray-200 rounded" />,
-});
-const UserMenu = dynamic(() => import("@/components/auth/user-menu").then(m => m.UserMenu), {
-  ssr: false,
-  loading: () => <div className="w-8 h-8 animate-pulse bg-gray-200 rounded-full" />,
-});
-const LoginModal = dynamic(() => import("@/components/auth/login-modal").then(m => m.LoginModal), {
-  ssr: false,
-  loading: () => null,
-});
+const CartDrawer = dynamic(
+  () => import("@/components/cart/cart-drawer").then((m) => m.CartDrawer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-6 h-6 animate-pulse bg-gray-200 rounded" />
+    ),
+  },
+);
+const UserMenu = dynamic(
+  () => import("@/components/auth/user-menu").then((m) => m.UserMenu),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-8 h-8 animate-pulse bg-gray-200 rounded-full" />
+    ),
+  },
+);
+const LoginModal = dynamic(
+  () => import("@/components/auth/login-modal").then((m) => m.LoginModal),
+  {
+    ssr: false,
+    loading: () => null,
+  },
+);
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/auth-context";
 
 const staticNavigation = Object.freeze([
@@ -39,39 +53,12 @@ const staticNavigation = Object.freeze([
 
 function NavigationInner() {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
 
   const { user } = useAuth();
 
-  // memoize to avoid re-creating array every render
-  const navigation = useMemo(() => staticNavigation, []);
-
-  // Optimized prefetching strategy for better initial load performance
-  useEffect(() => {
-    // Prefetch critical data immediately (products and courses are most accessed)
-    Promise.all([
-      cachedProductsApi.prefetchProducts(),
-      cachedCoursesApi.prefetchCourses(),
-    ]).catch(() => {});
-    
-    // Defer less critical data to avoid blocking initial load
-    const deferredTimeout = setTimeout(() => {
-      Promise.all([
-        cachedProductsApi.prefetchCategories(),
-        cachedBlogsApi.prefetchBlogs(),
-        cachedServicesApi.prefetchServices(),
-      ]).catch(() => {});
-    }, 1000);
-    
-    // Prefetch navigation routes
-    navigation.forEach(item => {
-      router.prefetch(item.href);
-    });
-    
-    return () => clearTimeout(deferredTimeout);
-  }, [router, navigation]);
+  const navigation = staticNavigation;
 
   // Navbar should be hidden on all admin pages
   if (pathname.startsWith("/admin")) return null;
@@ -83,7 +70,9 @@ function NavigationInner() {
           {/* Logo */}
           <div className="flex lg:flex-1">
             <Link href="/" className="-m-1.5 p-1.5">
-              <span className="text-2xl font-bold text-blue-600">FitOrigin</span>
+              <span className="text-2xl font-bold text-blue-600">
+                FitOrigin
+              </span>
             </Link>
           </div>
 
@@ -106,7 +95,6 @@ function NavigationInner() {
                   </Link>
                 </div>
 
-                {/* Always show navigation */}
                 <div className="mt-6 flow-root">
                   <div className="-my-6 divide-y divide-gray-500/10">
                     <div className="space-y-2 py-6">
@@ -114,7 +102,6 @@ function NavigationInner() {
                         <Link
                           key={item.name}
                           href={item.href}
-                          prefetch={true}
                           className={`block rounded-lg px-3 py-2 text-base font-semibold leading-7 ${
                             pathname === item.href
                               ? "text-blue-600 bg-gray-100"
@@ -127,6 +114,24 @@ function NavigationInner() {
                       ))}
                     </div>
                     <div className="py-6 flex justify-center gap-4">
+                      <Link
+                        href="/favorites"
+                        aria-label="Favorites"
+                        className={`rounded-full p-2 border transition-colors ${
+                          pathname === "/favorites"
+                            ? "border-red-500 text-red-500"
+                            : "border-transparent text-gray-900 hover:text-red-500 hover:border-red-200"
+                        }`}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Heart
+                          className={`h-5 w-5 ${
+                            pathname === "/favorites"
+                              ? "fill-red-500 text-red-500"
+                              : ""
+                          }`}
+                        />
+                      </Link>
                       <CartDrawer />
                       {user ? (
                         <UserMenu />
@@ -153,10 +158,9 @@ function NavigationInner() {
               <Link
                 key={item.name}
                 href={item.href}
-                prefetch={true}
                 className={`text-sm font-semibold leading-6 ${
                   pathname === item.href
-                    ? "text-blue-600 border-b-2 border-blue-600 pb-1"
+                    ? "text-blue-600"
                     : "text-gray-900 hover:text-blue-600"
                 }`}
               >
@@ -167,6 +171,21 @@ function NavigationInner() {
 
           {/* Right side: Cart + User/Sign In */}
           <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:items-center lg:gap-4">
+            <Link
+              href="/favorites"
+              aria-label="Favorites"
+              className={`rounded-full p-2 border transition-colors ${
+                pathname === "/favorites"
+                  ? "border-red-500 text-red-500"
+                  : "border-transparent text-gray-700 hover:text-red-500 hover:border-red-200"
+              }`}
+            >
+              <Heart
+                className={`h-5 w-5 ${
+                  pathname === "/favorites" ? "fill-red-500 text-red-500" : ""
+                }`}
+              />
+            </Link>
             <CartDrawer />
             {user ? (
               <UserMenu />

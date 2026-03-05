@@ -69,7 +69,9 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(({
                   : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
               }`}
             >
-              {cat.name}
+              <span className="inline-block max-w-[180px] truncate align-bottom" title={cat.name}>
+                {cat.name}
+              </span>
             </button>
           ))}
 
@@ -91,7 +93,9 @@ export const CategoryFilter = React.memo<CategoryFilterProps>(({
                     key={cat.category_id}
                     onClick={() => onCategoryChange(String(cat.category_id))}
                   >
-                    {cat.name}
+                    <span className="inline-block max-w-[240px] truncate" title={cat.name}>
+                      {cat.name}
+                    </span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

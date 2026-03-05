@@ -1,14 +1,11 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
 import { StatsCard } from "@/components/admin/shared/stats-card";
 import { DashboardStatsCardsProps } from "@/types";
 
-export const DashboardStatsCards = React.memo<DashboardStatsCardsProps>(({ 
-  stats, 
-  adminCount 
-}) => {
+export function DashboardStatsCards({
+  stats,
+  adminCount,
+}: DashboardStatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-5">
       {stats.map((stat, index) => (
@@ -24,8 +21,8 @@ export const DashboardStatsCards = React.memo<DashboardStatsCardsProps>(({
           />
           {stat.title === "Admins" && (
             <div className="mt-1 ml-2">
-              <Link 
-                href="/admin/users?role=admin" 
+              <Link
+                href="/admin/users?role=admin"
                 className="text-xs text-indigo-700 underline"
               >
                 Manage Admins
@@ -36,6 +33,4 @@ export const DashboardStatsCards = React.memo<DashboardStatsCardsProps>(({
       ))}
     </div>
   );
-});
-
-DashboardStatsCards.displayName = "DashboardStatsCards";
+}

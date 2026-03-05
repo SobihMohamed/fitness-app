@@ -1,14 +1,11 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Target, 
-  CheckCircle, 
-  Users, 
+import {
+  CheckCircle,
   BookOpen,
   Award,
-  Clock
+  Clock,
+  Users,
+  FileText,
 } from "lucide-react";
 
 interface Course {
@@ -30,100 +27,68 @@ interface CourseDetailsInfoProps {
   course: Course;
 }
 
-const CourseDetailsInfo = React.memo<CourseDetailsInfoProps>(({ course }) => {
-  // Mock data for what students will learn and requirements
-  const learningOutcomes = [
-    "Master fundamental fitness principles and techniques",
-    "Develop a personalized workout routine",
-    "Learn proper form and injury prevention",
-    "Understand nutrition basics for fitness goals",
-    "Build strength, endurance, and flexibility",
-    "Track progress and set achievable goals"
-  ];
-
-
+export default function CourseDetailsInfo({ course }: CourseDetailsInfoProps) {
+  const totalChapters =
+    course.modules?.reduce((sum, m) => sum + (m.chapters?.length || 0), 0) || 0;
 
   const courseFeatures = [
-    { icon: BookOpen, label: "Comprehensive Modules", value: `${course.modules?.length || 0} modules` },
-    { icon: Clock, label: "Flexible Schedule", value: "Learn at your pace" },
+    {
+      icon: BookOpen,
+      label: "Modules",
+      value: `${course.modules?.length || 0} modules`,
+    },
+    {
+      icon: FileText,
+      label: "Chapters",
+      value: `${totalChapters} chapters`,
+    },
+    {
+      icon: Clock,
+      label: "Schedule",
+      value: course.duration || "Self-paced",
+    },
     { icon: Award, label: "Certificate", value: "Upon completion" },
-    { icon: Users, label: "Community", value: "Join fellow learners" }
+    {
+      icon: Users,
+      label: "Students",
+      value: `${course.students_count || 0} enrolled`,
+    },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* What You'll Learn */}
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Target className="w-6 h-6 text-primary" />
-            What You'll Learn
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-4">
-            {learningOutcomes.map((outcome, index) => (
-              <div key={index} className="flex items-start gap-3">
-                <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">{outcome}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Course Features */}
-      <Card className="border-gray-100 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Course Features</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            {courseFeatures.map((feature, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <feature.icon className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground">{feature.label}</h4>
-                  <p className="text-sm text-muted-foreground">{feature.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-
+    <div className="space-y-6">
+      {/* Course Features — compact horizontal strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        {courseFeatures.map((feature, index) => (
+          <Card
+            key={index}
+            className="border-gray-100 shadow-sm text-center py-4 px-2"
+          >
+            <feature.icon className="w-5 h-5 text-primary mx-auto mb-1.5" />
+            <p className="text-xs text-muted-foreground">{feature.label}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {feature.value}
+            </p>
+          </Card>
+        ))}
+      </div>
 
       {/* Course Description */}
       <Card className="border-gray-100 shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">About This Course</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <CheckCircle className="w-5 h-5 text-primary" />
+            About This Course
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="prose prose-gray max-w-none">
-            <p className="text-muted-foreground leading-relaxed">
+            <p className="text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
               {course.description}
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              This comprehensive fitness course is designed to help you achieve your health and wellness goals 
-              through structured learning and practical application. Whether you're a complete beginner or 
-              looking to enhance your existing knowledge, this course provides the foundation you need to 
-              succeed in your fitness journey.
-            </p>
-            <p className="text-muted-foreground leading-relaxed mt-4">
-              Our expert instructors will guide you through each module, ensuring you understand not just 
-              the "what" but also the "why" behind effective fitness practices. Join thousands of students 
-              who have transformed their lives through our proven methodology.
             </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-});
-
-CourseDetailsInfo.displayName = "CourseDetailsInfo";
-
-export default CourseDetailsInfo;
+}

@@ -1,43 +1,105 @@
 "use client";
 
-import React, { useState, useCallback, useMemo, useEffect } from "react";
-import dynamic from "next/dynamic";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import dynamicImport from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useProductManagement } from "@/hooks/admin/use-product-management";
-import { Plus, Package, Loader2 } from "lucide-react";
+import { useAdminApi } from "@/hooks/admin/use-admin-api";
+import { Package } from "lucide-react";
 import type { Product, ProductFormData, ProductDeleteTarget } from "@/types";
 
 // Lazy load heavy components for better performance
-const StatsCards = dynamic(() => import("@/components/admin/products").then(mod => mod.StatsCards), { 
-  loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div>
-});
-const CategoryFilter = dynamic(() => import("@/components/admin/products").then(mod => mod.CategoryFilter), { 
-  loading: () => <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" />
-});
-const SearchAndFilter = dynamic(() => import("@/components/admin/products").then(mod => mod.SearchAndFilter), { 
-  loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
-});
-const ProductsTable = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductsTable), { 
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-});
-const ProductForm = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductForm), { 
-  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
-});
-const ProductDetailsDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.ProductDetailsDialog), { 
-  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-});
-const CategoryManagementDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.CategoryManagementDialog), { 
-  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
-});
-const DeleteConfirmationDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.DeleteConfirmationDialog), { 
-  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
-});
-const ImagePreviewDialog = dynamic(() => import("@/components/admin/products").then(mod => mod.ImagePreviewDialog), { 
-  loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-});
+const StatsCards = dynamicImport(
+  () => import("@/components/admin/products").then((mod) => mod.StatsCards),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    ),
+  },
+);
+const CategoryFilter = dynamicImport(
+  () => import("@/components/admin/products").then((mod) => mod.CategoryFilter),
+  {
+    loading: () => (
+      <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" />
+    ),
+  },
+);
+const SearchAndFilter = dynamicImport(
+  () =>
+    import("@/components/admin/products").then((mod) => mod.SearchAndFilter),
+  {
+    loading: () => (
+      <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+    ),
+  },
+);
+const ProductsTable = dynamicImport(
+  () => import("@/components/admin/products").then((mod) => mod.ProductsTable),
+  {
+    loading: () => (
+      <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const ProductForm = dynamicImport(
+  () => import("@/components/admin/products").then((mod) => mod.ProductForm),
+  {
+    loading: () => (
+      <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const ProductDetailsDialog = dynamicImport(
+  () =>
+    import("@/components/admin/products").then(
+      (mod) => mod.ProductDetailsDialog,
+    ),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const CategoryManagementDialog = dynamicImport(
+  () =>
+    import("@/components/admin/products").then(
+      (mod) => mod.CategoryManagementDialog,
+    ),
+  {
+    loading: () => (
+      <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const DeleteConfirmationDialog = dynamicImport(
+  () =>
+    import("@/components/admin/products").then(
+      (mod) => mod.DeleteConfirmationDialog,
+    ),
+  {
+    loading: () => (
+      <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const ImagePreviewDialog = dynamicImport(
+  () =>
+    import("@/components/admin/products").then((mod) => mod.ImagePreviewDialog),
+  {
+    loading: () => (
+      <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
 
 export default function ProductsManagement() {
+  const { showErrorToast } = useAdminApi();
   // Use the centralized product management hook
   const {
     products,
@@ -71,7 +133,9 @@ export default function ProductsManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<ProductDeleteTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ProductDeleteTarget | null>(
+    null,
+  );
   const [isCatDialogOpen, setIsCatDialogOpen] = useState(false);
   const [maxPrimary, setMaxPrimary] = useState(8);
   const [cacheBuster, setCacheBuster] = useState(0);
@@ -92,53 +156,78 @@ export default function ProductsManagement() {
 
   // Prevent background scroll when dialog is open
   useEffect(() => {
-    const modalOpen = !!detailsProduct || isAddDialogOpen || showDeleteConfirm || !!previewImageUrl;
+    const modalOpen =
+      !!detailsProduct ||
+      isAddDialogOpen ||
+      showDeleteConfirm ||
+      !!previewImageUrl;
     const original = document.body.style.overflow;
     if (modalOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = original || '';
+      document.body.style.overflow = original || "";
     }
     return () => {
-      document.body.style.overflow = original || '';
+      document.body.style.overflow = original || "";
     };
   }, [detailsProduct, isAddDialogOpen, showDeleteConfirm, previewImageUrl]);
 
   // Memoized event handlers to prevent unnecessary re-renders
   const handleAddProduct = useCallback(() => {
+    if (categories.length === 0) {
+      showErrorToast("Please add category first");
+      return;
+    }
     setEditingProduct(null);
     setIsAddDialogOpen(true);
-  }, []);
+  }, [categories.length, showErrorToast]);
 
-  const handleEditProduct = useCallback((product: Product) => {
-    setEditingProduct(product);
-    setIsAddDialogOpen(true);
-  }, []);
+  const handleEditProduct = useCallback(
+    async (product: Product) => {
+      // Prefill with the table product and refresh with full details (including gallery)
+      setEditingProduct(product);
+      try {
+        const detailed = await getProductDetails(product.product_id);
+        setEditingProduct(detailed);
+      } catch (error) {
+        // fallback to minimal product shape
+        setEditingProduct(product);
+      }
+      setIsAddDialogOpen(true);
+    },
+    [getProductDetails],
+  );
 
-  const handleViewDetails = useCallback(async (product: Product) => {
-    try {
-      const productWithDetails = await getProductDetails(product.product_id);
-      setDetailsProduct(productWithDetails);
-    } catch (error) {
-      setDetailsProduct(product);
-    }
-  }, [getProductDetails]);
+  const handleViewDetails = useCallback(
+    async (product: Product) => {
+      try {
+        const productWithDetails = await getProductDetails(product.product_id);
+        setDetailsProduct(productWithDetails);
+      } catch (error) {
+        setDetailsProduct(product);
+      }
+    },
+    [getProductDetails],
+  );
 
-  const handleDeleteProduct = useCallback((productId: string) => {
-    const product = products.find(p => p.product_id === productId);
-    if (product) {
-      setDeleteTarget({
-        type: "product",
-        id: productId,
-        name: product.name,
-      });
-      setShowDeleteConfirm(true);
-    }
-  }, [products]);
+  const handleDeleteProduct = useCallback(
+    (productId: string) => {
+      const product = products.find((p) => p.product_id === productId);
+      if (product) {
+        setDeleteTarget({
+          type: "product",
+          id: productId,
+          name: product.name,
+        });
+        setShowDeleteConfirm(true);
+      }
+    },
+    [products],
+  );
 
   const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget) return;
-    
+
     if (deleteTarget.type === "product") {
       await deleteProduct(deleteTarget.id);
     } else {
@@ -146,66 +235,100 @@ export default function ProductsManagement() {
     }
   }, [deleteTarget, deleteProduct, deleteCategory]);
 
-  const handleProductFormSubmit = useCallback(async (
-    formData: ProductFormData,
-    mainImage?: File,
-    subImages?: File[]
-  ) => {
-    if (editingProduct) {
-      await updateProduct(editingProduct.product_id, formData, mainImage, subImages);
-      // If details dialog is open for this product, refresh it and bump cache buster
-      if (detailsProduct && detailsProduct.product_id === editingProduct.product_id) {
-        const updated = await getProductDetails(editingProduct.product_id);
+  const handleProductFormSubmit = useCallback(
+    async (formData: ProductFormData, mainImage?: File, subImages?: File[]) => {
+      if (editingProduct) {
+        await updateProduct(
+          editingProduct.product_id,
+          formData,
+          mainImage,
+          subImages,
+        );
+        // If details dialog is open for this product, refresh it and bump cache buster
+        if (
+          detailsProduct &&
+          detailsProduct.product_id === editingProduct.product_id
+        ) {
+          const updated = await getProductDetails(editingProduct.product_id);
+          setDetailsProduct(updated);
+          setCacheBuster((v) => v + 1);
+        }
+      } else {
+        await addProduct(formData, mainImage, subImages);
+      }
+    },
+    [editingProduct, addProduct, updateProduct],
+  );
+
+  const handleAddCategory = useCallback(
+    async (name: string) => {
+      await addCategory(name);
+    },
+    [addCategory],
+  );
+
+  const handleUpdateCategory = useCallback(
+    async (categoryId: string, name: string) => {
+      await updateCategory(categoryId, name);
+    },
+    [updateCategory],
+  );
+
+  const handleRemoveSubImage = useCallback(
+    async (imagePath: string) => {
+      if (!detailsProduct) return;
+
+      const currentImages = detailsProduct.sub_images || [];
+      const keepImages = currentImages.filter((img) => img !== imagePath);
+
+      await removeSubImage(detailsProduct.product_id, imagePath, keepImages);
+
+      // Update local state
+      setDetailsProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              sub_images: keepImages,
+            }
+          : null,
+      );
+    },
+    [detailsProduct, removeSubImage],
+  );
+
+  const handleReplaceSubImage = useCallback(
+    async (oldImagePath: string, file: File, existingImages: string[]) => {
+      if (!detailsProduct) return;
+      // Optimistic UI: show the selected file immediately
+      const tempUrl = URL.createObjectURL(file);
+      setDetailsProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              sub_images: (prev.sub_images || []).map((p) =>
+                p === oldImagePath ? tempUrl : p,
+              ),
+            }
+          : prev,
+      );
+
+      try {
+        await replaceSubImage(
+          detailsProduct.product_id,
+          oldImagePath,
+          file,
+          existingImages,
+        );
+      } finally {
+        // Release object URL and refresh to get the canonical server URL
+        URL.revokeObjectURL(tempUrl);
+        const updated = await getProductDetails(detailsProduct.product_id);
         setDetailsProduct(updated);
         setCacheBuster((v) => v + 1);
       }
-    } else {
-      await addProduct(formData, mainImage, subImages);
-    }
-  }, [editingProduct, addProduct, updateProduct]);
-
-  const handleAddCategory = useCallback(async (name: string) => {
-    await addCategory(name);
-  }, [addCategory]);
-
-  const handleUpdateCategory = useCallback(async (categoryId: string, name: string) => {
-    await updateCategory(categoryId, name);
-  }, [updateCategory]);
-
-  const handleRemoveSubImage = useCallback(async (imagePath: string) => {
-    if (!detailsProduct) return;
-    
-    const currentImages = detailsProduct.sub_images || [];
-    const keepImages = currentImages.filter(img => img !== imagePath);
-    
-    await removeSubImage(detailsProduct.product_id, imagePath, keepImages);
-    
-    // Update local state
-    setDetailsProduct(prev => prev ? {
-      ...prev,
-      sub_images: keepImages
-    } : null);
-  }, [detailsProduct, removeSubImage]);
-
-  const handleReplaceSubImage = useCallback(async (oldImagePath: string, file: File, existingImages: string[]) => {
-    if (!detailsProduct) return;
-    // Optimistic UI: show the selected file immediately
-    const tempUrl = URL.createObjectURL(file);
-    setDetailsProduct(prev => prev ? {
-      ...prev,
-      sub_images: (prev.sub_images || []).map(p => p === oldImagePath ? tempUrl : p)
-    } : prev);
-
-    try {
-      await replaceSubImage(detailsProduct.product_id, oldImagePath, file, existingImages);
-    } finally {
-      // Release object URL and refresh to get the canonical server URL
-      URL.revokeObjectURL(tempUrl);
-      const updated = await getProductDetails(detailsProduct.product_id);
-      setDetailsProduct(updated);
-      setCacheBuster((v) => v + 1);
-    }
-  }, [detailsProduct, replaceSubImage, getProductDetails]);
+    },
+    [detailsProduct, replaceSubImage, getProductDetails],
+  );
 
   const handleImagePreview = useCallback((imageUrl: string) => {
     setPreviewImageUrl(imageUrl);
@@ -288,7 +411,6 @@ export default function ProductsManagement() {
           selectedCategory={selectedCategory}
           onPageChange={setCurrentPage}
           onViewDetails={handleViewDetails}
-          onEditProduct={handleEditProduct}
           onDeleteProduct={handleDeleteProduct}
           onAddProduct={handleAddProduct}
         />
@@ -299,8 +421,34 @@ export default function ProductsManagement() {
           onClose={() => setIsAddDialogOpen(false)}
           onSubmit={handleProductFormSubmit}
           categories={categories}
+          products={products}
           editingProduct={editingProduct}
           isSubmitting={loading.submitting}
+          onRemoveSubImage={(path) =>
+            removeSubImage(
+              editingProduct?.product_id || "",
+              path,
+              (editingProduct?.sub_images || []).filter((p) => p !== path),
+            )
+          }
+          onReplaceSubImage={(oldPath, file, existing) =>
+            replaceSubImage(
+              editingProduct?.product_id || "",
+              oldPath,
+              file,
+              existing,
+            )
+          }
+          onReloadEditingProduct={async () => {
+            if (!editingProduct) return null;
+            const refreshed = await getProductDetails(
+              editingProduct.product_id,
+            );
+            setEditingProduct(refreshed);
+            return refreshed;
+          }}
+          isSubUploading={loading.subUploading}
+          cacheBuster={cacheBuster}
         />
 
         {/* Product Details Dialog */}
@@ -345,7 +493,7 @@ export default function ProductsManagement() {
           onClose={() => setPreviewImageUrl(null)}
         />
       </div>
-      <div className="fixed bottom-8 right-8">
+      <div className="flex justify-end pr-8 pb-8">
         <button
           onClick={handleAddProduct}
           className="px-4 py-3 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"

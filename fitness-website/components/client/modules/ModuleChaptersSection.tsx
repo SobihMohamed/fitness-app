@@ -48,7 +48,7 @@ const ModuleChaptersSection = React.memo<ModuleChaptersSectionProps>(({
     return !isChapterCompleted(previousChapter.chapter_id);
   };
 
-  const sortedChapters = chapters.sort((a, b) => a.order_number - b.order_number);
+  const sortedChapters = [...chapters].sort((a, b) => a.order_number - b.order_number);
   const completionPercentage = (completedChapters.size / chapters.length) * 100;
 
   const formatDuration = () => "15m"; // Mock duration

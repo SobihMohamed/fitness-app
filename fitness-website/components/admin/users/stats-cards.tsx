@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Shield, UserCheck, Clock } from "lucide-react";
 import type { UserStats } from "@/types";
@@ -10,7 +7,7 @@ interface StatsCardsProps {
   loading?: boolean;
 }
 
-export const StatsCards = React.memo<StatsCardsProps>(({ stats, loading = false }) => {
+export function StatsCards({ stats, loading = false }: StatsCardsProps) {
   const statsData = [
     {
       title: "Total Users",
@@ -70,6 +67,4 @@ export const StatsCards = React.memo<StatsCardsProps>(({ stats, loading = false 
       })}
     </div>
   );
-});
-
-StatsCards.displayName = "StatsCards";
+}

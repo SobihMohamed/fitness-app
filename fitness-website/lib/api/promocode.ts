@@ -5,7 +5,7 @@ import { API_CONFIG } from "@/config/api";
 import type {
   PromoCode,
   PromoCodeFormData,
-  PromoCodeApiResponse
+  PromoCodeApiResponse,
 } from "@/types";
 
 const http = getHttpClient();
@@ -17,18 +17,18 @@ export const promoCodeApi = {
     try {
       const response = await http.get<PromoCodeApiResponse>(
         API_CONFIG.ADMIN_FUNCTIONS.promoCodes.getAll,
-        { 
+        {
           headers: promoCodeApi.getAuthHeaders(),
-          params: { _: Date.now() }
-        }
+          params: { _: Date.now() },
+        },
       );
 
       const data = response.data;
       const promoCodesData = Array.isArray(data)
         ? data
         : Array.isArray(data?.data)
-        ? data.data
-        : [];
+          ? data.data
+          : [];
 
       return promoCodeApi.formatPromoCodesData(promoCodesData);
     } catch (error: any) {
@@ -44,17 +44,17 @@ export const promoCodeApi = {
     try {
       const response = await http.get<PromoCodeApiResponse>(
         API_CONFIG.ADMIN_FUNCTIONS.promoCodes.getById(id),
-        { 
+        {
           headers: promoCodeApi.getAuthHeaders(),
-          params: { _: Date.now() }
-        }
+          params: { _: Date.now() },
+        },
       );
 
       const data = response.data;
       const promoCodeData = data?.data || data;
-      
+
       if (!promoCodeData) return null;
-      
+
       return promoCodeApi.formatSinglePromoCodeData(promoCodeData);
     } catch (error: any) {
       if (error?.status === 404) {
@@ -78,6 +78,14 @@ export const promoCodeApi = {
         }),
       });
 
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          `Server returned non-JSON response: ${text.substring(0, 100)}`,
+        );
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData?.message || "Failed to create promo code");
@@ -91,18 +99,32 @@ export const promoCodeApi = {
   },
 
   // Update existing promo code
-  async updatePromoCode(id: string, formData: PromoCodeFormData): Promise<PromoCode> {
+  async updatePromoCode(
+    id: string,
+    formData: PromoCodeFormData,
+  ): Promise<PromoCode> {
     try {
-      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.promoCodes.update(id), {
-        method: "POST",
-        headers: promoCodeApi.getAuthHeaders(),
-        body: JSON.stringify({
-          promo_code: formData.promo_code.trim(),
-          start_date: formData.start_date,
-          end_date: formData.end_date,
-          percentage_of_discount: Number(formData.percentage_of_discount),
-        }),
-      });
+      const response = await fetch(
+        API_CONFIG.ADMIN_FUNCTIONS.promoCodes.update(id),
+        {
+          method: "POST",
+          headers: promoCodeApi.getAuthHeaders(),
+          body: JSON.stringify({
+            promo_code: formData.promo_code.trim(),
+            start_date: formData.start_date,
+            end_date: formData.end_date,
+            percentage_of_discount: Number(formData.percentage_of_discount),
+          }),
+        },
+      );
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          `Server returned non-JSON response: ${text.substring(0, 100)}`,
+        );
+      }
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -119,10 +141,13 @@ export const promoCodeApi = {
   // Delete promo code
   async deletePromoCode(id: string): Promise<void> {
     try {
-      const response = await fetch(API_CONFIG.ADMIN_FUNCTIONS.promoCodes.delete(id), {
-        method: "DELETE",
-        headers: promoCodeApi.getAuthHeaders(),
-      });
+      const response = await fetch(
+        API_CONFIG.ADMIN_FUNCTIONS.promoCodes.delete(id),
+        {
+          method: "DELETE",
+          headers: promoCodeApi.getAuthHeaders(),
+        },
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -137,18 +162,26 @@ export const promoCodeApi = {
   formatPromoCodesData(promoCodesData: any[]): PromoCode[] {
     return promoCodesData
       .filter((promoCode): promoCode is Record<string, any> => !!promoCode)
-      .map((promoCode): PromoCode => promoCodeApi.formatSinglePromoCodeData(promoCode));
+      .map(
+        (promoCode): PromoCode =>
+          promoCodeApi.formatSinglePromoCodeData(promoCode),
+      );
   },
 
   // Format single promo code data
   formatSinglePromoCodeData(promoCodeData: any): PromoCode {
     return {
-      promoCode_id: String(promoCodeData.promoCode_id || promoCodeData.id || ''),
-      promo_code: String(promoCodeData.promo_code || ''),
-      start_date: String(promoCodeData.start_date || ''),
-      end_date: String(promoCodeData.end_date || ''),
+      promoCode_id: String(
+        promoCodeData.promoCode_id || promoCodeData.id || "",
+      ),
+      promo_code: String(promoCodeData.promo_code || ""),
+      start_date: String(promoCodeData.start_date || ""),
+      end_date: String(promoCodeData.end_date || ""),
       percentage_of_discount: promoCodeData.percentage_of_discount || 0,
-      created_at: promoCodeData.created_at || promoCodeData.createdAt || new Date().toISOString(),
+      created_at:
+        promoCodeData.created_at ||
+        promoCodeData.createdAt ||
+        new Date().toISOString(),
     };
   },
 
@@ -163,11 +196,11 @@ export const promoCodeApi = {
   },
 
   // Get auth headers (will be overridden in component context)
-  getAuthHeaders(includeContentType: boolean = true): Record<string, string> {
+  getAuthHeaders: (includeContentType: boolean = true): Record<string, string> => {
     const headers: Record<string, string> = {};
     if (includeContentType) {
-      headers['Content-Type'] = 'application/json';
+      headers["Content-Type"] = "application/json";
     }
     return headers;
-  }
+  },
 };

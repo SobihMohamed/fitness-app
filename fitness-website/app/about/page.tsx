@@ -1,9 +1,8 @@
-"use client"
-import React, { useMemo } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Users, Award, Target, Heart, Trophy, Zap } from "lucide-react"
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Users, Award, Target, Heart, Trophy, Zap } from "lucide-react";
 import Link from "next/link";
 
 const teamMembers = [
@@ -23,7 +22,11 @@ const teamMembers = [
     name: "Emily Davis",
     role: "Nutrition Expert",
     bio: "Registered dietitian helping clients achieve their health goals through proper nutrition and lifestyle changes.",
-    specialties: ["Nutrition Planning", "Weight Management", "Wellness Coaching"],
+    specialties: [
+      "Nutrition Planning",
+      "Weight Management",
+      "Wellness Coaching",
+    ],
   },
   {
     name: "David Wilson",
@@ -31,7 +34,7 @@ const teamMembers = [
     bio: "Certified yoga instructor with expertise in mindfulness and flexibility training. 500-hour RYT certified.",
     specialties: ["Yoga", "Mindfulness", "Flexibility", "Meditation"],
   },
-]
+];
 
 const values = [
   {
@@ -55,9 +58,10 @@ const values = [
   {
     icon: Award,
     title: "Excellence",
-    description: "Committed to delivering the highest quality fitness programs and services with proven results.",
+    description:
+      "Committed to delivering the highest quality fitness programs and services with proven results.",
   },
-]
+];
 
 const milestones = [
   {
@@ -69,13 +73,15 @@ const milestones = [
   {
     year: "2019",
     title: "First 1,000 Members",
-    description: "Reached our first major milestone with incredible community support",
+    description:
+      "Reached our first major milestone with incredible community support",
     icon: Users,
   },
   {
     year: "2021",
     title: "Online Platform Launch",
-    description: "Expanded to digital with comprehensive online training programs",
+    description:
+      "Expanded to digital with comprehensive online training programs",
     icon: Zap,
   },
   {
@@ -84,17 +90,17 @@ const milestones = [
     description: "Now serving a global community of fitness enthusiasts",
     icon: Award,
   },
-]
+];
 
 export default function AboutPage() {
-  // Memoized statistics for better performance
-  const aboutStats = useMemo(() => ({
+  // Static data defined outside
+  const aboutStats = {
     memberCount: "50,000+",
     trainerCount: "200+",
     successStories: "10,000+",
-    averageRating: "4.9",
-    foundedYear: "2018"
-  }), [])
+    programsLaunched: "120+",
+    foundedYear: "2018",
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
@@ -110,10 +116,10 @@ export default function AboutPage() {
                   <span className="text-blue-600"> Fitness</span>
                 </h1>
                 <p className="text-xl text-gray-600">
-                  Founded in {aboutStats.foundedYear}, FitOrigin has been dedicated
-                  to helping individuals achieve their fitness goals through
-                  personalized training, expert guidance, and a supportive
-                  community that celebrates every victory.
+                  Founded in {aboutStats.foundedYear}, FitOrigin has been
+                  dedicated to helping individuals achieve their fitness goals
+                  through personalized training, expert guidance, and a
+                  supportive community that celebrates every victory.
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -316,7 +322,10 @@ export default function AboutPage() {
               { number: aboutStats.memberCount, label: "Active Members" },
               { number: aboutStats.trainerCount, label: "Certified Trainers" },
               { number: aboutStats.successStories, label: "Success Stories" },
-              { number: aboutStats.averageRating, label: "Average Rating" },
+              {
+                number: aboutStats.programsLaunched,
+                label: "Programs Launched",
+              },
             ].map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="text-4xl lg:text-5xl font-bold text-white mb-2">
@@ -337,17 +346,24 @@ export default function AboutPage() {
             Ready to Join Our Community?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Become part of a supportive community that's committed to helping you
-            achieve your fitness goals.
+            Become part of a supportive community that's committed to helping
+            you achieve your fitness goals.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/courses">
-              <Button size="lg" className="text-lg px-8 bg-white text-black hover:bg-gray-100">
+              <Button
+                size="lg"
+                className="text-lg px-8 bg-white text-black hover:bg-gray-100"
+              >
                 Start Your Journey
               </Button>
             </Link>
             <Link href="/contact">
-              <Button size="lg" variant="outline" className="text-lg px-8 text-white border-white hover:bg-white hover:text-black bg-transparent">
+              <Button
+                size="lg"
+                variant="outline"
+                className="text-lg px-8 text-white border-white hover:bg-white hover:text-black bg-transparent"
+              >
                 Contact Our Team
               </Button>
             </Link>

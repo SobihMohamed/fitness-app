@@ -1,99 +1,116 @@
-import bundleAnalyzer from '@next/bundle-analyzer'
+import bundleAnalyzer from "@next/bundle-analyzer";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
+  reactStrictMode: true,
   // Performance optimizations
   compiler: {
-    // Remove all console statements in production for better performance
-    removeConsole: process.env.NODE_ENV === 'production' 
-      ? { exclude: ['error'] } // Keep console.error for critical issues
-      : false,
+    removeConsole:
+      process.env.NODE_ENV === "production" ? { exclude: ["error"] } : false,
   },
-  // Enable compression for faster page loads
   compress: true,
-  // Optimize production builds
   productionBrowserSourceMaps: false,
-  // Remove X-Powered-By header for security and performance
   poweredByHeader: false,
   onDemandEntries: {
-    maxInactiveAge: 60 * 60 * 1000,
-    pagesBufferLength: 5,
+    maxInactiveAge: 25 * 1000, // Reduced from 60s for faster HMR in dev, doesn't affect prod
+    pagesBufferLength: 2, // Reduced buffer for lower memory usage
   },
-  // Enable Next.js Image Optimization (do not disable globally)
+  // Image optimization - critical for performance
   images: {
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     localPatterns: [
       {
-        pathname: '/proxy-image',
-        // allow any value for `url` param, e.g. /proxy-image?url=http://localhost:8000/uploads/...
-        search: 'url=**',
+        pathname: "/proxy-image",
+        search: "url=**",
       },
-      // Allow all assets under the public/ folder (e.g. /home-hero-fitness.jpg)
       {
-        pathname: '/**',
+        pathname: "/**",
       },
     ],
-    // Allow remote images served directly from backend and CDNs
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '8000',
-        pathname: '/**',
+        protocol: "http",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/**",
       },
       {
-        protocol: 'http',
-        hostname: '127.0.0.1',
-        port: '8000',
-        pathname: '/**',
+        protocol: "http",
+        hostname: "127.0.0.1",
+        port: "8000",
+        pathname: "/**",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
       },
     ],
-    formats: ['image/webp', 'image/avif'],
   },
   experimental: {
-    // Reduce bundle size by optimizing common package imports
     optimizePackageImports: [
+      "lucide-react",
       "date-fns",
-      "clsx",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-dropdown-menu",
-      "@radix-ui/react-select",
-      "@radix-ui/react-tabs",
-      "recharts",
+      "react-hook-form",
+      "@hookform/resolvers",
+      "zod",
     ],
-    // Enable aggressive caching
-    optimisticClientCache: true,
-    // Optimize CSS for better performance
-    optimizeCss: true,
+    // Turbopack: dramatically faster dev-mode compilation (replaces Webpack in dev)
+    turbopack: {},
   },
+  // Trailing slash for better SEO and caching
+  trailingSlash: true,
+  // Dist directory for cleaner builds
+  distDir: ".next",
   // Add cache headers for static assets
   async headers() {
     return [
+      // Static images - immutable cache
       {
-        source: '/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico)',
+        source: "/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico)",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
+      // Next.js static files
       {
-        source: '/_next/static/:path*',
+        source: "/_next/static/:path*",
         headers: [
           {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // Font files - immutable cache
+      {
+        source: "/:all*(woff|woff2|eot|ttf|otf)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      // API responses - short cache with stale-while-revalidate
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, s-maxage=300, stale-while-revalidate=600",
           },
         ],
       },
@@ -104,16 +121,18 @@ const nextConfig = {
     const target =
       process.env.NEXT_PUBLIC_API_TARGET_URL ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
-      'http://localhost:8000'
+      "http://localhost:8000";
     return [
       {
-        source: '/api/:path*',
+        source: "/api/:path*",
         destination: `${target}/:path*`,
       },
-    ]
+    ];
   },
-}
+};
 
-const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === 'true' })
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
-export default withBundleAnalyzer(nextConfig)
+export default withBundleAnalyzer(nextConfig);

@@ -1,14 +1,5 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Target, 
-  CheckCircle, 
-  BookOpen,
-  Lightbulb,
-  Award
-} from "lucide-react";
+import { Target, CheckCircle, BookOpen, Lightbulb, Award } from "lucide-react";
 
 interface Module {
   module_id: number;
@@ -24,14 +15,14 @@ interface ModuleDetailsInfoProps {
   module: Module;
 }
 
-const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
+export default function ModuleDetailsInfo({ module }: ModuleDetailsInfoProps) {
   // Mock learning objectives based on module content
   const learningObjectives = [
     "Understand the core concepts covered in this module",
     "Apply practical techniques through hands-on exercises",
     "Master the fundamental skills required for progression",
     "Build confidence through structured learning approach",
-    "Prepare for advanced topics in subsequent modules"
+    "Prepare for advanced topics in subsequent modules",
   ];
 
   const keyTopics = [
@@ -39,7 +30,7 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
     "Step-by-step practical demonstrations",
     "Common mistakes and how to avoid them",
     "Best practices and professional tips",
-    "Real-world application examples"
+    "Real-world application examples",
   ];
 
   return (
@@ -58,9 +49,11 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
               {module.description}
             </p>
             <p className="text-muted-foreground leading-relaxed mt-4">
-              This module is carefully designed to build upon previous knowledge while introducing 
-              new concepts that will enhance your understanding and practical skills. Each chapter 
-              within this module focuses on specific aspects that contribute to your overall learning journey.
+              This module is carefully designed to build upon previous knowledge
+              while introducing new concepts that will enhance your
+              understanding and practical skills. Each chapter within this
+              module focuses on specific aspects that contribute to your overall
+              learning journey.
             </p>
           </div>
         </CardContent>
@@ -77,10 +70,7 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
         <CardContent>
           <div className="space-y-3">
             {learningObjectives.map((objective, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3"
-              >
+              <div key={index} className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">{objective}</span>
               </div>
@@ -123,18 +113,13 @@ const ModuleDetailsInfo = React.memo<ModuleDetailsInfoProps>(({ module }) => {
         <CardContent>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-blue-800 text-sm">
-              {module.order_number > 1 
+              {module.order_number > 1
                 ? `Complete Module ${module.order_number - 1} before starting this module for the best learning experience.`
-                : "This is the first module - no prerequisites required! Perfect for beginners."
-              }
+                : "This is the first module - no prerequisites required! Perfect for beginners."}
             </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-});
-
-ModuleDetailsInfo.displayName = "ModuleDetailsInfo";
-
-export default ModuleDetailsInfo;
+}

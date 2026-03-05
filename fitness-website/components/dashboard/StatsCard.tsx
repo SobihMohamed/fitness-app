@@ -1,5 +1,3 @@
-"use client";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { LucideIcon } from "lucide-react";
 
@@ -12,13 +10,13 @@ interface StatsCardProps {
   isLoading?: boolean;
 }
 
-export function StatsCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  iconColor, 
-  bgColor, 
-  isLoading = false 
+export function StatsCard({
+  title,
+  value,
+  icon: Icon,
+  iconColor,
+  bgColor,
+  isLoading = false,
 }: StatsCardProps) {
   if (isLoading) {
     return (
@@ -46,12 +44,8 @@ export function StatsCard({
             <Icon className={`h-6 w-6 ${iconColor}`} />
           </div>
           <div className="ml-4">
-            <p className="text-sm font-medium text-gray-600">
-              {title}
-            </p>
-            <p className="text-2xl font-bold text-gray-900">
-              {value}
-            </p>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-2xl font-bold text-gray-900">{value}</p>
           </div>
         </div>
       </CardContent>

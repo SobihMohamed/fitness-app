@@ -16,7 +16,7 @@ export const courseApi = {
   async fetchCourses(): Promise<Course[]> {
     const response = await http.get<ApiResponse<Course[]>>(
       `${API_CONFIG.BASE_URL}/AdminCourses/getAll`,
-      { headers: this.getAuthHeaders() }
+      { headers: this.getAuthHeaders(), params: { _: Date.now() } }
     );
 
     const data = response.data;
@@ -59,7 +59,8 @@ export const courseApi = {
       
       if (formData.image_url instanceof File) {
         body.append('image_url', formData.image_url);
-      } else if (formData.image_url && typeof formData.image_url === 'string') {
+      } else if (typeof formData.image_url === 'string') {
+        // Allow clearing image by sending an explicit empty string
         body.append('image_url', formData.image_url);
       }
 
@@ -80,7 +81,8 @@ export const courseApi = {
       requestBody.append('price', formData.price);
       requestBody.append('description', formData.description);
       
-      if (formData.image_url && typeof formData.image_url === 'string') {
+      if (typeof formData.image_url === 'string') {
+        // Allow clearing image by sending an explicit empty string
         requestBody.append('image_url', formData.image_url);
       }
 
@@ -163,7 +165,7 @@ export const courseApi = {
   },
 
   // Get auth headers (will be overridden in component context)
-  getAuthHeaders(includeContentType: boolean = true): Record<string, string> {
+  getAuthHeaders: (includeContentType: boolean = true): Record<string, string> => {
     const token = typeof window !== "undefined" ? localStorage.getItem("adminAuth") : null;
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;

@@ -1,15 +1,6 @@
-"use client";
+import { CheckCircle } from "lucide-react";
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Download } from "lucide-react";
-
-interface RequestsHeaderProps {
-  onExport?: () => void;
-}
-
-export const RequestsHeader = React.memo<RequestsHeaderProps>(({ onExport }) => {
-
+export function RequestsHeader() {
   return (
     <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-6">
       <div className="flex-1">
@@ -20,11 +11,10 @@ export const RequestsHeader = React.memo<RequestsHeaderProps>(({ onExport }) => 
           Advanced Requests Management
         </h1>
         <p className="text-slate-600 text-lg">
-          Search, filter, and manage all training, course, and order requests with advanced tools.
+          Search, filter, and manage all training, course, and order requests
+          with advanced tools.
         </p>
       </div>
     </div>
   );
-});
-
-RequestsHeader.displayName = "RequestsHeader";
+}

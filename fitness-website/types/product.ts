@@ -114,7 +114,7 @@ export interface ProductsFilterSectionProps {
 export interface ProductCardProps {
   product: ClientProduct;
   categories: ClientCategory[];
-  favorites: Set<number>;
+  isFavorite: boolean;
   onAddToCart: (product: ClientProduct) => void;
   onToggleFavorite: (productId: number) => void;
   priority?: boolean;
@@ -127,6 +127,7 @@ export interface ProductGridProps {
   loading: boolean;
   onAddToCart: (product: ClientProduct) => void;
   onToggleFavorite: (productId: number) => void;
+  onClearFilters: () => void;
 }
 
 export interface ProductPaginationProps {

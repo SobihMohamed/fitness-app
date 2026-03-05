@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 
 type StatsCardProps = {
@@ -11,7 +8,13 @@ type StatsCardProps = {
   description?: string;
 };
 
-export function StatsCard({ title, value, icon, color = "#6366f1", description }: StatsCardProps) {
+export function StatsCard({
+  title,
+  value,
+  icon,
+  color = "#6366f1",
+  description,
+}: StatsCardProps) {
   return (
     <Card className="border-0 shadow-lg">
       <CardContent className="p-4">
@@ -24,7 +27,10 @@ export function StatsCard({ title, value, icon, color = "#6366f1", description }
             ) : null}
           </div>
           {icon ? (
-            <div className="p-3 rounded-full" style={{ backgroundColor: `${color}22` }}>
+            <div
+              className="p-3 rounded-full"
+              style={{ backgroundColor: `${color}22` }}
+            >
               <div style={{ color }}>{icon}</div>
             </div>
           ) : null}
@@ -33,5 +39,3 @@ export function StatsCard({ title, value, icon, color = "#6366f1", description }
     </Card>
   );
 }
-
-
