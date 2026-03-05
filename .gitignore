@@ -1,0 +1,16 @@
+# IDEs and Editors
+.vs/
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Backend (PHP API)
+fitness-api-php/public/log.txt
+fitness-api-php/vendor/
+fitness-api-php/.env
+
+# (Optional) You can leave the frontend one as is, 
+# it will still work for the fitness-website folder.
