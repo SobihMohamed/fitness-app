@@ -1,15 +1,5 @@
-"use client";
-
-import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { 
-  BookOpen, 
-  Clock, 
-  Play, 
-  Calendar,
-  Target,
-  Users
-} from "lucide-react";
+import { BookOpen, Clock, Play, Calendar, Target } from "lucide-react";
 
 interface Module {
   module_id: number;
@@ -25,12 +15,14 @@ interface ModuleDetailsHeaderProps {
   module: Module;
 }
 
-const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) => {
+export default function ModuleDetailsHeader({
+  module,
+}: ModuleDetailsHeaderProps) {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -39,7 +31,7 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
     const totalMinutes = chaptersCount * 15; // Assume 15 min per chapter
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }
@@ -51,7 +43,10 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
       <div className="max-w-4xl">
         {/* Module Badge */}
         <div className="flex items-center gap-2 mb-4">
-          <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">
+          <Badge
+            variant="secondary"
+            className="bg-primary/10 text-primary font-medium"
+          >
             <BookOpen className="w-3 h-3 mr-1" />
             Module {module.order_number}
           </Badge>
@@ -61,16 +56,12 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
         </div>
 
         {/* Module Title */}
-        <h1
-          className="text-3xl lg:text-4xl font-bold text-foreground mb-4"
-        >
+        <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
           {module.title}
         </h1>
 
         {/* Module Description */}
-        <p
-          className="text-lg text-muted-foreground mb-8 leading-relaxed"
-        >
+        <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
           {module.description}
         </p>
 
@@ -119,8 +110,4 @@ const ModuleDetailsHeader = React.memo<ModuleDetailsHeaderProps>(({ module }) =>
       </div>
     </div>
   );
-});
-
-ModuleDetailsHeader.displayName = "ModuleDetailsHeader";
-
-export default ModuleDetailsHeader;
+}

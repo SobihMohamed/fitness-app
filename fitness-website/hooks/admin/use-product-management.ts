@@ -56,7 +56,7 @@ interface ProductManagementReturn extends ProductManagementState, ProductManagem
 }
 
 export function useProductManagement(): ProductManagementReturn {
-  const { getAuthHeaders, showErrorToast, showSuccessToast } = useAdminApi();
+  const { getAuthHeaders, showErrorToast, showSuccessToast, showInfoToast } = useAdminApi();
   
   // State
   const [products, setProducts] = useState<Product[]>([]);
@@ -199,7 +199,21 @@ export function useProductManagement(): ProductManagementReturn {
   const updateProduct = useCallback(async (productId: string, formData: ProductFormData, mainImage?: File, subImages?: File[]) => {
     try {
       setLoading(prev => ({ ...prev, submitting: true }));
-      await productsApi.updateProduct(productId, formData, mainImage, subImages);
+
+      // IMPORTANT (backend behavior): if sub_images[] is present in updateProduct, the backend deletes
+      // ALL existing gallery images and replaces them. It also does NOT support keep_sub_images[].
+      // So we update product fields first WITHOUT sub_images, then (if user selected new gallery files)
+      // we re-upload old+new together using productsApi.addSubImages.
+      const hasNewGallery = !!(subImages && subImages.length > 0);
+
+      await productsApi.updateProduct(productId, formData, mainImage, undefined);
+
+      if (hasNewGallery) {
+        const current = await productsApi.getProductById(productId);
+        const existingImages = Array.isArray(current?.sub_images) ? current.sub_images : [];
+        await productsApi.addSubImages(productId, subImages as File[], existingImages);
+      }
+
       showSuccessToast("Product updated successfully!");
       await fetchProducts();
     } catch (error: any) {
@@ -218,7 +232,28 @@ export function useProductManagement(): ProductManagementReturn {
       await productsApi.deleteProduct(productId);
       showSuccessToast("Product deleted successfully!");
     } catch (error: any) {
-      const status = error?.response?.status;
+      const status = error?.response?.status ?? error?.status;
+      const rawMessage = String(
+        error?.response?.data?.message ??
+        error?.data?.message ??
+        error?.message ??
+        ""
+      );
+
+      const normalized = rawMessage.toLowerCase();
+      const deletionBlocked =
+        normalized.includes("cannot delete") ||
+        normalized.includes("foreign key") ||
+        normalized.includes("constraint") ||
+        normalized.includes("failed to excute") ||
+        normalized.includes("error during delete product");
+
+      if (deletionBlocked) {
+        await fetchProducts();
+        showInfoToast("You can't delete this product because a customer has requested it.");
+        return;
+      }
+
       // If backend returns 400/404 (already deleted or bad request), keep optimistic state
       if (status === 400 || status === 404) {
         showSuccessToast("Product deletion finalized");
@@ -236,8 +271,21 @@ export function useProductManagement(): ProductManagementReturn {
   // Category CRUD operations
   const addCategory = useCallback(async (name: string) => {
     try {
+      const trimmed = String(name || "").trim();
+      if (!trimmed) {
+        showErrorToast("Category name is required");
+        throw new Error("Category name is required");
+      }
+
+      const normalized = trimmed.toLowerCase();
+      const duplicate = categories.some((c) => String(c.name || "").trim().toLowerCase() === normalized);
+      if (duplicate) {
+        showErrorToast(`Name "${trimmed}" already exists.`);
+        throw new Error(`Name "${trimmed}" already exists.`);
+      }
+
       setLoading(prev => ({ ...prev, submitting: true }));
-      await categoriesApi.addCategory({ name });
+      await categoriesApi.addCategory({ name: trimmed });
       showSuccessToast("Category added successfully!");
       await fetchCategories();
     } catch (error: any) {
@@ -246,7 +294,7 @@ export function useProductManagement(): ProductManagementReturn {
     } finally {
       setLoading(prev => ({ ...prev, submitting: false }));
     }
-  }, [fetchCategories]);
+  }, [fetchCategories, categories]);
 
   const updateCategory = useCallback(async (categoryId: string, name: string) => {
     try {

@@ -1,132 +1,87 @@
-"use client";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { API_CONFIG } from "@/config/api";
+import {
+  normalizeHomeProduct,
+  normalizeHomeCourse,
+} from "@/lib/api/normalizers";
+import HomeView from "./HomeView";
+import HomeDataSections from "@/components/client/home/HomeDataSections";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Users, Award, TrendingUp, Star, ShoppingCart, BookOpen, Heart, Settings } from "lucide-react";
-import { useHomeData } from "@/hooks/client/use-home-data";
-import FeaturesSection from "@/components/client/home/FeaturesSection";
-import StatsSection from "@/components/client/home/StatsSection";
-import CTASection from "@/components/client/home/CTASection";
-import HeroSection from "@/components/client/home/HeroSection";
-import FeaturedCoursesSection from "@/components/client/home/FeaturedCoursesSection";
-import FeaturedProductsSection from "@/components/client/home/FeaturedProductsSection";
-import type { HomePageProps, Feature, Stat } from "@/types";
+export const revalidate = 60;
 
+async function safeJson(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
 
-// Statistics data for the stats section - memoized for performance
-const useStatsData = (): Stat[] => {
-  return useMemo(() => [
-    { icon: Users, label: "Active Members", value: "50K+" },
-    { icon: Award, label: "Certified Trainers", value: "200+" },
-    { icon: TrendingUp, label: "Success Stories", value: "10K+" },
-    { icon: Star, label: "Average Rating", value: "4.9" },
-  ], []);
-};
+async function FeaturedSections() {
+  let featuredProducts: ReturnType<typeof normalizeHomeProduct>[] = [];
+  let featuredCourses: ReturnType<typeof normalizeHomeCourse>[] = [];
 
-// Features data for the features section - memoized for performance
-const useFeaturesData = (): Feature[] => {
-  return useMemo(() => [
-    {
-      icon: ShoppingCart,
-      title: "E-Commerce Store",
-      description: "Premium fitness products, supplements, and equipment with secure checkout.",
-      href: "/products",
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-    },
-    {
-      icon: BookOpen,
-      title: "Online Courses",
-      description: "Expert-led fitness courses and training programs for all levels.",
-      href: "/courses",
-      color: "text-green-600",
-      bgColor: "bg-green-100",
-    },
-    {
-      icon: Heart,
-      title: "Wellness Blog",
-      description: "Latest fitness tips, nutrition advice, and success stories.",
-      href: "/blog",
-      color: "text-red-600",
-      bgColor: "bg-red-100",
-    },
-    {
-      icon: Settings,
-      title: "Admin Dashboard",
-      description: "Complete management system for products, users, and content.",
-      href: "/admin/login",
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
-    },
-  ], []);
-};
+  try {
+    const [productsRes, coursesRes] = await Promise.all([
+      fetch(API_CONFIG.USER_FUNCTIONS.products.getAll, {
+        next: { revalidate: 60 },
+      }).catch(() => null),
+      fetch(API_CONFIG.USER_FUNCTIONS.courses.getAll, {
+        next: { revalidate: 60 },
+      }).catch(() => null),
+    ]);
 
+    if (productsRes?.ok) {
+      const json = await safeJson(productsRes);
+      featuredProducts = (
+        Array.isArray(json) ? json : json?.data || json?.products || []
+      )
+        .slice(0, 6)
+        .map(normalizeHomeProduct);
+    }
 
-// Optimized HomePage component with React.memo and performance optimizations
-const HomePage = React.memo<HomePageProps>(({ 
-  initialFeaturedProducts = [], 
-  initialFeaturedCourses = [] 
-}) => {
-  const [isVisible, setIsVisible] = useState(false);
-  
-  // Use custom hook for all data management and API calls
-  const {
-    featuredProducts,
-    featuredCourses,
-    isLoadingProducts,
-    isLoadingCourses,
-    handleCourseEnrollment,
-    handleAddToCart
-  } = useHomeData({ initialFeaturedProducts, initialFeaturedCourses });
-  
-  // Memoized data for static sections
-  const stats = useStatsData();
-  const features = useFeaturesData();
-  
-  // Memoized hero image source
-  const heroImageSrc = useMemo(() => "/home-hero-fitness.jpg", []);
-  
-  // Initialize visibility state for animations
-  useEffect(() => {
-    setIsVisible(true);
-  }, []);
-
+    if (coursesRes?.ok) {
+      const json = await safeJson(coursesRes);
+      featuredCourses = (
+        Array.isArray(json) ? json : json?.data || json?.courses || []
+      )
+        .slice(0, 6)
+        .map(normalizeHomeCourse);
+    }
+  } catch {
+    // Gracefully handle build-time errors when API is unavailable
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Hero Section - Critical above-the-fold content */}
-      <HeroSection 
-        isVisible={isVisible} 
-        heroImageSrc={heroImageSrc} 
-      />
-
-      {/* Features Section - Memoized component */}
-      <FeaturesSection features={features} />
-
-      {/* Stats Section - Memoized component */}
-      <StatsSection stats={stats} />
-
-      {/* Featured Courses */}
-      <FeaturedCoursesSection 
-        courses={featuredCourses}
-        isLoading={isLoadingCourses}
-        onEnrollment={handleCourseEnrollment}
-      />
-
-      {/* Featured Products */}
-      <FeaturedProductsSection 
-        products={featuredProducts}
-        isLoading={isLoadingProducts}
-        onAddToCart={handleAddToCart}
-      />
-
-      {/* CTA Section - Memoized component */}
-      <CTASection />
-    </div>
+    <HomeDataSections
+      initialFeaturedProducts={featuredProducts}
+      initialFeaturedCourses={featuredCourses}
+    />
   );
-});
+}
 
-// Set display name for debugging
-HomePage.displayName = "HomePage";
+function FeaturedSectionsFallback() {
+  return (
+    <>
+      <div className="py-20 bg-gray-50">
+        <Skeleton className="h-96 max-w-7xl mx-auto" />
+      </div>
+      <div className="py-20 bg-white">
+        <Skeleton className="h-96 max-w-7xl mx-auto" />
+      </div>
+    </>
+  );
+}
 
-export { HomePage };
-export default HomePage;
+export default function HomePage() {
+  return (
+    <HomeView
+      dataSlot={
+        <Suspense fallback={<FeaturedSectionsFallback />}>
+          <FeaturedSections />
+        </Suspense>
+      }
+    />
+  );
+}

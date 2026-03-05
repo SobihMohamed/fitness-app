@@ -1,9 +1,6 @@
-"use client"
+import { Badge } from "@/components/ui/badge";
 
-import { memo } from "react"
-import { Badge } from "@/components/ui/badge"
-
-export const ServicesHero = memo(function ServicesHero() {
+export default function ServicesHero() {
   return (
     <section className="py-12 lg:py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -17,9 +14,10 @@ export const ServicesHero = memo(function ServicesHero() {
           </span>
         </h1>
         <p className="text-xl max-w-3xl mx-auto text-muted leading-relaxed">
-          Personal training, group classes, wellness coaching, and more—everything you need to stay consistent and see results.
+          Personal training, group classes, wellness coaching, and
+          more—everything you need to stay consistent and see results.
         </p>
       </div>
     </section>
-  )
-})
+  );
+}

@@ -1,9 +1,6 @@
-"use client";
-
-import React from "react";
 import { Badge } from "@/components/ui/badge";
 
-const CoursesHeroSection = React.memo(() => {
+export default function CoursesHeroSection() {
   return (
     <section className="py-12 lg:py-20 bg-gradient-to-b from-white to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -17,14 +14,11 @@ const CoursesHeroSection = React.memo(() => {
           </span>
         </h1>
         <p className="text-xl max-w-3xl mx-auto text-muted leading-relaxed">
-          Unlock your potential with our comprehensive fitness courses. From beginner-friendly workouts
-          to advanced training programs, we have everything you need to achieve your goals.
+          Unlock your potential with our comprehensive fitness courses. From
+          beginner-friendly workouts to advanced training programs, we have
+          everything you need to achieve your goals.
         </p>
       </div>
     </section>
   );
-});
-
-CoursesHeroSection.displayName = "CoursesHeroSection";
-
-export default CoursesHeroSection;
+}

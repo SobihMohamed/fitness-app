@@ -1,39 +1,52 @@
-"use client"
-import Link from "next/link"
-import Image from "next/image"
-import { getProxyImageUrl } from "@/lib/images"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useCart } from "@/contexts/cart-context"
-import { useAuth } from "@/contexts/auth-context"
-import { ShoppingCart, Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
-import { toast } from "sonner"
+"use client";
+import Link from "next/link";
+import Image from "next/image";
+import { getProxyImageUrl } from "@/lib/images";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { useCart } from "@/contexts/cart-context";
+import { useAuth } from "@/contexts/auth-context";
+import { ShoppingCart, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
 
 export function CartDrawer() {
   const cartContext = useCart();
   const { items, total, isOpen } = cartContext.state;
-  const { toggleCart, closeCart, updateQuantity, removeItem, getCartCount, openCart } = cartContext;
+  const {
+    toggleCart,
+    closeCart,
+    updateQuantity,
+    removeItem,
+    getCartCount,
+    openCart,
+  } = cartContext;
   const { user } = useAuth();
   const itemCount = getCartCount();
 
   const handleDecrease = (id: string, quantity: number, name?: string) => {
     if (quantity > 1) {
-      updateQuantity(id, quantity - 1)
-      toast("Quantity decreased")
+      updateQuantity(id, quantity - 1);
+      toast("Quantity decreased");
     } else {
       // quantity is 1 -> confirm deletion
       toast.warning("Are you sure you want to delete the product?", {
         action: {
           label: "Delete",
           onClick: () => {
-            removeItem(id)
-            toast.success("Product removed")
+            removeItem(id);
+            toast.success("Product removed");
           },
         },
-      })
+      });
     }
-  }
+  };
 
   return (
     <Sheet
@@ -100,20 +113,23 @@ export function CartDrawer() {
                   key={`${String(item.id ?? "item")}-${idx}`}
                   className="flex items-center space-x-4"
                 >
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                  <div className="relative w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                     <Image
                       src={getProxyImageUrl(item.image) || "/placeholder.svg"}
                       alt={item.name}
                       fill
+                      unoptimized
                       className="object-cover"
                       sizes="64px"
                     />
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <h4 className="font-medium text-sm text-foreground">
+                  <div className="flex-1 space-y-1 min-w-0">
+                    <h4 className="font-medium text-sm text-foreground line-clamp-2 break-words">
                       {item.name}
                     </h4>
-                    <p className="text-xs text-muted">{item.category}</p>
+                    <p className="text-xs text-muted truncate">
+                      {item.category}
+                    </p>
                     <p className="font-bold text-sm text-primary">
                       {Number(item.price ?? 0).toFixed(2)} EGP
                     </p>
@@ -156,7 +172,7 @@ export function CartDrawer() {
               ))}
             </div>
 
-            <div className="space-y-4 pt-4 border-t">
+            <div className="space-y-4 pt-4 mt-4 border-t bg-background sticky bottom-0">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium text-foreground">
                   Total:
@@ -167,7 +183,7 @@ export function CartDrawer() {
               </div>
               <div>
                 <Button className="w-full bg-primary" onClick={closeCart}>
-                  <Link href="/checkout">Produce CheckOut</Link>
+                  <Link href="/checkout">Proceed to Checkout</Link>
                 </Button>
               </div>
             </div>

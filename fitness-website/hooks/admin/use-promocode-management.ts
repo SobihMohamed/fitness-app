@@ -3,17 +3,17 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { promoCodeApi } from "@/lib/api/promocode";
 import { useAdminApi } from "./use-admin-api";
-import type { 
-  PromoCode, 
-  PromoCodeFormData, 
-  PromoCodeManagementReturn
+import type {
+  PromoCode,
+  PromoCodeFormData,
+  PromoCodeManagementReturn,
 } from "@/types";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export function usePromoCodeManagement(): PromoCodeManagementReturn {
   const { getAuthHeaders, showErrorToast, showSuccessToast } = useAdminApi();
-  
+
   // State
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,10 +79,11 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
   const filteredPromoCodes = useMemo(() => {
     const searchTerm = search.trim().toLowerCase();
     if (!searchTerm) return promoCodes;
-    
-    return promoCodes.filter((promoCode) =>
-      promoCode.promo_code?.toLowerCase().includes(searchTerm) ||
-      promoCode.percentage_of_discount?.toString().includes(searchTerm)
+
+    return promoCodes.filter(
+      (promoCode) =>
+        promoCode.promo_code?.toLowerCase().includes(searchTerm) ||
+        promoCode.percentage_of_discount?.toString().includes(searchTerm),
     );
   }, [search, promoCodes]);
 
@@ -110,7 +111,9 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
       promo_code: promoCode.promo_code || "",
       start_date: (promoCode.start_date || todayStr()).slice(0, 10),
       end_date: (promoCode.end_date || todayStr()).slice(0, 10),
-      percentage_of_discount: (promoCode.percentage_of_discount ?? "").toString(),
+      percentage_of_discount: (
+        promoCode.percentage_of_discount ?? ""
+      ).toString(),
     });
     setIsDialogOpen(true);
   }, []);
@@ -119,6 +122,14 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
   const validateForm = useCallback((): boolean => {
     if (!form.promo_code.trim()) {
       showErrorToast("Promo code is required");
+      return false;
+    }
+    if (form.promo_code.trim().length < 3) {
+      showErrorToast("Promo code must be at least 3 characters");
+      return false;
+    }
+    if (form.promo_code.trim().length > 20) {
+      showErrorToast("Promo code must not exceed 20 characters");
       return false;
     }
     if (!form.start_date || !form.end_date) {
@@ -140,10 +151,10 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
   // Save promo code (create or update) - removed toast functions from dependencies to prevent infinite re-renders
   const savePromoCode = useCallback(async () => {
     if (!validateForm()) return;
-    
+
     try {
       setSubmitting(true);
-      
+
       if (editing) {
         await promoCodeApi.updatePromoCode(editing.promoCode_id, form);
         showSuccessToast("Promo code updated successfully");
@@ -165,14 +176,16 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
   // Delete promo code - removed toast functions from dependencies to prevent infinite re-renders
   const deletePromoCode = useCallback(async () => {
     if (!confirmDelete) return;
-    
+
     try {
       setSubmitting(true);
       await promoCodeApi.deletePromoCode(confirmDelete.promoCode_id);
       showSuccessToast("Promo code deleted successfully");
-      
+
       // Update local state immediately for better UX
-      setPromoCodes(prev => prev.filter(p => p.promoCode_id !== confirmDelete.promoCode_id));
+      setPromoCodes((prev) =>
+        prev.filter((p) => p.promoCode_id !== confirmDelete.promoCode_id),
+      );
       setConfirmDelete(null);
     } catch (error: any) {
       showErrorToast(error.message || "Failed to delete promo code");
@@ -182,9 +195,12 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
   }, [confirmDelete]);
 
   // Update form field
-  const updateForm = useCallback((field: keyof PromoCodeFormData, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-  }, []);
+  const updateForm = useCallback(
+    (field: keyof PromoCodeFormData, value: string) => {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   return {
     // State
@@ -196,10 +212,10 @@ export function usePromoCodeManagement(): PromoCodeManagementReturn {
     editing,
     confirmDelete,
     form,
-    
+
     // Computed values
     filteredPromoCodes,
-    
+
     // Actions
     loadPromoCodes,
     openAdd,

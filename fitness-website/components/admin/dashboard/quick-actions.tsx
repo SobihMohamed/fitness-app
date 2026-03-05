@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import {
   Card,
   CardContent,
@@ -8,16 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  UserCheck,
-  Package,
-  BookOpen,
-  ShoppingCart,
-  Zap,
-} from "lucide-react";
+import { UserCheck, Package, BookOpen, ShoppingCart, Zap } from "lucide-react";
 import Link from "next/link";
-import { QuickActionsProps } from "@/types";
-
 const quickActionsData = [
   {
     href: "/admin/users",
@@ -63,7 +52,7 @@ const quickActionsData = [
   },
 ];
 
-export const QuickActions = React.memo<QuickActionsProps>(() => {
+export function QuickActions() {
   return (
     <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all">
       <CardHeader>
@@ -94,6 +83,4 @@ export const QuickActions = React.memo<QuickActionsProps>(() => {
       </CardContent>
     </Card>
   );
-});
-
-QuickActions.displayName = "QuickActions";
+}

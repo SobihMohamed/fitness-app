@@ -3,9 +3,15 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ChevronLeft, BookOpen } from "lucide-react";
-import { formatDateTimeDDMMYYYYHHmm } from "@/utils/format";
+import { formatDateTimeDDMMYYYYHHmm } from "@/lib/utils/format";
 import type { Course } from "@/types";
 
 interface CourseHeaderProps {
@@ -14,6 +20,22 @@ interface CourseHeaderProps {
 
 export const CourseHeader = React.memo<CourseHeaderProps>(({ course }) => {
   const router = useRouter();
+
+  const formatCreatedAt = (createdAt?: string | null) => {
+    if (!createdAt) return "-";
+    const raw = String(createdAt);
+    // If backend sends date-only (no time), avoid showing 00:00 which looks incorrect.
+    const hasTime = /\d{2}:\d{2}/.test(raw);
+    if (!hasTime) {
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return "-";
+      const dd = String(d.getUTCDate()).padStart(2, "0");
+      const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const yyyy = d.getUTCFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }
+    return formatDateTimeDDMMYYYYHHmm(raw);
+  };
 
   return (
     <>
@@ -51,17 +73,16 @@ export const CourseHeader = React.memo<CourseHeaderProps>(({ course }) => {
             <h3 className="text-sm font-medium text-slate-500 mb-2">
               Description
             </h3>
-            <p className="text-slate-700">
-              {course?.description || "No description provided for this course."}
+            <p className="text-slate-700 break-words whitespace-pre-wrap max-h-40 overflow-auto">
+              {course?.description ||
+                "No description provided for this course."}
             </p>
           </div>
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
               <span className="text-slate-500 block">Created</span>
               <span className="font-medium">
-                {course?.created_at
-                  ? formatDateTimeDDMMYYYYHHmm(course.created_at)
-                  : "-"}
+                {formatCreatedAt(course?.created_at)}
               </span>
             </div>
             {course?.price && (

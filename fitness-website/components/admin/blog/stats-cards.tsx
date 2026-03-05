@@ -1,11 +1,8 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, Eye, Edit3 } from "lucide-react";
 import type { StatsCardsProps } from "@/types";
 
-export const StatsCards = React.memo(({ blogs }: StatsCardsProps) => {
+export function StatsCards({ blogs }: StatsCardsProps) {
   const totalBlogs = blogs.length;
   const publishedBlogs = blogs.filter((b) => b.status === "published").length;
   const archivedBlogs = blogs.filter((b) => b.status === "archived").length;
@@ -19,9 +16,7 @@ export const StatsCards = React.memo(({ blogs }: StatsCardsProps) => {
               <p className="text-sm font-medium text-indigo-700 mb-2">
                 Total Blogs
               </p>
-              <p className="text-4xl font-bold text-indigo-900">
-                {totalBlogs}
-              </p>
+              <p className="text-4xl font-bold text-indigo-900">{totalBlogs}</p>
             </div>
             <div className="p-4 bg-white bg-opacity-50 rounded-full shadow-sm">
               <FileText className="h-8 w-8 text-indigo-700" />
@@ -67,6 +62,4 @@ export const StatsCards = React.memo(({ blogs }: StatsCardsProps) => {
       </Card>
     </div>
   );
-});
-
-StatsCards.displayName = "StatsCards";
+}

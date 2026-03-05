@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import {
   Card,
   CardContent,
@@ -11,10 +8,7 @@ import {
 import { Users, UserCheck } from "lucide-react";
 import { UserStatisticsProps } from "@/types";
 
-export const UserStatistics = React.memo<UserStatisticsProps>(({ 
-  userStats, 
-  adminCount 
-}) => {
+export function UserStatistics({ userStats, adminCount }: UserStatisticsProps) {
   return (
     <Card className="bg-gradient-to-br from-white to-gray-50 shadow-xl rounded-2xl border-0 hover:shadow-2xl transition-all duration-300">
       <CardHeader>
@@ -30,9 +24,15 @@ export const UserStatistics = React.memo<UserStatisticsProps>(({
         <div className="space-y-4">
           {[
             {
-              icon: <UserCheck className="h-5 w-5 text-indigo-600 mr-2 animate-bounce" />,
+              icon: (
+                <UserCheck className="h-5 w-5 text-indigo-600 mr-2 animate-bounce" />
+              ),
               label: <span className="font-bold text-indigo-700">Admins</span>,
-              value: <span className="text-xl font-bold text-indigo-700">{adminCount}</span>,
+              value: (
+                <span className="text-xl font-bold text-indigo-700">
+                  {adminCount}
+                </span>
+              ),
             },
             {
               icon: <UserCheck className="h-5 w-5 text-green-500 mr-2" />,
@@ -52,6 +52,4 @@ export const UserStatistics = React.memo<UserStatisticsProps>(({
       </CardContent>
     </Card>
   );
-});
-
-UserStatistics.displayName = "UserStatistics";
+}

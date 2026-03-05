@@ -47,13 +47,15 @@ interface LoginModalProps {
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { login, register, forgetPassword, verifyOtp } = useAuth();
-  const [activeTab, setActiveTab] = useState("login"); // ✅ الحالة الابتدائية الصحيحة
+  const [activeTab, setActiveTab] = useState("login");
   // Separate visibility toggles to avoid cross-tab coupling
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] =
+    useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
-  const [showResetConfirmNewPassword, setShowResetConfirmNewPassword] = useState(false);
+  const [showResetConfirmNewPassword, setShowResetConfirmNewPassword] =
+    useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -68,6 +70,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   const initialRegisterData = {
     name: "",
     email: "",
@@ -81,9 +84,22 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState(initialRegisterData);
 
+  const validatePhone = (phone: string) => {
+    const value = phone.trim();
+    if (!value) return false;
+
+    // Allow only digits (no +, spaces, dashes, etc.)
+    const digits = value.replace(/\D/g, "");
+
+    const MobileRegex =
+      /^(1[0125][0-9]{8}|01[0125][0-9]{8}|201[0125][0-9]{8})$/;
+    return MobileRegex.test(digits);
+  };
+
   const validateEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validatePassword = (password: string) => password.length >= 6;
+
+  const validatePassword = (password: string) => password.length >= 8;
 
   const handleClose = useCallback(() => {
     setMessage(null);
@@ -95,7 +111,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setOtp("");
     setNewPassword("");
     setConfirmNewPassword("");
-    // reset visibility toggles to default
     setShowLoginPassword(false);
     setShowRegisterPassword(false);
     setShowRegisterConfirmPassword(false);
@@ -110,6 +125,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       setMessage(null);
       const email = loginData.email.trim();
       const password = loginData.password;
+
       if (!validateEmail(email)) {
         setMessage({ type: "error", text: "Please enter a valid email." });
         return;
@@ -121,6 +137,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         });
         return;
       }
+
       setLoginLoading(true);
       try {
         const result = await login(email, password);
@@ -136,7 +153,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setLoginLoading(false);
       }
     },
-    [loginData, login, handleClose]
+    [loginData, login, handleClose],
   );
 
   const handleRegister = useCallback(
@@ -161,7 +178,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         return;
       }
       if (!validatePassword(password)) {
-        setMessage({ type: "error", text: "Password must be at least 8 characters." });
+        setMessage({
+          type: "error",
+          text: "Password must be at least 8 characters.",
+        });
         return;
       }
       if (password !== confirm) {
@@ -172,20 +192,39 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setMessage({ type: "error", text: "Please select a user type." });
         return;
       }
+
+      // ✅ FIX: Phone number is now REQUIRED, not optional
+      if (!phone) {
+        setMessage({ type: "error", text: "Phone number is required." });
+        return;
+      }
+      if (!validatePhone(phone)) {
+        setMessage({
+          type: "error",
+          text: "Please enter a valid Egyptian phone number (11 digits).",
+        });
+        return;
+      }
+
       setRegisterLoading(true);
       try {
+        // Remove all non-digits before sending to backend
+        const normalizedPhone = phone.replace(/\D/g, "");
+
         const response = await register(
           name,
           email,
           password,
-          phone,
+          normalizedPhone,
           address,
           country,
-          userType
+          userType,
         );
         if (response.success) {
-          // Improve flow: switch to login, prefill email
-          setMessage({ type: "success", text: "Account created successfully! Please sign in." });
+          setMessage({
+            type: "success",
+            text: "Account created successfully! Please sign in.",
+          });
           setActiveTab("login");
           setLoginData({ email, password: "" });
         } else {
@@ -197,7 +236,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setRegisterLoading(false);
       }
     },
-    [registerData, register, handleClose]
+    [registerData, register],
   );
 
   const handleRegistrationContinue = () => {
@@ -252,7 +291,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setForgetPasswordLoading(false);
       }
     },
-    [resetEmail, forgetPassword]
+    [resetEmail, forgetPassword],
   );
 
   const handleVerifyOtp = useCallback(
@@ -294,26 +333,30 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setVerifyOtpLoading(false);
       }
     },
-    [otp, newPassword, confirmNewPassword, resetEmail, verifyOtp, handleClose]
+    [otp, newPassword, confirmNewPassword, resetEmail, verifyOtp, handleClose],
   );
 
-  // Derived validity states for disabling buttons and showing inline validation hints
-  const isLoginValid = validateEmail(loginData.email.trim()) && validatePassword(loginData.password);
+  const isLoginValid =
+    validateEmail(loginData.email.trim()) &&
+    validatePassword(loginData.password);
   const isRegisterStep1Valid =
     !!registerData.name.trim() &&
     validateEmail(registerData.email.trim()) &&
     validatePassword(registerData.password) &&
     registerData.password === registerData.confirmPassword &&
     !!registerData.user_type;
+  const isPhoneValid = validatePhone(registerData.phone);
   const isResetEmailValid = validateEmail(resetEmail.trim());
-  const isOtpValid = otp.trim().length >= 6 && validatePassword(newPassword) && newPassword === confirmNewPassword;
+  const isOtpValid =
+    otp.trim().length >= 6 &&
+    validatePassword(newPassword) &&
+    newPassword === confirmNewPassword;
 
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
     setMessage(null);
     setRegisterStep(1);
     setResetStep("email");
-    // also reset visibility toggles when switching tabs
     setShowLoginPassword(false);
     setShowRegisterPassword(false);
     setShowRegisterConfirmPassword(false);
@@ -346,7 +389,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             onValueChange={handleTabChange}
             className="w-full"
           >
-            {/* ✅ FIX: Corrected the values to be consistent */}
             <TabsList className="grid w-full grid-cols-3 bg-slate-200/60 rounded-lg p-1">
               <TabsTrigger
                 value="login"
@@ -378,23 +420,24 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       : ""
                   }
                 >
-                  {message.type === "error" ? (
-                    <AlertCircle className="h-4 w-4" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  )}
-                  <AlertDescription
-                    className={
-                      message.type === "success" ? "text-green-800" : ""
-                    }
-                  >
-                    {message.text}
-                  </AlertDescription>
+                  <div className="flex items-center gap-2">
+                    {message.type === "error" ? (
+                      <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                    )}
+                    <AlertDescription
+                      className={
+                        message.type === "success" ? "text-green-800" : ""
+                      }
+                    >
+                      {message.text}
+                    </AlertDescription>
+                  </div>
                 </Alert>
               </div>
             )}
 
-            {/* ✅ FIX: `value` now matches the trigger value "login" */}
             <TabsContent value="login" className="pt-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1">
@@ -405,6 +448,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       id="login-email"
                       type="email"
                       placeholder="you@example.com"
+                      autoComplete="username"
                       value={loginData.email}
                       onChange={(e) =>
                         setLoginData({ ...loginData, email: e.target.value })
@@ -413,9 +457,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       required
                     />
                   </div>
-                  {loginData.email && !validateEmail(loginData.email.trim()) && (
-                    <p className="text-sm text-red-600">Please enter a valid email.</p>
-                  )}
+                  {loginData.email &&
+                    !validateEmail(loginData.email.trim()) && (
+                      <p className="text-sm text-red-600">
+                        Please enter a valid email.
+                      </p>
+                    )}
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="login-password">Password</Label>
@@ -425,6 +472,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       id="login-password"
                       type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
+                      autoComplete="current-password"
                       value={loginData.password}
                       onChange={(e) =>
                         setLoginData({ ...loginData, password: e.target.value })
@@ -444,9 +492,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       )}
                     </button>
                   </div>
-                  {loginData.password && !validatePassword(loginData.password) && (
-                    <p className="text-sm text-red-600">Password must be at least 8 characters.</p>
-                  )}
+                  {loginData.password &&
+                    !validatePassword(loginData.password) && (
+                      <p className="text-sm text-red-600">
+                        Password must be at least 8 characters.
+                      </p>
+                    )}
                 </div>
                 <Button
                   type="submit"
@@ -474,7 +525,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </form>
             </TabsContent>
 
-           
             <TabsContent value="register" className="pt-4">
               <form onSubmit={handleRegister} className="space-y-4">
                 {registerStep === 1 && (
@@ -497,9 +547,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           required
                         />
                       </div>
-                      {registerData.name !== "" && registerData.name.trim() === "" && (
-                        <p className="text-sm text-red-600">Please enter your name.</p>
-                      )}
+                      {registerData.name !== "" &&
+                        registerData.name.trim() === "" && (
+                          <p className="text-sm text-red-600">
+                            Please enter your name.
+                          </p>
+                        )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="register-email">Email</Label>
@@ -520,9 +573,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           required
                         />
                       </div>
-                      {registerData.email && !validateEmail(registerData.email.trim()) && (
-                        <p className="text-sm text-red-600">Please enter a valid email.</p>
-                      )}
+                      {registerData.email &&
+                        !validateEmail(registerData.email.trim()) && (
+                          <p className="text-sm text-red-600">
+                            Please enter a valid email.
+                          </p>
+                        )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
@@ -545,7 +601,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           />
                           <button
                             type="button"
-                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            onClick={() =>
+                              setShowRegisterPassword(!showRegisterPassword)
+                            }
                             className="absolute right-3 top-1/2 -translate-y-1/2"
                           >
                             {showRegisterPassword ? (
@@ -555,9 +613,12 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             )}
                           </button>
                         </div>
-                        {registerData.password && !validatePassword(registerData.password) && (
-                          <p className="text-sm text-red-600">Password must be at least 8 characters.</p>
-                        )}
+                        {registerData.password &&
+                          !validatePassword(registerData.password) && (
+                            <p className="text-sm text-red-600">
+                              Password must be at least 8 characters.
+                            </p>
+                          )}
                       </div>
                       <div className="space-y-1">
                         <Label htmlFor="register-confirm-password">
@@ -567,7 +628,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                           <Input
                             id="register-confirm-password"
-                            type={showRegisterConfirmPassword ? "text" : "password"}
+                            type={
+                              showRegisterConfirmPassword ? "text" : "password"
+                            }
                             placeholder="••••••••"
                             value={registerData.confirmPassword}
                             onChange={(e) =>
@@ -582,7 +645,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                           <button
                             type="button"
                             onClick={() =>
-                              setShowRegisterConfirmPassword(!showRegisterConfirmPassword)
+                              setShowRegisterConfirmPassword(
+                                !showRegisterConfirmPassword,
+                              )
                             }
                             className="absolute right-3 top-1/2 -translate-y-1/2"
                           >
@@ -593,9 +658,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                             )}
                           </button>
                         </div>
-                        {registerData.confirmPassword && registerData.password !== registerData.confirmPassword && (
-                          <p className="text-sm text-red-600">Passwords do not match.</p>
-                        )}
+                        {registerData.confirmPassword &&
+                          registerData.password !==
+                            registerData.confirmPassword && (
+                            <p className="text-sm text-red-600">
+                              Passwords do not match.
+                            </p>
+                          )}
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -619,7 +688,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         <option value="Trainee">Trainee</option>
                       </select>
                       {registerData.user_type === "" && (
-                        <p className="text-sm text-red-600">Please select a user type.</p>
+                        <p className="text-sm text-red-600">
+                          Please select a user type.
+                        </p>
                       )}
                     </div>
                     <Button
@@ -636,28 +707,41 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   <div className="space-y-4">
                     <div className="space-y-1">
                       <Label htmlFor="register-phone">
-                        Phone Number (Optional)
+                        Phone Number <span className="text-red-600">*</span>
                       </Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <Input
                           id="register-phone"
                           type="tel"
-                          placeholder="Your phone number"
+                          placeholder="01XXXXXXXXX or 201XXXXXXXXX"
                           value={registerData.phone}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            // ✅ FIX: Only allow digits
+                            const value = e.target.value.replace(/\D/g, "");
                             setRegisterData({
                               ...registerData,
-                              phone: e.target.value,
-                            })
-                          }
+                              phone: value,
+                            });
+                          }}
+                          inputMode="numeric"
+                          autoComplete="tel"
+                          maxLength={11}
+                          required
                           className="pl-10 h-11"
                         />
                       </div>
+                      {registerData.phone && !isPhoneValid && (
+                        <p className="text-sm text-red-600">
+                          Please enter a valid Egyptian phone number (11 digits,
+                          e.g., 01XXXXXXXXX).
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="register-country">
-                        Country (Optional)
+                        Country{" "}
+                        <span className="text-gray-400">(Optional)</span>
                       </Label>
                       <div className="relative">
                         <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -677,7 +761,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="register-address">
-                        Address (Optional)
+                        Address{" "}
+                        <span className="text-gray-400">(Optional)</span>
                       </Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -707,11 +792,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       <Button
                         type="submit"
                         className="w-full h-11 text-base font-bold bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
-                        disabled={registerLoading || !isRegisterStep1Valid}
+                        disabled={
+                          registerLoading ||
+                          !isRegisterStep1Valid ||
+                          !isPhoneValid
+                        }
                       >
                         {registerLoading ? (
                           <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             Creating Account...
                           </>
                         ) : (
@@ -742,7 +831,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       />
                     </div>
                     {resetEmail && !isResetEmailValid && (
-                      <p className="text-sm text-red-600">Please enter a valid email.</p>
+                      <p className="text-sm text-red-600">
+                        Please enter a valid email.
+                      </p>
                     )}
                   </div>
                   <Button
@@ -752,7 +843,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   >
                     {forgetPasswordLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Sending Code...
                       </>
                     ) : (
@@ -775,7 +866,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                       required
                     />
                     {otp && otp.trim().length < 6 && (
-                      <p className="text-sm text-red-600">OTP must be 6 characters.</p>
+                      <p className="text-sm text-red-600">
+                        OTP must be 6 characters.
+                      </p>
                     )}
                   </div>
                   <div className="space-y-1">
@@ -792,11 +885,15 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         required
                       />
                       {!validatePassword(newPassword) && newPassword !== "" && (
-                        <p className="text-sm text-red-600 mt-2">New password must be at least 8 characters.</p>
+                        <p className="text-sm text-red-600 mt-2">
+                          New password must be at least 8 characters.
+                        </p>
                       )}
                       <button
                         type="button"
-                        onClick={() => setShowResetNewPassword(!showResetNewPassword)}
+                        onClick={() =>
+                          setShowResetNewPassword(!showResetNewPassword)
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2"
                       >
                         {showResetNewPassword ? (
@@ -822,12 +919,19 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         className="pl-10 h-11"
                         required
                       />
-                      {confirmNewPassword && newPassword !== confirmNewPassword && (
-                        <p className="text-sm text-red-600 mt-2">New passwords do not match.</p>
-                      )}
+                      {confirmNewPassword &&
+                        newPassword !== confirmNewPassword && (
+                          <p className="text-sm text-red-600 mt-2">
+                            New passwords do not match.
+                          </p>
+                        )}
                       <button
                         type="button"
-                        onClick={() => setShowResetConfirmNewPassword(!showResetConfirmNewPassword)}
+                        onClick={() =>
+                          setShowResetConfirmNewPassword(
+                            !showResetConfirmNewPassword,
+                          )
+                        }
                         className="absolute right-3 top-1/2 -translate-y-1/2"
                       >
                         {showResetConfirmNewPassword ? (
@@ -845,7 +949,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   >
                     {verifyOtpLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />{" "}
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Resetting...
                       </>
                     ) : (

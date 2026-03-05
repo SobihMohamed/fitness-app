@@ -5,8 +5,14 @@ import { toast } from "sonner";
 
 export function useUserApi() {
   const getAuthHeaders = useCallback((withJson = true) => {
-    const token =
-      typeof window !== "undefined" ? sessionStorage.getItem("token") : null;
+    let token: string | null = null;
+    if (typeof window !== "undefined") {
+      try {
+        token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      } catch {
+        token = null;
+      }
+    }
     const headers: Record<string, string> = {};
     if (token) headers.Authorization = `Bearer ${token}`;
     headers["Accept"] = "application/json";
@@ -54,6 +60,11 @@ export function useUserApi() {
       if (response.status === 401) {
         // Handle unauthorized - just throw error without redirect
         throw new Error("Authentication required for this action");
+      }
+      // Many endpoints use 404 to represent an empty state (e.g., no requests yet).
+      // Treat it as a successful empty response to avoid noisy UI errors.
+      if (response.status === 404) {
+        return ({ status: "success", data: [] } as any) as T;
       }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }

@@ -1,53 +1,100 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Loader2 } from "lucide-react";
+import { Users } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useUserManagement } from "@/hooks/admin/use-user-management";
-import type { 
-  UserFormData, 
-  CombinedUserItem, 
+import type {
+  UserFormData,
+  CombinedUserItem,
   UserDeleteTarget,
   UserType,
-  AdminType
+  AdminType,
 } from "@/types";
 
 // Lazy load heavy components for better performance
 const StatsCards = dynamic(
-  () => import("@/components/admin/users/stats-cards").then(mod => mod.StatsCards),
-  { loading: () => <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />)}</div> }
+  () =>
+    import("@/components/admin/users/stats-cards").then(
+      (mod) => mod.StatsCards,
+    ),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    ),
+  },
 );
 
 const SearchAndFilter = dynamic(
-  () => import("@/components/admin/users/search-and-filter").then(mod => mod.SearchAndFilter),
-  { loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" /> }
+  () =>
+    import("@/components/admin/users/search-and-filter").then(
+      (mod) => mod.SearchAndFilter,
+    ),
+  {
+    loading: () => (
+      <div className="h-16 bg-gray-100 animate-pulse rounded-lg mb-6" />
+    ),
+  },
 );
 
 const UserTable = dynamic(
-  () => import("@/components/admin/users/user-table").then(mod => mod.UserTable),
-  { loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" /> }
+  () =>
+    import("@/components/admin/users/user-table").then((mod) => mod.UserTable),
+  {
+    loading: () => (
+      <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
 );
 
 const ActionButtons = dynamic(
-  () => import("@/components/admin/users/action-buttons").then(mod => mod.ActionButtons),
-  { loading: () => <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" /> }
+  () =>
+    import("@/components/admin/users/action-buttons").then(
+      (mod) => mod.ActionButtons,
+    ),
+  {
+    loading: () => (
+      <div className="h-12 bg-gray-100 animate-pulse rounded-lg mb-4" />
+    ),
+  },
 );
 
 const UserForm = dynamic(
-  () => import("@/components/admin/users/user-form").then(mod => mod.UserForm),
-  { loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" /> }
+  () =>
+    import("@/components/admin/users/user-form").then((mod) => mod.UserForm),
+  {
+    loading: () => (
+      <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
 );
 
 const DeleteConfirmation = dynamic(
-  () => import("@/components/admin/users/delete-confirmation").then(mod => mod.DeleteConfirmation),
-  { loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" /> }
+  () =>
+    import("@/components/admin/users/delete-confirmation").then(
+      (mod) => mod.DeleteConfirmation,
+    ),
+  {
+    loading: () => (
+      <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
 );
 
 const Pagination = dynamic(
-  () => import("@/components/admin/users/pagination").then(mod => mod.Pagination),
-  { loading: () => <div className="h-16 bg-gray-100 animate-pulse rounded-lg mt-6" /> }
+  () =>
+    import("@/components/admin/users/pagination").then((mod) => mod.Pagination),
+  {
+    loading: () => (
+      <div className="h-16 bg-gray-100 animate-pulse rounded-lg mt-6" />
+    ),
+  },
 );
 
 export default function UsersManagement() {
@@ -89,7 +136,9 @@ export default function UsersManagement() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<UserDeleteTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserDeleteTarget | null>(
+    null,
+  );
 
   // Validation helper functions
   const validateForm = useCallback((): string | null => {
@@ -125,28 +174,32 @@ export default function UsersManagement() {
   }, [formData, editingItem, editingType, checkEmailExists, checkPhoneExists]);
 
   // Form submission handler
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
 
-    const validationError = validateForm();
-    if (validationError) {
-      return;
-    }
-
-    try {
-      if (editingItem) {
-        const userId = editingType === "user" 
-          ? (editingItem as UserType).user_id 
-          : (editingItem as AdminType).admin_id;
-        await updateUser(userId, formData, editingType!);
-      } else {
-        await addUser(formData);
+      const validationError = validateForm();
+      if (validationError) {
+        return;
       }
-      resetForm();
-    } catch (error) {
-      // Error handling is done in the hook
-    }
-  }, [formData, editingItem, editingType, validateForm, updateUser, addUser]);
+
+      try {
+        if (editingItem) {
+          const userId =
+            editingType === "user"
+              ? (editingItem as UserType).user_id
+              : (editingItem as AdminType).admin_id;
+          await updateUser(userId, formData, editingType!);
+        } else {
+          await addUser(formData);
+        }
+        resetForm();
+      } catch (error) {
+        // Error handling is done in the hook
+      }
+    },
+    [formData, editingItem, editingType, validateForm, updateUser, addUser],
+  );
 
   // Event handlers
   const handleEdit = useCallback((item: CombinedUserItem) => {
@@ -280,7 +333,7 @@ export default function UsersManagement() {
               submitting={loading.submitting}
               deleting={loading.deleting}
             />
-            
+
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}

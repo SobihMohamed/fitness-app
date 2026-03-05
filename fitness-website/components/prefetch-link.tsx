@@ -2,60 +2,81 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, type ComponentProps } from "react";
-import { cachedProductsApi } from "@/lib/api/cached-client";
+import { useCallback, useEffect, useRef, type ComponentProps } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
+import * as fetchers from "@/lib/api/fetchers";
 
 interface PrefetchLinkProps extends ComponentProps<typeof Link> {
   prefetchData?: {
-    type: 'product' | 'course' | 'blog' | 'service';
+    type: "product" | "course" | "blog" | "service";
     id: string;
   };
 }
 
 /**
- * Enhanced Link component with aggressive prefetching
- * - Prefetches route on hover (earlier than Next.js default)
- * - Optionally prefetches data for instant page loads
+ * Enhanced Link component with aggressive prefetching.
+ * On hover it warms the React Query cache for the target entity.
  */
-export function PrefetchLink({ 
-  prefetchData, 
+export function PrefetchLink({
+  prefetchData,
   onMouseEnter,
   children,
-  ...props 
+  ...props
 }: PrefetchLinkProps) {
   const router = useRouter();
-  const prefetchedRef = useRef(false);
+  const qc = useQueryClient();
+  const routePrefetchedRef = useRef(false);
+  const dataPrefetchedRef = useRef(false);
 
-  // Always prefetch the route immediately
+  // Prefetch the route immediately
   useEffect(() => {
-    if (props.href && !prefetchedRef.current) {
+    if (props.href && !routePrefetchedRef.current) {
       router.prefetch(props.href.toString());
-      prefetchedRef.current = true;
+      routePrefetchedRef.current = true;
     }
   }, [props.href, router]);
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    // Call original onMouseEnter if provided
-    onMouseEnter?.(e);
+  const handleMouseEnter = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      onMouseEnter?.(e);
 
-    // Prefetch data on hover for instant loading
-    if (prefetchData && !prefetchedRef.current) {
-      switch (prefetchData.type) {
-        case 'product':
-          cachedProductsApi.prefetchProductDetail(prefetchData.id).catch(() => {});
-          break;
-        // Add other types as needed
+      if (prefetchData && !dataPrefetchedRef.current) {
+        const { type, id } = prefetchData;
+        switch (type) {
+          case "product":
+            qc.prefetchQuery({
+              queryKey: queryKeys.products.detail(id),
+              queryFn: () => fetchers.fetchProductById(id),
+            });
+            break;
+          case "course":
+            qc.prefetchQuery({
+              queryKey: queryKeys.courses.detail(id),
+              queryFn: () => fetchers.fetchCourseById(id),
+            });
+            break;
+          case "blog":
+            qc.prefetchQuery({
+              queryKey: queryKeys.blogs.detail(id),
+              queryFn: () => fetchers.fetchBlogById(id),
+            });
+            break;
+          case "service":
+            qc.prefetchQuery({
+              queryKey: queryKeys.services.detail(id),
+              queryFn: () => fetchers.fetchServiceById(id),
+            });
+            break;
+        }
+        dataPrefetchedRef.current = true;
       }
-      prefetchedRef.current = true;
-    }
-  };
+    },
+    [onMouseEnter, prefetchData, qc],
+  );
 
   return (
-    <Link 
-      {...props} 
-      prefetch={true}
-      onMouseEnter={handleMouseEnter}
-    >
+    <Link {...props} prefetch={true} onMouseEnter={handleMouseEnter}>
       {children}
     </Link>
   );

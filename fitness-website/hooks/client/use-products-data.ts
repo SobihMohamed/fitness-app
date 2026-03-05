@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { cachedProductsApi } from "@/lib/api/cached-client";
+import { useProducts, useCategories } from "@/hooks/queries";
 import type { ClientProduct, ClientCategory } from "@/types";
 
 // Local filter state used only inside this hook
 interface ProductFilterState {
   searchTerm: string;
   category: string; // category_id as string ("" means all)
-  sortBy: string;   // "name-asc" | "name-desc" | "price-asc" | "price-desc"
+  sortBy: string; // "name-asc" | "name-desc" | "price-asc" | "price-desc"
   showFavoritesOnly: boolean;
   page: number;
   pageSize: number;
@@ -18,7 +18,7 @@ interface UseProductsDataReturnShape {
   products: ClientProduct[];
   categories: ClientCategory[];
   loading: boolean;
-  favorites: Set<number>; // product_id set
+  favorites: Set<number>;
   filter: ProductFilterState;
   filteredProducts: ClientProduct[];
   paginatedProducts: ClientProduct[];
@@ -32,16 +32,28 @@ interface UseProductsDataReturnShape {
 
 const FAVORITES_KEY = "product_favorites";
 
-export function useProductsData(): UseProductsDataReturnShape {
-  const [products, setProducts] = useState<ClientProduct[]>([]);
-  const [categories, setCategories] = useState<ClientCategory[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export function useProductsData(
+  initialProducts?: ClientProduct[],
+  initialCategories?: ClientCategory[],
+  options?: { initialShowFavoritesOnly?: boolean },
+): UseProductsDataReturnShape {
+  // React Query replaces manual useState + useEffect for data fetching
+  const {
+    data: products = [],
+    isLoading: loadingProducts,
+    refetch: refetchProducts,
+  } = useProducts(initialProducts);
+  const { data: categories = [], isLoading: loadingCategories } =
+    useCategories(initialCategories);
+
+  const loading = loadingProducts || loadingCategories;
+
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [filter, setFilter] = useState<ProductFilterState>({
     searchTerm: "",
     category: "",
     sortBy: "",
-    showFavoritesOnly: false,
+    showFavoritesOnly: options?.initialShowFavoritesOnly ?? false,
     page: 1,
     pageSize: 6,
   });
@@ -53,11 +65,13 @@ export function useProductsData(): UseProductsDataReturnShape {
       if (raw) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          const cleaned = parsed.filter((n: any) => Number.isFinite(n)).map((n: any) => Number(n));
+          const cleaned = parsed
+            .filter((n: any) => Number.isFinite(n))
+            .map((n: any) => Number(n));
           setFavorites(new Set<number>(cleaned));
         }
       }
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, []);
@@ -65,8 +79,11 @@ export function useProductsData(): UseProductsDataReturnShape {
   // Persist favorites
   useEffect(() => {
     try {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(Array.from(favorites)));
-    } catch (e) {
+      localStorage.setItem(
+        FAVORITES_KEY,
+        JSON.stringify(Array.from(favorites)),
+      );
+    } catch {
       // ignore
     }
   }, [favorites]);
@@ -75,7 +92,6 @@ export function useProductsData(): UseProductsDataReturnShape {
     setFilter((prev) => ({
       ...prev,
       ...patch,
-      // Reset to first page if the query changes (except for page itself)
       page: patch.page !== undefined ? patch.page : 1,
     }));
   }, []);
@@ -83,54 +99,32 @@ export function useProductsData(): UseProductsDataReturnShape {
   const toggleFavorite = useCallback((productId: number) => {
     setFavorites((prev) => {
       const next = new Set(prev);
-      if (next.has(productId)) {
-        next.delete(productId);
-      } else {
-        next.add(productId);
-      }
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
       return next;
     });
   }, []);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [prods, cats] = await Promise.all([
-        cachedProductsApi.fetchProducts(),
-        cachedProductsApi.fetchCategories(),
-      ]);
-      setProducts(prods);
-      setCategories(cats);
-    } catch (err) {
-      console.error("[Products] Failed to load data", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchAll();
-  }, [fetchAll]);
+  const refresh = useCallback(async () => {
+    await refetchProducts();
+  }, [refetchProducts]);
 
   // Derived: filtered products
   const filteredProducts = useMemo(() => {
     let list = products.slice();
 
-    // Filter by favorites only
     if (filter.showFavoritesOnly) {
       list = list.filter((p) => favorites.has(p.product_id));
     }
 
-    // Filter by search term
     if (filter.searchTerm.trim()) {
       const q = filter.searchTerm.trim().toLowerCase();
-      list = list.filter((p) =>
-        p.name?.toLowerCase().includes(q) ||
-        String(p.product_id).includes(q)
+      list = list.filter(
+        (p) =>
+          p.name?.toLowerCase().includes(q) || String(p.product_id).includes(q),
       );
     }
 
-    // Filter by category
     if (filter.category) {
       const cid = Number.parseInt(filter.category, 10);
       if (Number.isFinite(cid)) {
@@ -138,7 +132,6 @@ export function useProductsData(): UseProductsDataReturnShape {
       }
     }
 
-    // Sort
     switch (filter.sortBy) {
       case "name-asc":
         list.sort((a, b) => a.name.localeCompare(b.name));
@@ -152,28 +145,25 @@ export function useProductsData(): UseProductsDataReturnShape {
       case "price-desc":
         list.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
-      default:
-        break;
     }
 
     return list;
   }, [products, favorites, filter]);
 
-  // Pagination
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredProducts.length / filter.pageSize));
-  }, [filteredProducts.length, filter.pageSize]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(filteredProducts.length / filter.pageSize)),
+    [filteredProducts.length, filter.pageSize],
+  );
 
   const paginatedProducts = useMemo(() => {
     const start = (filter.page - 1) * filter.pageSize;
     return filteredProducts.slice(start, start + filter.pageSize);
   }, [filteredProducts, filter.page, filter.pageSize]);
 
-  const actions = useMemo(() => ({
-    updateFilter,
-    toggleFavorite,
-    refresh: fetchAll,
-  }), [updateFilter, toggleFavorite, fetchAll]);
+  const actions = useMemo(
+    () => ({ updateFilter, toggleFavorite, refresh }),
+    [updateFilter, toggleFavorite, refresh],
+  );
 
   return {
     products,

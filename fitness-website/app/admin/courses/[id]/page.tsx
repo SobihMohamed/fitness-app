@@ -1,41 +1,93 @@
 "use client";
 
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { useCourseDetailsManagement } from "@/hooks/admin/use-course-details-management";
 import { useParams } from "next/navigation";
-import type { 
-  Course, 
-  Module, 
-  Chapter, 
-  ModuleFormData, 
+import type {
+  Course,
+  Module,
+  Chapter,
+  ModuleFormData,
   ChapterFormData,
-  CourseDetailsDeleteTarget
+  CourseDetailsDeleteTarget,
 } from "@/types";
-import { Loader2 } from "lucide-react";
 
 // Lazy load heavy components for better performance
-const CourseHeader = dynamic(() => import("@/components/admin/courses/course-header").then(mod => mod.CourseHeader), { 
-  loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" />
-});
-const ModulesAccordion = dynamic(() => import("@/components/admin/courses/modules-accordion").then(mod => mod.ModulesAccordion), { 
-  loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
-});
-const ModuleForm = dynamic(() => import("@/components/admin/courses/module-form").then(mod => mod.ModuleForm), { 
-  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
-});
-const ChapterForm = dynamic(() => import("@/components/admin/courses/chapter-form").then(mod => mod.ChapterForm), { 
-  loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
-});
-const CourseDetailsDeleteConfirmation = dynamic(() => import("@/components/admin/courses/course-details-delete-confirmation").then(mod => mod.CourseDetailsDeleteConfirmation), { 
-  loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
-});
+const CourseHeader = dynamic(
+  () =>
+    import("@/components/admin/courses/course-header").then(
+      (mod) => mod.CourseHeader,
+    ),
+  {
+    loading: () => (
+      <div className="h-32 bg-gray-100 animate-pulse rounded-lg mb-6" />
+    ),
+  },
+);
+const ModulesAccordion = dynamic(
+  () =>
+    import("@/components/admin/courses/modules-accordion").then(
+      (mod) => mod.ModulesAccordion,
+    ),
+  {
+    loading: () => (
+      <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const ModuleForm = dynamic(
+  () =>
+    import("@/components/admin/courses/module-form").then(
+      (mod) => mod.ModuleForm,
+    ),
+  {
+    loading: () => (
+      <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const ChapterForm = dynamic(
+  () =>
+    import("@/components/admin/courses/chapter-form").then(
+      (mod) => mod.ChapterForm,
+    ),
+  {
+    loading: () => (
+      <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+const CourseDetailsDeleteConfirmation = dynamic(
+  () =>
+    import("@/components/admin/courses/course-details-delete-confirmation").then(
+      (mod) => mod.CourseDetailsDeleteConfirmation,
+    ),
+  {
+    loading: () => (
+      <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+    ),
+  },
+);
+
+const INITIAL_MODULE_FORM_DATA: ModuleFormData = {
+  title: "",
+  description: "",
+  order_number: "",
+};
+
+const INITIAL_CHAPTER_FORM_DATA: ChapterFormData = {
+  title: "",
+  description: "",
+  video_link: "",
+  order_number: "",
+};
 
 export default function CourseDetailsPage() {
   const params = useParams<{ id: string }>();
   const courseId = params?.id ? String(params.id) : "";
-  
+
   const courseManagement = useCourseDetailsManagement(courseId);
 
   // Local UI state for forms and delete dialog
@@ -43,32 +95,25 @@ export default function CourseDetailsPage() {
   const [isChapterFormOpen, setIsChapterFormOpen] = useState(false);
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
-  const [currentModuleForChapter, setCurrentModuleForChapter] = useState<Module | null>(null);
+  const [currentModuleForChapter, setCurrentModuleForChapter] =
+    useState<Module | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<CourseDetailsDeleteTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] =
+    useState<CourseDetailsDeleteTarget | null>(null);
 
-  const initialModuleFormData: ModuleFormData = useMemo(() => ({
-    title: "",
-    description: "",
-    order_number: "",
-  }), []);
-
-  const initialChapterFormData: ChapterFormData = useMemo(() => ({
-    title: "",
-    description: "",
-    video_link: "",
-    order_number: "",
-  }), []);
-
-  const [moduleFormData, setModuleFormData] = useState<ModuleFormData>(initialModuleFormData);
-  const [chapterFormData, setChapterFormData] = useState<ChapterFormData>(initialChapterFormData);
+  const [moduleFormData, setModuleFormData] = useState<ModuleFormData>(
+    INITIAL_MODULE_FORM_DATA,
+  );
+  const [chapterFormData, setChapterFormData] = useState<ChapterFormData>(
+    INITIAL_CHAPTER_FORM_DATA,
+  );
 
   // Handlers with useCallback for performance
   const handleOpenCreateModule = useCallback(() => {
     setEditingModule(null);
-    setModuleFormData(initialModuleFormData);
+    setModuleFormData(INITIAL_MODULE_FORM_DATA);
     setIsModuleFormOpen(true);
-  }, [initialModuleFormData]);
+  }, []);
 
   const handleEditModule = useCallback((module: Module) => {
     setEditingModule(module);
@@ -80,23 +125,29 @@ export default function CourseDetailsPage() {
     setIsModuleFormOpen(true);
   }, []);
 
-  const handleSubmitModule = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!moduleFormData.title.trim()) return;
+  const handleSubmitModule = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!moduleFormData.title.trim()) return;
 
-    try {
-      if (editingModule) {
-        await courseManagement.updateModule(String(editingModule.module_id), moduleFormData);
-      } else {
-        await courseManagement.createModule(moduleFormData);
+      try {
+        if (editingModule) {
+          await courseManagement.updateModule(
+            String(editingModule.module_id),
+            moduleFormData,
+          );
+        } else {
+          await courseManagement.createModule(moduleFormData);
+        }
+        setIsModuleFormOpen(false);
+        setEditingModule(null);
+        setModuleFormData(INITIAL_MODULE_FORM_DATA);
+      } catch (error) {
+        // Error handling is done in the hook
       }
-      setIsModuleFormOpen(false);
-      setEditingModule(null);
-      setModuleFormData(initialModuleFormData);
-    } catch (error) {
-      // Error handling is done in the hook
-    }
-  }, [editingModule, moduleFormData, courseManagement, initialModuleFormData]);
+    },
+    [editingModule, moduleFormData, courseManagement],
+  );
 
   const handleDeleteModule = useCallback((module: Module) => {
     setDeleteTarget({
@@ -110,9 +161,9 @@ export default function CourseDetailsPage() {
   const handleOpenCreateChapter = useCallback((module: Module) => {
     setEditingChapter(null);
     setCurrentModuleForChapter(module);
-    setChapterFormData(initialChapterFormData);
+    setChapterFormData(INITIAL_CHAPTER_FORM_DATA);
     setIsChapterFormOpen(true);
-  }, [initialChapterFormData]);
+  }, []);
 
   const handleEditChapter = useCallback((module: Module, chapter: Chapter) => {
     setCurrentModuleForChapter(module);
@@ -126,27 +177,45 @@ export default function CourseDetailsPage() {
     setIsChapterFormOpen(true);
   }, []);
 
-  const handleSubmitChapter = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chapterFormData.title.trim() || !currentModuleForChapter) return;
+  const handleSubmitChapter = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!chapterFormData.title.trim() || !currentModuleForChapter) return;
 
-    try {
-      if (editingChapter) {
-        await courseManagement.updateChapter(String(editingChapter.chapter_id), chapterFormData);
-      } else {
-        await courseManagement.createChapter(String(currentModuleForChapter.module_id), chapterFormData);
+      try {
+        if (editingChapter) {
+          await courseManagement.updateChapter(
+            String(editingChapter.chapter_id),
+            chapterFormData,
+          );
+        } else {
+          await courseManagement.createChapter(
+            String(currentModuleForChapter.module_id),
+            chapterFormData,
+          );
+        }
+        setIsChapterFormOpen(false);
+        setEditingChapter(null);
+        setCurrentModuleForChapter(null);
+        setChapterFormData(INITIAL_CHAPTER_FORM_DATA);
+      } catch (error) {
+        // Error handling is done in the hook
       }
-      setIsChapterFormOpen(false);
-      setEditingChapter(null);
-      setCurrentModuleForChapter(null);
-      setChapterFormData(initialChapterFormData);
-    } catch (error) {
-      // Error handling is done in the hook
-    }
-  }, [editingChapter, chapterFormData, currentModuleForChapter, courseManagement, initialChapterFormData]);
+    },
+    [
+      editingChapter,
+      chapterFormData,
+      currentModuleForChapter,
+      courseManagement,
+    ],
+  );
 
   const handleDeleteChapter = useCallback((chapter: Chapter) => {
-    setDeleteTarget({ type: "chapter", id: chapter.chapter_id, name: chapter.title });
+    setDeleteTarget({
+      type: "chapter",
+      id: chapter.chapter_id,
+      name: chapter.title,
+    });
     setShowDeleteConfirm(true);
   }, []);
 
@@ -170,7 +239,7 @@ export default function CourseDetailsPage() {
     <AdminLayout>
       <div className="sm:space-y-8 sm:p-8 bg-gradient-to-br from-slate-50 to-white">
         <CourseHeader course={courseManagement.course} />
-        
+
         <ModulesAccordion
           modules={courseManagement.modules}
           chaptersByModule={courseManagement.chaptersByModule}

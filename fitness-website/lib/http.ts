@@ -1,48 +1,87 @@
 "use client";
 
-import axios, { AxiosInstance } from "axios";
+import axios, { type AxiosInstance } from "axios";
 import { getApiBaseUrl } from "@/lib/env";
 
-let client: AxiosInstance | null = null;
+// ---------------------------------------------------------------------------
+// Unified Axios HTTP clients (singleton pattern – created once, reused)
+// ---------------------------------------------------------------------------
 
-export function getHttpClient(): AxiosInstance {
-  if (client) return client;
+let adminClient: AxiosInstance | null = null;
+let userClient: AxiosInstance | null = null;
 
-  client = axios.create({
-    baseURL: getApiBaseUrl(),
-    timeout: 15000,
-    withCredentials: false,
-    // Do not set a global Content-Type header.
-    // Axios will set the correct header automatically based on the request body.
-  });
-
-  // Inject auth token from localStorage on the client only
-  client.interceptors.request.use((config) => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("adminAuth");
-      if (token) {
-        config.headers = config.headers || {};
-        (config.headers as any).Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  });
-
-  // Normalize errors
-  client.interceptors.response.use(
+/**
+ * Shared error-normalising response interceptor.
+ */
+function attachErrorInterceptor(instance: AxiosInstance) {
+  instance.interceptors.response.use(
     (response) => response,
     (error) => {
       const normalized = {
         status: error?.response?.status || 0,
         message:
-          error?.response?.data?.message ||
-          error?.message ||
-          "Network error",
+          error?.response?.data?.message || error?.message || "Network error",
         data: error?.response?.data,
       };
       return Promise.reject(normalized);
-    }
+    },
   );
+}
 
-  return client;
+/**
+ * Admin-scoped HTTP client.
+ * Reads `adminAuth` from localStorage for Bearer token.
+ */
+export function getHttpClient(): AxiosInstance {
+  if (adminClient) return adminClient;
+
+  adminClient = axios.create({
+    baseURL: getApiBaseUrl(),
+    timeout: 15_000,
+    withCredentials: false,
+  });
+
+  adminClient.interceptors.request.use((config) => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("adminAuth");
+      if (token) {
+        config.headers = config.headers || {};
+        (config.headers as Record<string, string>).Authorization =
+          `Bearer ${token}`;
+      }
+    }
+    return config;
+  });
+
+  attachErrorInterceptor(adminClient);
+  return adminClient;
+}
+
+/**
+ * User-scoped HTTP client.
+ * Reads `token` from sessionStorage (set by AuthProvider on login).
+ */
+export function getUserHttpClient(): AxiosInstance {
+  if (userClient) return userClient;
+
+  userClient = axios.create({
+    baseURL: getApiBaseUrl(),
+    timeout: 15_000,
+    withCredentials: false,
+  });
+
+  userClient.interceptors.request.use((config) => {
+    if (typeof window !== "undefined") {
+      const token = sessionStorage.getItem("token");
+      if (token) {
+        config.headers = config.headers || {};
+        (config.headers as Record<string, string>).Authorization =
+          `Bearer ${token}`;
+      }
+    }
+    return config;
+  });
+
+  attachErrorInterceptor(userClient);
+  return userClient;
 }

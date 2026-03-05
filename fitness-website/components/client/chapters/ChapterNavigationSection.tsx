@@ -40,7 +40,7 @@ const ChapterNavigationSection = React.memo<ChapterNavigationSectionProps>(({
   // Mock completion status
   const [completedChapters] = React.useState<Set<number>>(new Set([1, 2]));
 
-  const sortedChapters = moduleChapters.sort((a, b) => a.order_number - b.order_number);
+  const sortedChapters = [...moduleChapters].sort((a, b) => a.order_number - b.order_number);
   const currentIndex = sortedChapters.findIndex(ch => ch.chapter_id === currentChapter.chapter_id);
   const previousChapter = currentIndex > 0 ? sortedChapters[currentIndex - 1] : null;
   const nextChapter = currentIndex < sortedChapters.length - 1 ? sortedChapters[currentIndex + 1] : null;

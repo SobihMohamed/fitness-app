@@ -58,7 +58,7 @@ export function useModuleDetails(moduleId: string, courseId?: string) {
       if (response.status === 401 || !response.ok) {
         if (!courseId) {
           const message = "Unauthorized – please login to view this module.";
-          console.error("Module details 401 or failed and no courseId for fallback");
+          // Silent - no courseId for fallback
           setState(prev => ({ ...prev, loading: false, error: message }));
           toast.error(message);
           return;
@@ -86,7 +86,7 @@ export function useModuleDetails(moduleId: string, courseId?: string) {
         throw new Error(data.message || 'Failed to fetch module details');
       }
     } catch (error: any) {
-      console.error("Error fetching module details:", error);
+      // Silent error handling
       setState(prev => ({ 
         ...prev, 
         loading: false, 

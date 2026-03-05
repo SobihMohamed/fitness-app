@@ -8,8 +8,6 @@ export interface HomeProduct {
   image: string;
   category: string;
   description: string;
-  rating?: number;
-  reviews?: number;
   stock?: number;
 }
 
@@ -44,10 +42,7 @@ export interface Stat {
 }
 
 // Hero section props
-export interface HeroSectionProps {
-  isVisible: boolean;
-  heroImageSrc: string;
-}
+export interface HeroSectionProps {}
 
 // Features section props
 export interface FeaturesSectionProps {

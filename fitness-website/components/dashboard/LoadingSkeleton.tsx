@@ -1,13 +1,16 @@
-"use client";
-
 interface LoadingSkeletonProps {
   height?: string;
   className?: string;
 }
 
-export function LoadingSkeleton({ height = "h-40", className = "" }: LoadingSkeletonProps) {
+export function LoadingSkeleton({
+  height = "h-40",
+  className = "",
+}: LoadingSkeletonProps) {
   return (
-    <div className={`flex items-center justify-center ${height} text-gray-600 ${className}`}>
+    <div
+      className={`flex items-center justify-center ${height} text-gray-600 ${className}`}
+    >
       <div className="flex items-center space-x-2">
         <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
         <div className="w-4 h-4 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
@@ -40,7 +43,10 @@ export function StatsSkeleton() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
       {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="bg-white p-6 rounded-lg shadow-sm animate-pulse">
+        <div
+          key={i}
+          className="bg-white p-6 rounded-lg shadow-sm animate-pulse"
+        >
           <div className="flex items-center">
             <div className="p-2 bg-gray-300 rounded-lg">
               <div className="h-6 w-6 bg-gray-400 rounded" />

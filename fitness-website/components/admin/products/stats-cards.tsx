@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Package, CheckCircle, Tag } from "lucide-react";
 
@@ -10,11 +7,11 @@ interface StatsCardsProps {
   totalCategories: number;
 }
 
-export const StatsCards = React.memo<StatsCardsProps>(({
+export function StatsCards({
   totalProducts,
   inStockProducts,
   totalCategories,
-}) => {
+}: StatsCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-indigo-100 hover:shadow-xl transition-all duration-200">
@@ -39,9 +36,7 @@ export const StatsCards = React.memo<StatsCardsProps>(({
         <CardContent className="p-8">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-700 mb-1">
-                In Stock
-              </p>
+              <p className="text-sm font-medium text-blue-700 mb-1">In Stock</p>
               <p className="text-3xl font-bold text-blue-900">
                 {inStockProducts}
               </p>
@@ -72,6 +67,4 @@ export const StatsCards = React.memo<StatsCardsProps>(({
       </Card>
     </div>
   );
-});
-
-StatsCards.displayName = "StatsCards";
+}

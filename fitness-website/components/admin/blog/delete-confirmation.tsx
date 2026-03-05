@@ -43,7 +43,7 @@ export const DeleteConfirmation = React.memo(({
             variant="outline"
             onClick={onClose}
             disabled={isSubmitting}
-            className="rounded-lg border-slate-200 hover:bg-slate-50 transition-colors duration-200"
+            className="rounded-lg border-slate-200 hover:bg-slate-50 text-slate-700 hover:text-slate-800 transition-colors duration-200"
           >
             Cancel
           </Button>
