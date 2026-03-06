@@ -11,28 +11,28 @@ import { useChapterDetails } from "@/hooks/client/use-chapter-details";
 // Lazy load heavy components for better performance
 const ChapterVideoPlayer = dynamic(
   () => import("@/components/client/chapters/ChapterVideoPlayer"),
-  { 
+  {
     loading: () => <div className="aspect-video bg-gray-100 animate-pulse rounded-lg" />
   }
 );
 
 const ChapterDetailsInfo = dynamic(
   () => import("@/components/client/chapters/ChapterDetailsInfo"),
-  { 
+  {
     loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
   }
 );
 
 const ChapterNavigationSection = dynamic(
   () => import("@/components/client/chapters/ChapterNavigationSection"),
-  { 
+  {
     loading: () => <div className="h-64 bg-gray-100 animate-pulse rounded-lg" />
   }
 );
 
 const ChapterNotesSection = dynamic(
   () => import("@/components/client/chapters/ChapterNotesSection"),
-  { 
+  {
     loading: () => <div className="h-80 bg-gray-100 animate-pulse rounded-lg" />
   }
 );
@@ -43,7 +43,7 @@ const ChapterDetailsPage = React.memo(() => {
   const courseId = params.id as string;
   const moduleId = params.moduleId as string;
   const chapterId = params.chapterId as string;
-  
+
   const {
     state,
     actions,
@@ -64,7 +64,7 @@ const ChapterDetailsPage = React.memo(() => {
 
   if (state.loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+      <div className="min-h-screen bg-slate-50 pt-20">
         <div className="flex items-center justify-center min-h-screen">
           <div className="flex items-center space-x-3">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -77,7 +77,7 @@ const ChapterDetailsPage = React.memo(() => {
 
   if (!state.chapter) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 pt-20 flex items-center justify-center">
         <Card className="shadow-2xl max-w-md mx-auto">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
@@ -94,12 +94,12 @@ const ChapterDetailsPage = React.memo(() => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+    <div className="min-h-screen bg-slate-50 pt-20">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Back Button */}
-        <Button 
-          variant="outline" 
-          onClick={handleBack} 
+        <Button
+          variant="outline"
+          onClick={handleBack}
           className="mb-6 text-gray-600 hover:text-gray-900 border-gray-200 hover:border-gray-300 transition-colors"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -110,16 +110,16 @@ const ChapterDetailsPage = React.memo(() => {
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
           <div className="lg:col-span-2">
             {/* Video Player */}
-            <ChapterVideoPlayer 
+            <ChapterVideoPlayer
               chapter={state.chapter}
               onVideoEnd={actions.markAsCompleted}
             />
-            
+
             {/* Chapter Info */}
             <ChapterDetailsInfo chapter={state.chapter} />
-            
+
             {/* Notes Section */}
-            <ChapterNotesSection 
+            <ChapterNotesSection
               chapterId={chapterId}
               notes={state.notes}
               onAddNote={actions.addNote}
@@ -127,7 +127,7 @@ const ChapterDetailsPage = React.memo(() => {
               onDeleteNote={actions.deleteNote}
             />
           </div>
-          
+
           <div className="lg:col-span-1">
             {/* Navigation */}
             <ChapterNavigationSection

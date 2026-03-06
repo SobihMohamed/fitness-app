@@ -29,38 +29,38 @@ export default function AdminLoginPage() {
       setError("Email is required");
       return false;
     }
-    
+
     if (!isValidEmail(credentials.email)) {
       setError("Please enter a valid email address");
       return false;
     }
-    
+
     if (!credentials.password.trim()) {
       setError("Password is required");
       return false;
     }
-    
+
     if (credentials.password.length < 6) {
       setError("Password must be at least 6 characters");
       return false;
     }
-    
+
     return true;
   }, [credentials]);
 
   const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Reset previous errors
     setError("");
-    
+
     // Validate form before submitting
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const response = await fetch(`${API_BASE}/admin/login`, {
         method: "POST",
@@ -93,7 +93,7 @@ export default function AdminLoginPage() {
   }, [error]);
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground">Admin Login</h1>

@@ -4,29 +4,27 @@ import ProductsClientPage from "@/components/client/products/ProductsClientPage"
 import { API_CONFIG } from "@/config/api";
 import { normalizeProduct, normalizeCategory } from "@/lib/api/normalizers";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds (ISR) instead of force-dynamic for better performance
+export const revalidate = 60;
 
-async function safeJson(res: Response) {
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   try {
+    const res = await fetch(url, {
+      ...options,
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
     return await res.json();
-  } catch {
+  } catch (error) {
+    console.error(`Fetch failed for ${url}:`, error);
     return null;
   }
 }
 
 export default async function ProductsPage() {
-  const [productsRes, categoriesRes] = await Promise.all([
-    fetch(API_CONFIG.USER_FUNCTIONS.products.getAll, {
-      cache: "no-store",
-    }),
-    fetch(API_CONFIG.USER_FUNCTIONS.categories.getAll, {
-      cache: "no-store",
-    }),
-  ]);
-
   const [productsJson, categoriesJson] = await Promise.all([
-    safeJson(productsRes),
-    safeJson(categoriesRes),
+    fetchWithTimeout(API_CONFIG.USER_FUNCTIONS.products.getAll),
+    fetchWithTimeout(API_CONFIG.USER_FUNCTIONS.categories.getAll),
   ]);
 
   const initialProducts = (
@@ -44,7 +42,7 @@ export default async function ProductsPage() {
   ).map(normalizeCategory);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       <ProductsHeroSection />
 
       {/* Client-side logic for filtering and grid rendering */}

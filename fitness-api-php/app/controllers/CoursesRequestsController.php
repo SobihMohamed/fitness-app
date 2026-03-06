@@ -85,8 +85,7 @@ class CoursesRequestsController extends AbstractController {
     $user = $this->getUserFromToken();
     $requests = $this->reqModel->getRequestsByUserId($user['id']);
     if(!$requests || $requests === false){
-      $this->sendError("No Requests Found" ,404 );
-      return;
+      return $this->json(["status"=>"success","data"=>[]]);
     }
       return $this->json(["status"=>"success","data"=>$requests]);
   }

@@ -31,7 +31,7 @@ export default function AdminRequestsPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 p-6 bg-gradient-to-br from-slate-50 to-white min-h-screen">
+      <div className="space-y-8 p-6 bg-slate-50 min-h-screen">
         {/* Enhanced Header */}
         <RequestsHeader />
 

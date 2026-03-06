@@ -102,10 +102,10 @@ export default function RootLayout({
       className="scroll-smooth"
       data-scroll-behavior="smooth"
     >
-      <body className={inter.className}>
+      <body className={`${inter.className} antialiased min-h-screen flex flex-col bg-white text-slate-900`}>
         <Providers>
           <Navigation />
-          <main>{children}</main>
+          <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
         </Providers>
       </body>

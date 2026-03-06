@@ -4,27 +4,27 @@ import { API_CONFIG } from "@/config/api";
 import { normalizeBlog, normalizeBlogCategory } from "@/lib/api/normalizers";
 import type { BlogPost, BlogCategory } from "@/types";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds (ISR) instead of force-dynamic for better performance
+export const revalidate = 60;
 
-async function safeJson(res: Response) {
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   try {
+    const res = await fetch(url, {
+      ...options,
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
     return await res.json();
-  } catch {
+  } catch (error) {
+    console.error(`Fetch failed for ${url}:`, error);
     return null;
   }
 }
 
 export default async function BlogPage() {
-  const [blogsRes, categoriesRes] = await Promise.all([
-    fetch(API_CONFIG.USER_FUNCTIONS.blogs.getAll, { cache: "no-store" }),
-    fetch(API_CONFIG.USER_FUNCTIONS.blogs.categories.getAll, {
-      cache: "no-store",
-    }),
-  ]);
-
   const [blogsJson, categoriesJson] = await Promise.all([
-    safeJson(blogsRes),
-    safeJson(categoriesRes),
+    fetchWithTimeout(API_CONFIG.USER_FUNCTIONS.blogs.getAll),
+    fetchWithTimeout(API_CONFIG.USER_FUNCTIONS.blogs.categories.getAll),
   ]);
 
   const rawBlogs: Record<string, any>[] = (
@@ -32,6 +32,7 @@ export default async function BlogPage() {
       ? blogsJson
       : blogsJson?.data || blogsJson?.blogs || []
   ).slice(0, 12);
+
   const initialBlogs: BlogPost[] = rawBlogs
     .map(normalizeBlog)
     .filter((b) => b.id);
@@ -39,12 +40,11 @@ export default async function BlogPage() {
   const rawCategories: Record<string, any>[] = Array.isArray(categoriesJson)
     ? categoriesJson
     : categoriesJson?.data || categoriesJson?.categories || [];
-  const initialCategories: BlogCategory[] = rawCategories.map(
-    normalizeBlogCategory,
-  );
+
+  const initialCategories: BlogCategory[] = rawCategories.map(normalizeBlogCategory);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       <BlogClientPage
         initialBlogs={initialBlogs}
         initialCategories={initialCategories}

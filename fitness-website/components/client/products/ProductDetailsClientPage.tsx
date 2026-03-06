@@ -60,7 +60,7 @@ const ProductDetailsClientPage = React.memo<ProductDetailsClientPageProps>(
 
     if (state.loading) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+        <div className="min-h-screen bg-slate-50 pt-20">
           <div className="flex items-center justify-center min-h-screen">
             <div className="flex items-center space-x-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -75,7 +75,7 @@ const ProductDetailsClientPage = React.memo<ProductDetailsClientPageProps>(
 
     if (!state.product) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 pt-20 flex items-center justify-center">
           <Card className="shadow-2xl max-w-md mx-auto">
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
@@ -100,7 +100,7 @@ const ProductDetailsClientPage = React.memo<ProductDetailsClientPageProps>(
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+      <div className="min-h-screen bg-slate-50 pt-20">
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Back Button */}
           <Button

@@ -68,6 +68,7 @@ public function addService($data) {
       return $this->db
         ->delete()
         ->where('service_id', '=', $id)
+        ->orderBy("service_id")
         ->excute();
     } catch (Exception $e) {
       return false;

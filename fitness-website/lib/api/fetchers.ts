@@ -124,7 +124,8 @@ export async function fetchServices(): Promise<ClientService[]> {
 
 export async function fetchServiceById(id: string): Promise<ClientService> {
   const res = await axios.get(API_CONFIG.USER_FUNCTIONS.services.getById(id));
-  const raw = res.data?.data || res.data?.service || res.data;
+  const raw =
+    res.data?.data || res.data?.Service || res.data?.service || res.data;
   if (!raw) throw new Error("Service not found");
   return normalizeService(raw);
 }

@@ -96,7 +96,7 @@ export default function AdminPromoCodesPage() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 to-white">
+      <div className="space-y-8 p-8 bg-slate-50 min-h-screen">
         {/* Header Section */}
         <div className="flex items-start justify-between">
           <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { ErrorDisplay } from "@/components/admin/shared/error-display";
 import { PageHeader } from "@/components/admin/shared/page-header";
@@ -23,19 +23,17 @@ export default function AdminDashboardPage() {
     requestsOverTime,
     rolesDistribution,
     error,
-    loading,
+    // loading is handled inside the components or useDashboardData if configured
   } = useDashboardData();
 
-  // Avoid hydration mismatch with Recharts by rendering charts only after mount
+  // Hydration safety for charts
   const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const adminCount = useMemo(() => {
-    return parseInt(stats.find((s) => s.title === "Admins")?.value ?? "0", 10);
-  }, [stats]);
+  const adminCount = useMemo(
+    () => parseInt(stats.find((s) => s.title === "Admins")?.value ?? "0", 10),
+    [stats]
+  );
 
   const orderStatusData = useMemo((): OrderStatusData[] => {
     if (!orderStats) {
@@ -52,48 +50,30 @@ export default function AdminDashboardPage() {
     ];
   }, [orderStats]);
 
-  const handleRetry = useCallback(() => {
-    window.location.reload();
-  }, []);
-
   if (error) {
-    return <ErrorDisplay message={error} onRetry={handleRetry} />;
+    return <ErrorDisplay message={error} onRetry={() => window.location.reload()} />;
   }
 
   return (
     <AdminLayout>
-      <div className="space-y-8 p-6 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 min-h-screen">
-        {/* Header */}
+      <div className="space-y-8 p-6 lg:p-8 bg-slate-50 min-h-screen">
         <PageHeader
           title="Dashboard"
           description="Welcome back! Here's what's happening with your fitness platform."
         />
 
-        {/* Stats Cards */}
         <DashboardStatsCards stats={stats} adminCount={adminCount} />
 
-        {/* User Statistics */}
         <UserStatistics userStats={userStats} adminCount={adminCount} />
 
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RequestsChartDynamic
-            requestsOverTime={requestsOverTime}
-            isMounted={isMounted}
-          />
-          <RolesChartDynamic
-            rolesDistribution={rolesDistribution}
-            isMounted={isMounted}
-          />
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+          <RequestsChartDynamic requestsOverTime={requestsOverTime} isMounted={isMounted} />
+          <RolesChartDynamic rolesDistribution={rolesDistribution} isMounted={isMounted} />
         </div>
 
-        {/* Quick Actions + Order Statistics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
           <QuickActions />
-          <OrderStatisticsDynamic
-            orderStatusData={orderStatusData}
-            isMounted={isMounted}
-          />
+          <OrderStatisticsDynamic orderStatusData={orderStatusData} isMounted={isMounted} />
         </div>
       </div>
     </AdminLayout>
