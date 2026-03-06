@@ -8,7 +8,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PageHeroText } from "@/components/shared/page-hero";
 import {
   MapPin,
   Phone,
@@ -19,103 +19,102 @@ import {
   Calendar,
 } from "lucide-react";
 
+// Static data extracted to prevent re-creation on render
+const CONTACT_INFO = [
+  {
+    icon: MapPin,
+    title: "Visit Our Gym",
+    details: ["123 Fitness Street", "Health City, HC 12345", "United States"],
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  {
+    icon: Phone,
+    title: "Call Us",
+    details: ["Main: +1 (555) 123-4567", "Support: +1 (555) 123-4568"],
+    color: "text-secondary",
+    bgColor: "bg-secondary/10",
+  },
+  {
+    icon: Mail,
+    title: "Email Us",
+    details: ["info@fitpro.com", "support@fitpro.com"],
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+  },
+  {
+    icon: Clock,
+    title: "Operating Hours",
+    details: ["Mon-Fri: 5:00 AM - 11:00 PM", "Sat-Sun: 6:00 AM - 10:00 PM"],
+    color: "text-secondary",
+    bgColor: "bg-secondary/10",
+  },
+];
+
+const QUICK_ACTIONS = [
+  {
+    icon: MessageCircle,
+    title: "Live Chat",
+    description: "Get instant help from our support team",
+    action: "Start Chat",
+    available: true,
+  },
+  {
+    icon: Calendar,
+    title: "Book Consultation",
+    description: "Schedule a free fitness consultation",
+    action: "Book Now",
+    available: true,
+  },
+  {
+    icon: Users,
+    title: "Join Group Class",
+    description: "Find and join our group fitness classes",
+    action: "View Classes",
+    available: true,
+  },
+];
+
+const FAQS = [
+  {
+    question: "What are your membership options?",
+    answer:
+      "We offer Starter ($49/month), Pro ($89/month), and Elite ($149/month) memberships with different benefits.",
+  },
+  {
+    question: "Do you offer personal training?",
+    answer:
+      "Yes, we have certified personal trainers available for one-on-one sessions starting at $80 per session.",
+  },
+  {
+    question: "Can I try before I buy?",
+    answer:
+      "We offer a free 7-day trial for new members to experience our facilities and services.",
+  },
+  {
+    question: "What safety measures do you have?",
+    answer:
+      "We maintain high cleanliness standards, have 24/7 security monitoring, and certified staff on-site during all hours.",
+  },
+];
+
 export default function ContactPage() {
-  // Static data
-  const contactInfo = [
-    {
-      icon: MapPin,
-      title: "Visit Our Gym",
-      details: ["123 Fitness Street", "Health City, HC 12345", "United States"],
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      icon: Phone,
-      title: "Call Us",
-      details: ["Main: +1 (555) 123-4567", "Support: +1 (555) 123-4568"],
-      color: "text-secondary",
-      bgColor: "bg-secondary/10",
-    },
-    {
-      icon: Mail,
-      title: "Email Us",
-      details: ["info@fitpro.com", "support@fitpro.com"],
-      color: "text-primary",
-      bgColor: "bg-primary/10",
-    },
-    {
-      icon: Clock,
-      title: "Operating Hours",
-      details: ["Mon-Fri: 5:00 AM - 11:00 PM", "Sat-Sun: 6:00 AM - 10:00 PM"],
-      color: "text-secondary",
-      bgColor: "bg-secondary/10",
-    },
-  ];
-
-  const quickActions = [
-    {
-      icon: MessageCircle,
-      title: "Live Chat",
-      description: "Get instant help from our support team",
-      action: "Start Chat",
-      available: true,
-    },
-    {
-      icon: Calendar,
-      title: "Book Consultation",
-      description: "Schedule a free fitness consultation",
-      action: "Book Now",
-      available: true,
-    },
-    {
-      icon: Users,
-      title: "Join Group Class",
-      description: "Find and join our group fitness classes",
-      action: "View Classes",
-      available: true,
-    },
-  ];
-
-  const faqs = [
-    {
-      question: "What are your membership options?",
-      answer:
-        "We offer Starter ($49/month), Pro ($89/month), and Elite ($149/month) memberships with different benefits.",
-    },
-    {
-      question: "Do you offer personal training?",
-      answer:
-        "Yes, we have certified personal trainers available for one-on-one sessions starting at $80 per session.",
-    },
-    {
-      question: "Can I try before I buy?",
-      answer:
-        "We offer a free 7-day trial for new members to experience our facilities and services.",
-    },
-    {
-      question: "What safety measures do you have?",
-      answer:
-        "We maintain high cleanliness standards, have 24/7 security monitoring, and certified staff on-site during all hours.",
-    },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div>
-            <Badge className="bg-blue-100 text-blue-800 mb-4">
-              Get In Touch
-            </Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent">
-              Contact
-              <span className="text-blue-600"> Us</span>
-            </h1>
-            <p className="text-xl max-w-3xl mx-auto text-gray-600">
-              Have questions about our services or need help getting started?
-              We're here to help you on your fitness journey.
-            </p>
+            <PageHeroText
+              badge="Get In Touch"
+              title="Contact"
+              highlight="Us"
+              description="Have questions about our services or need help getting started? We're here to help you on your fitness journey."
+              badgeProps={{ className: "bg-blue-100 text-blue-800" }}
+              titleClassName="text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent"
+              highlightClassName="text-blue-600"
+              descriptionClassName="text-gray-600"
+            />
           </div>
         </div>
       </section>
@@ -124,7 +123,7 @@ export default function ContactPage() {
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-6">
-            {quickActions.map((action, index) => (
+            {QUICK_ACTIONS.map((action, index) => (
               <Card
                 key={index}
                 className="border-0 shadow-lg hover:shadow-xl transition-shadow text-center"
@@ -166,7 +165,7 @@ export default function ContactPage() {
             {/* Contact Information */}
             <div className="space-y-8">
               <div className="grid gap-6">
-                {contactInfo.map((info, index) => (
+                {CONTACT_INFO.map((info, index) => (
                   <Card key={index} className="border-0 shadow-lg">
                     <CardContent className="p-6">
                       <div className="flex items-start space-x-4">
@@ -202,13 +201,13 @@ export default function ContactPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {faqs.map((faq, index) => (
+                  {FAQS.map((faq, index) => (
                     <div key={index} className="space-y-2">
                       <h4 className="font-medium text-foreground">
                         {faq.question}
                       </h4>
                       <p className="text-sm text-muted">{faq.answer}</p>
-                      {index < faqs.length - 1 && <hr className="my-4" />}
+                      {index < FAQS.length - 1 && <hr className="my-4" />}
                     </div>
                   ))}
                 </CardContent>

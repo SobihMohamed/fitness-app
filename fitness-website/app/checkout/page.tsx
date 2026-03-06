@@ -161,67 +161,42 @@ export default function CheckoutPage() {
             </Link>
           </Button>
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold" style={{ color: "#212529" }}>
+            <h1 className="text-3xl font-bold text-slate-900">
               Checkout
             </h1>
-            <span
-              className="rounded-md px-2 py-1 text-xs font-medium"
-              style={{
-                backgroundColor: "#F1F5F9",
-                color: "#0F172A",
-                border: "1px solid #E2E8F0",
-              }}
-            >
+            <span className="rounded-md px-2 py-1 text-xs font-medium bg-slate-100 text-slate-900 border border-slate-200">
               {itemCount} {itemCount === 1 ? "item" : "items"}
             </span>
           </div>
-          <p className="mt-2 text-sm" style={{ color: "#6C757D" }}>
+          <p className="mt-2 text-sm text-slate-500">
             Review your items and complete the payment via InstaPay.
           </p>
         </div>
 
         {/* Stepper */}
-        <div aria-label="Checkout progress" className="mb-8">
+        <div aria-label="Checkout progress" className="mb-8 hidden sm:block">
           <ol className="grid grid-cols-3 gap-4" role="list">
             <li className="flex items-center gap-2">
-              <span
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white text-xs font-semibold"
-                style={{ backgroundColor: "#007BFF" }}
-              >
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-white text-xs font-semibold">
                 1
               </span>
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "#212529" }}
-              >
+              <span className="text-sm font-semibold text-slate-900">
                 Cart
               </span>
             </li>
-            <li className="flex items-center gap-2">
-              <span
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white text-xs font-semibold"
-                style={{ backgroundColor: "#007BFF" }}
-              >
+            <li className="flex items-center gap-2 opacity-50">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-600 text-xs font-semibold">
                 2
               </span>
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "#212529" }}
-              >
+              <span className="text-sm font-semibold text-slate-500">
                 Details
               </span>
             </li>
-            <li className="flex items-center gap-2">
-              <span
-                className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white text-xs font-semibold"
-                style={{ backgroundColor: "#007BFF" }}
-              >
+            <li className="flex items-center gap-2 opacity-50">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-600 text-xs font-semibold">
                 3
               </span>
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "#212529" }}
-              >
+              <span className="text-sm font-semibold text-slate-500">
                 Payment
               </span>
             </li>
@@ -230,64 +205,48 @@ export default function CheckoutPage() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-3 gap-6">
-            {/* Left: Details + Payment */}
+            {/* Left: Payment Form/CTA */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Contact/Billing Details */}
-              {/* Payment - InstaPay only */}
-              <Card className="bg-white border-0 shadow-lg">
+              <Card className="bg-white border-none shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-2xl" style={{ color: "#212529" }}>
+                  <CardTitle className="text-2xl text-slate-900">
                     Pay with InstaPay
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div
-                    className="rounded-lg border p-4"
-                    style={{ borderColor: "#E9ECEF" }}
-                  >
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
                       <div className="space-y-1">
-                        <p className="text-sm" style={{ color: "#6C757D" }}>
+                        <p className="text-sm text-slate-500">
                           Complete your payment securely via InstaPay.
                         </p>
-                        <div className="text-sm" style={{ color: "#212529" }}>
+                        <div className="text-sm text-slate-900">
                           <span className="font-medium">Recipient:</span>{" "}
                           <span>shehab_1@instapay</span>
                         </div>
                       </div>
-                      <div
-                        className="shrink-0 rounded-md px-2 py-1 text-xs font-medium"
-                        style={{
-                          backgroundColor: "#E9F5FF",
-                          color: "#007BFF",
-                          border: "1px solid #B6E0FE",
-                        }}
-                      >
+                      <div className="shrink-0 rounded-md px-2 py-1 text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200">
                         InstaPay
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 items-end gap-4">
-                    <div className="sm:col-span-2">
-                      <p className="text-sm" style={{ color: "#6C757D" }}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 items-end gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-slate-500">
                         Amount due
                       </p>
-                      <p
-                        className="text-2xl font-bold leading-tight"
-                        style={{ color: "#007BFF" }}
-                      >
+                      <p className="text-3xl font-bold leading-tight text-blue-600 mt-1">
                         {orderCalculations.finalTotal.toFixed(2)} EGP
                       </p>
-                      <p className="text-xs mt-1" style={{ color: "#6C757D" }}>
+                      <p className="text-xs mt-1 text-slate-500">
                         Includes taxes, shipping, and discounts
                       </p>
                     </div>
                     <Button
                       asChild
                       size="lg"
-                      style={{ backgroundColor: "#007BFF" }}
-                      className="w-full"
+                      className="w-full bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-lg transition-all"
                     >
                       <Link
                         href="https://ipn.eg/S/shehab_1/instapay/2MI6ho"
@@ -299,28 +258,19 @@ export default function CheckoutPage() {
                       </Link>
                     </Button>
                   </div>
-                  <div
-                    className="rounded-md bg-slate-50 border p-4"
-                    style={{ borderColor: "#E9ECEF" }}
-                  >
-                    <p
-                      className="text-xs font-medium mb-2"
-                      style={{ color: "#212529" }}
-                    >
+
+                  <div className="rounded-md bg-slate-50/50 border border-slate-200 p-4">
+                    <p className="text-xs font-semibold mb-2 text-slate-900">
                       How it works
                     </p>
-                    <ol
-                      className="list-decimal list-inside space-y-1 text-xs"
-                      style={{ color: "#6C757D" }}
-                    >
-                      <li>Click "Pay with InstaPay"</li>
-                      <li>Complete the transfer in InstaPay</li>
-                      <li>Return to this page to finish</li>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-slate-500">
+                      <li>Click "Pay with InstaPay" to generate your payment link</li>
+                      <li>Complete the exact transfer amount in your InstaPay app</li>
+                      <li>Hold onto your transaction reference receipt for support</li>
                     </ol>
                   </div>
-                  <p className="text-xs" style={{ color: "#6C757D" }}>
-                    Powered by InstaPay. The link opens in a new tab. Keep your
-                    transaction reference for support.
+                  <p className="text-xs text-slate-400 text-center pt-2">
+                    Powered by InstaPay. The link opens in a new tab securely.
                   </p>
                 </CardContent>
               </Card>
@@ -328,130 +278,117 @@ export default function CheckoutPage() {
 
             {/* Right: Summary */}
             <div className="lg:sticky lg:top-6 space-y-6 h-max">
-              <Card className="bg-white border-0 shadow-lg">
+              <Card className="bg-white border-none shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-2xl" style={{ color: "#212529" }}>
+                  <CardTitle className="text-2xl text-slate-900">
                     Order Summary
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="divide-y" style={{ borderColor: "#E9ECEF" }}>
+                <CardContent className="space-y-6">
+                  {/* Items List */}
+                  <div className="divide-y divide-slate-100 max-h-[300px] overflow-y-auto pr-2">
                     {items.map((item: CartItem) => (
                       <div
                         key={item.id}
-                        className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"
+                        className="flex items-center gap-4 py-3 first:pt-0 last:pb-0"
                       >
-                        <div className="relative w-12 h-12 rounded-lg overflow-hidden">
+                        <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-100 shadow-sm shrink-0">
                           <Image
-                            src={
-                              getProxyImageUrl(item.image) || "/placeholder.svg"
-                            }
+                            src={getProxyImageUrl(item.image) || "/placeholder.svg"}
                             alt={item.name}
                             fill
                             unoptimized
                             className="object-cover"
-                            loading="lazy"
-                            sizes="48px"
+                            sizes="56px"
                           />
                         </div>
-                        <div className="flex-1">
-                          <p
-                            className="font-medium text-sm"
-                            style={{ color: "#212529" }}
-                          >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-slate-900 truncate">
                             {item.name}
                           </p>
-                          <p className="text-xs" style={{ color: "#6C757D" }}>
+                          <p className="text-xs text-slate-500 mt-0.5">
                             Qty: {item.quantity}
                           </p>
                         </div>
-                        <p
-                          className="font-medium text-sm"
-                          style={{ color: "#007BFF" }}
-                        >
+                        <p className="font-semibold text-sm text-slate-900 shrink-0">
                           {(item.price * item.quantity).toFixed(2)} EGP
                         </p>
                       </div>
                     ))}
                   </div>
-                  <Separator />
+
+                  <Separator className="bg-slate-100" />
+
                   {/* Promo Code */}
-                  <div className="space-y-2">
-                    <Label htmlFor="promo">Promo Code</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="promo" className="text-slate-700">Promo Code</Label>
                     <div className="flex gap-2">
                       <Input
                         id="promo"
                         placeholder="Enter promo code"
                         value={promoCode}
                         onChange={(e) => handlePromoChange(e.target.value)}
-                        aria-label="Promo code"
+                        className="bg-slate-50 border-slate-200"
+                        aria-label="Promo code input"
                       />
                       <Button
                         type="button"
-                        variant="outline"
+                        variant="secondary"
                         disabled={!promoCode}
+                        className="bg-slate-100 text-slate-900 hover:bg-slate-200"
                       >
                         Apply
                       </Button>
                     </div>
                     {orderCalculations.discountPercent > 0 && (
-                      <p className="text-xs" style={{ color: "#32CD32" }}>
-                        Discount applied: {orderCalculations.discountPercent}%
+                      <p className="text-xs font-medium text-green-600 animate-in fade-in slide-in-from-top-1">
+                        ✓ Discount applied: {orderCalculations.discountPercent}% off
                       </p>
                     )}
                   </div>
-                  <div
-                    className="space-y-3 rounded-lg border p-4"
-                    style={{
-                      borderColor: "#E9ECEF",
-                      backgroundColor: "#F8FAFC",
-                    }}
-                  >
-                    <div className="flex justify-between">
-                      <span className="text-sm" style={{ color: "#6C757D" }}>
-                        Subtotal ({itemCount} items)
+
+                  {/* Totals Breakdown */}
+                  <div className="space-y-3 rounded-xl border border-slate-100 bg-slate-50/80 p-5 mt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500">
+                        Subtotal <span className="text-xs">({itemCount} items)</span>
                       </span>
-                      <span className="text-sm" style={{ color: "#212529" }}>
+                      <span className="text-sm font-medium text-slate-900">
                         {total.toFixed(2)} EGP
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm" style={{ color: "#6C757D" }}>
-                        Shipping
-                      </span>
-                      <span className="text-sm" style={{ color: "#212529" }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500">Shipping</span>
+                      <span className="text-sm font-medium text-slate-900">
                         {orderCalculations.shipping === 0
-                          ? "FREE"
+                          ? <span className="text-green-600 font-semibold">FREE</span>
                           : `${orderCalculations.shipping.toFixed(2)} EGP`}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm" style={{ color: "#6C757D" }}>
-                        Tax
-                      </span>
-                      <span className="text-sm" style={{ color: "#212529" }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500">Estimated Tax</span>
+                      <span className="text-sm font-medium text-slate-900">
                         {orderCalculations.tax.toFixed(2)} EGP
                       </span>
                     </div>
+
                     {orderCalculations.discountPercent > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-sm" style={{ color: "#6C757D" }}>
-                          Discount ({orderCalculations.discountPercent}%)
-                        </span>
-                        <span className="text-sm" style={{ color: "#212529" }}>
-                          -{" "}
-                          {(
-                            orderCalculations.preDiscountTotal -
-                            orderCalculations.finalTotal
-                          ).toFixed(2)}{" "}
-                          EGP
+                      <div className="flex justify-between items-center text-green-600 pt-1">
+                        <span className="text-sm">Discount</span>
+                        <span className="text-sm font-medium">
+                          - {(orderCalculations.preDiscountTotal - orderCalculations.finalTotal).toFixed(2)} EGP
                         </span>
                       </div>
                     )}
-                    <Separator />
-                    <div className="flex justify-between text-lg font-bold">
-                      <span style={{ color: "#212529" }}>Total</span>
-                      <span style={{ color: "#007BFF" }}>
+
+                    <Separator className="my-3 bg-slate-200" />
+
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <span className="block text-base font-bold text-slate-900">Total</span>
+                        <span className="block text-xs text-slate-500">Including strictly required fees</span>
+                      </div>
+                      <span className="text-2xl font-black text-blue-600 tracking-tight">
                         {orderCalculations.finalTotal.toFixed(2)} EGP
                       </span>
                     </div>

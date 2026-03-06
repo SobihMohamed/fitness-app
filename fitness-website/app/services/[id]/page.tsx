@@ -105,7 +105,7 @@ export default function ServiceDetailsPage() {
         try {
           token =
             sessionStorage.getItem("token") || localStorage.getItem("token");
-        } catch {}
+        } catch { }
         if (!token) {
           setRequestStatus("none");
           return;
@@ -201,7 +201,7 @@ export default function ServiceDetailsPage() {
       try {
         token =
           sessionStorage.getItem("token") || localStorage.getItem("token");
-      } catch {}
+      } catch { }
       if (!token) {
         setSubmitError("You must be logged in to book.");
         return;
@@ -268,7 +268,7 @@ export default function ServiceDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+      <div className="min-h-screen bg-slate-50 pt-20">
         <div className="flex items-center justify-center min-h-screen">
           <div className="flex items-center space-x-3">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -283,7 +283,7 @@ export default function ServiceDetailsPage() {
 
   if (error || !service) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 pt-20 flex items-center justify-center">
         <Card className="shadow-2xl max-w-md mx-auto">
           <CardContent className="p-8 text-center">
             <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
@@ -308,7 +308,7 @@ export default function ServiceDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+    <div className="min-h-screen bg-slate-50 pt-20">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* Breadcrumb */}
         <nav

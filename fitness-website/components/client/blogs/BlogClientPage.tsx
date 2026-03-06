@@ -21,7 +21,7 @@ const BlogHeroSection = dynamic(
   () => import("@/components/client/blogs/BlogHeroSection"),
   {
     loading: () => (
-      <div className="h-96 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 animate-pulse rounded-lg" />
+      <div className="h-96 bg-slate-200 animate-pulse rounded-lg" />
     ),
   },
 );

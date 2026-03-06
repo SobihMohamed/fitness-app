@@ -64,7 +64,7 @@ const CourseDetailsClientPage = React.memo<CourseDetailsClientPageProps>(
 
     if (state.loading) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+        <div className="min-h-screen bg-slate-50 pt-20">
           <div className="flex items-center justify-center min-h-screen">
             <div className="flex items-center space-x-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -83,7 +83,7 @@ const CourseDetailsClientPage = React.memo<CourseDetailsClientPageProps>(
         state.error?.includes("authentication");
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-slate-50 pt-20 flex items-center justify-center p-4">
           <Card className="shadow-2xl max-w-md mx-auto">
             <CardContent className="p-8 text-center">
               {isAuthError ? (
@@ -137,7 +137,7 @@ const CourseDetailsClientPage = React.memo<CourseDetailsClientPageProps>(
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+      <div className="min-h-screen bg-slate-50 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           {/* Back Button */}
           <Button

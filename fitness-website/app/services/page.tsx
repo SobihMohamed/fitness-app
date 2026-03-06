@@ -7,32 +7,63 @@ import { normalizeService } from "@/lib/api/normalizers";
 // Import Client Wrapper
 import { ServicesClientPage } from "@/components/client/services/ServicesClientPage";
 
-export const dynamic = "force-dynamic";
+// Revalidate every 60 seconds (ISR) instead of force-dynamic for better performance
+export const revalidate = 60;
 
-async function safeJson(res: Response) {
+async function fetchWithTimeout(url: string, options: RequestInit = {}) {
   try {
-    return await res.json();
-  } catch {
+    const res = await fetch(url, {
+      ...options,
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) {
+      console.error(`HTTP ${res.status} for ${url}`);
+      return null;
+    }
+
+    const text = await res.text();
+
+    // Check if response is HTML instead of JSON
+    if (text.trim().startsWith("<")) {
+      console.error(
+        `Server returned HTML instead of JSON for ${url}. Response: ${text.substring(0, 200)}`,
+      );
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.error(
+        `JSON parse error for ${url}:`,
+        parseError,
+        "Response:",
+        text.substring(0, 200),
+      );
+      return null;
+    }
+  } catch (error) {
+    console.error(`Fetch failed for ${url}:`, error);
     return null;
   }
 }
 
 export default async function ServicesPage() {
   // Preload services on the server to avoid client-side spinners
-  const servicesRes = await fetch(API_CONFIG.USER_FUNCTIONS.services.getAll, {
-    cache: "no-store",
-  });
+  const servicesJson = await fetchWithTimeout(
+    API_CONFIG.USER_FUNCTIONS.services.getAll,
+  );
 
-  const servicesJson = await safeJson(servicesRes);
   const rawServices = Array.isArray(servicesJson)
     ? servicesJson
     : servicesJson?.data || servicesJson?.services || [];
+
   const initialServices = Array.isArray(rawServices)
     ? rawServices.map((s: Record<string, any>) => normalizeService(s))
     : [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <ServicesHero />
 

@@ -128,7 +128,7 @@ export function normalizeService(item: Record<string, any>): ClientService {
   return {
     id: parseInt(item.service_id || item.id, 10) || 0,
     title: item.name || item.title || "Unnamed Service",
-    description: item.description || "",
+    description: item.details || item.description || "",
     price: parseFloat(item.price) || 0,
     duration: item.duration || "",
     image:

@@ -237,7 +237,7 @@ export default function CourseDetailsPage() {
 
   return (
     <AdminLayout>
-      <div className="sm:space-y-8 sm:p-8 bg-gradient-to-br from-slate-50 to-white">
+      <div className="sm:space-y-8 sm:p-8 bg-slate-50 min-h-screen">
         <CourseHeader course={courseManagement.course} />
 
         <ModulesAccordion

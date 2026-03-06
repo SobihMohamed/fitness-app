@@ -215,11 +215,11 @@ export default function DashboardPage() {
                   payment_method: "-",
                   items: Array.isArray(cached.products)
                     ? cached.products.map((p: any) => ({
-                        id: String(p.id || p.product_id || Math.random()),
-                        name: p.name || p.title || "Item",
-                        price: Number(p.price || p.unit_price || 0),
-                        quantity: Number(p.quantity || p.qty || 1),
-                      }))
+                      id: String(p.id || p.product_id || Math.random()),
+                      name: p.name || p.title || "Item",
+                      price: Number(p.price || p.unit_price || 0),
+                      quantity: Number(p.quantity || p.qty || 1),
+                    }))
                     : [],
                 });
                 setOrderDetailsError(
@@ -277,7 +277,7 @@ export default function DashboardPage() {
           try {
             const parsed = JSON.parse(itemsSource);
             if (Array.isArray(parsed)) itemsSource = parsed;
-          } catch {}
+          } catch { }
         }
 
         const normalized: any = {
@@ -287,22 +287,22 @@ export default function DashboardPage() {
           ),
           total_price: Number(
             (raw as any)?.total_price ||
-              (raw as any)?.total ||
-              (raw as any)?.amount ||
-              (raw as any)?.order_total ||
-              (raw as any)?.price ||
-              (raw as any)?.order?.total ||
-              (body as any)?.total ||
-              (body as any)?.total_price ||
-              0,
+            (raw as any)?.total ||
+            (raw as any)?.amount ||
+            (raw as any)?.order_total ||
+            (raw as any)?.price ||
+            (raw as any)?.order?.total ||
+            (body as any)?.total ||
+            (body as any)?.total_price ||
+            0,
           ),
           created_at: String(
             (raw as any)?.created_at ||
-              (raw as any)?.createdAt ||
-              (raw as any)?.date ||
-              (raw as any)?.order?.created_at ||
-              (body as any)?.created_at ||
-              new Date().toISOString(),
+            (raw as any)?.createdAt ||
+            (raw as any)?.date ||
+            (raw as any)?.order?.created_at ||
+            (body as any)?.created_at ||
+            new Date().toISOString(),
           ),
           payment_method:
             (raw as any)?.payment_method ||
@@ -315,71 +315,71 @@ export default function DashboardPage() {
             "Insta pay",
           items: Array.isArray(itemsSource)
             ? itemsSource.map((p: any) => ({
-                id: String(
-                  p.id ||
-                    p.product_id ||
-                    p.item_id ||
-                    p.order_item_id ||
-                    Math.random(),
-                ),
-                name:
-                  p.name ||
-                  p.title ||
-                  p.product_name ||
-                  p.product_title ||
-                  p.product?.name ||
-                  p.Product?.name ||
-                  "Item",
-                price: Number(
-                  p.price ||
-                    p.unit_price ||
-                    p.product_price ||
-                    p.net_price ||
-                    p.subtotal ||
-                    p.total ||
-                    p.product?.price ||
-                    p.Product?.price ||
-                    0,
-                ),
-                quantity: Number(
-                  p.quantity ||
-                    p.qty ||
-                    p.count ||
-                    p.quantity_ordered ||
-                    p.amount ||
-                    1,
-                ),
-                product_id: String(
-                  p.product_id ||
-                    p.productId ||
-                    p.ProductId ||
-                    p.product?.id ||
-                    p.Product?.id ||
-                    "",
-                ),
-              }))
+              id: String(
+                p.id ||
+                p.product_id ||
+                p.item_id ||
+                p.order_item_id ||
+                Math.random(),
+              ),
+              name:
+                p.name ||
+                p.title ||
+                p.product_name ||
+                p.product_title ||
+                p.product?.name ||
+                p.Product?.name ||
+                "Item",
+              price: Number(
+                p.price ||
+                p.unit_price ||
+                p.product_price ||
+                p.net_price ||
+                p.subtotal ||
+                p.total ||
+                p.product?.price ||
+                p.Product?.price ||
+                0,
+              ),
+              quantity: Number(
+                p.quantity ||
+                p.qty ||
+                p.count ||
+                p.quantity_ordered ||
+                p.amount ||
+                1,
+              ),
+              product_id: String(
+                p.product_id ||
+                p.productId ||
+                p.ProductId ||
+                p.product?.id ||
+                p.Product?.id ||
+                "",
+              ),
+            }))
             : [],
           original_total: Number(
             (raw as any)?.original_total ||
-              (raw as any)?.original ||
-              (raw as any)?.gross_total ||
-              (raw as any)?.total ||
-              0,
+            (raw as any)?.original ||
+            (raw as any)?.gross_total ||
+            (raw as any)?.total ||
+            0,
           ),
           discount_value: Number(
             (raw as any)?.discount_value || (raw as any)?.discount || 0,
           ),
           net_total: Number(
             (raw as any)?.net_total ||
-              (raw as any)?.net ||
-              (raw as any)?.total_price ||
-              0,
+            (raw as any)?.net ||
+            (raw as any)?.total_price ||
+            0,
           ),
           promo_code_used: String(
             (raw as any)?.promo_code_used ||
-              (raw as any)?.promo ||
-              (raw as any)?.coupon ||
-              "",
+            (raw as any)?.promo ||
+            (raw as any)?.coupon ||
+            "",
           ),
         };
 
@@ -403,11 +403,11 @@ export default function DashboardPage() {
               quantity: Number(p.quantity || p.qty || 1),
               product_id: String(
                 p.product_id ||
-                  p.productId ||
-                  p.ProductId ||
-                  p.product?.id ||
-                  p.Product?.id ||
-                  "",
+                p.productId ||
+                p.ProductId ||
+                p.product?.id ||
+                p.Product?.id ||
+                "",
               ),
             }));
           }
@@ -451,7 +451,7 @@ export default function DashboardPage() {
         // Show loading state (placed after all hooks to keep hook order stable)
         if (!isInitialized || isLoading) {
           return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
               <div className="flex items-center space-x-3">
                 <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                 <span className="text-gray-700 text-lg font-medium">
@@ -466,8 +466,8 @@ export default function DashboardPage() {
         try {
           const missing = Array.isArray(normalized.items)
             ? normalized.items.filter(
-                (it: any) => (!it.name || it.name === "Item") && it.product_id,
-              )
+              (it: any) => (!it.name || it.name === "Item") && it.product_id,
+            )
             : [];
           if (missing.length > 0) {
             const uniqueIds: string[] = Array.from(
@@ -532,7 +532,7 @@ export default function DashboardPage() {
               return it;
             });
           }
-        } catch {}
+        } catch { }
 
         setOrderDetails(normalized as OrderDetails);
       } catch (e: any) {
@@ -565,19 +565,19 @@ export default function DashboardPage() {
         payment_method: "-",
         items: Array.isArray((cached as any).products)
           ? (cached as any).products.map((p: any) => ({
-              id: String(p.id || p.product_id || Math.random()),
-              name: p.name || p.title,
-              price: Number(p.price || p.unit_price || 0),
-              quantity: Number(p.quantity || p.qty || 1),
-              product_id: String(
-                p.product_id ||
-                  p.productId ||
-                  p.ProductId ||
-                  p.product?.id ||
-                  p.Product?.id ||
-                  "",
-              ),
-            }))
+            id: String(p.id || p.product_id || Math.random()),
+            name: p.name || p.title,
+            price: Number(p.price || p.unit_price || 0),
+            quantity: Number(p.quantity || p.qty || 1),
+            product_id: String(
+              p.product_id ||
+              p.productId ||
+              p.ProductId ||
+              p.product?.id ||
+              p.Product?.id ||
+              "",
+            ),
+          }))
           : [],
       });
     }
@@ -644,19 +644,19 @@ export default function DashboardPage() {
 
   // Safe action handlers with fallbacks
   const safeActions = {
-    updateProfile: (actions as any)?.updateProfile || (async () => {}),
-    loadOrders: (actions as any)?.loadOrders || (async () => {}),
+    updateProfile: (actions as any)?.updateProfile || (async () => { }),
+    loadOrders: (actions as any)?.loadOrders || (async () => { }),
     loadSubscribedCourses:
-      (actions as any)?.loadSubscribedCourses || (async () => {}),
-    loadNotifications: (actions as any)?.loadNotifications || (async () => {}),
+      (actions as any)?.loadSubscribedCourses || (async () => { }),
+    loadNotifications: (actions as any)?.loadNotifications || (async () => { }),
     markNotificationAsRead:
-      (actions as any)?.markNotificationAsRead || (async () => {}),
+      (actions as any)?.markNotificationAsRead || (async () => { }),
     deleteNotification:
-      (actions as any)?.deleteNotification || (async () => {}),
+      (actions as any)?.deleteNotification || (async () => { }),
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Header */}
         <div className="mb-8 text-center">
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                         </div>
                         {typeof orderDetails.net_total !== "undefined" &&
                           Number(orderDetails.net_total) !==
-                            Number(orderDetails.total_price) && (
+                          Number(orderDetails.total_price) && (
                             <div className="p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200">
                               <p className="text-sm font-medium text-gray-600 mb-1">
                                 Net Total
@@ -837,8 +837,8 @@ export default function DashboardPage() {
                               <p className="text-xl font-semibold text-green-700">
                                 {Number(
                                   orderDetails.net_total ||
-                                    orderDetails.total_price ||
-                                    0,
+                                  orderDetails.total_price ||
+                                  0,
                                 ).toFixed(2)}{" "}
                                 EGP
                               </p>
@@ -875,7 +875,7 @@ export default function DashboardPage() {
                           Order Items
                         </h4>
                         {Array.isArray(orderDetails.items) &&
-                        orderDetails.items.length > 0 ? (
+                          orderDetails.items.length > 0 ? (
                           <div className="border rounded-lg overflow-hidden">
                             <table className="min-w-full">
                               <thead className="bg-gradient-to-r from-gray-50 to-blue-50">
@@ -907,7 +907,7 @@ export default function DashboardPage() {
                                     >
                                       <td className="px-4 py-3 text-gray-900 font-medium">
                                         {item.name &&
-                                        String(item.name).trim().length > 0
+                                          String(item.name).trim().length > 0
                                           ? item.name
                                           : "Loading..."}
                                       </td>

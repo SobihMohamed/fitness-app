@@ -83,7 +83,7 @@ const BlogPostClientPage = React.memo<BlogPostClientPageProps>(
 
     if (loading) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20">
+        <div className="min-h-screen bg-slate-50 pt-20">
           <div className="flex items-center justify-center min-h-screen">
             <div className="flex items-center space-x-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -98,7 +98,7 @@ const BlogPostClientPage = React.memo<BlogPostClientPageProps>(
 
     if (error || !blog) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 pt-20 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 pt-20 flex items-center justify-center">
           <Card className="shadow-2xl max-w-md mx-auto">
             <CardContent className="p-8 text-center">
               <AlertCircle className="h-16 w-16 text-red-600 mx-auto mb-4" />
@@ -129,7 +129,7 @@ const BlogPostClientPage = React.memo<BlogPostClientPageProps>(
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      <div className="min-h-screen bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
           <Button
             variant="ghost"
@@ -154,7 +154,7 @@ const BlogPostClientPage = React.memo<BlogPostClientPageProps>(
                     try {
                       (e.currentTarget as HTMLImageElement).src =
                         "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
-                    } catch {}
+                    } catch { }
                   }}
                 />
               ) : (
@@ -292,7 +292,7 @@ const BlogPostClientPage = React.memo<BlogPostClientPageProps>(
                           try {
                             (e.currentTarget as HTMLImageElement).src =
                               "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
-                          } catch {}
+                          } catch { }
                         }}
                       />
                     ) : (

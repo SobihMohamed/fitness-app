@@ -20,7 +20,7 @@ export default function HomeView({
   dataSlot,
 }: HomePageProps & { dataSlot?: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-slate-50">
       {/* Hero Section — static, rendered server-side for fast LCP */}
       <HeroSection />
 

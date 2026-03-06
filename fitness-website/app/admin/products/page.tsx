@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import dynamicImport from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { AdminLayout } from "@/components/admin/admin-layout";
+import { PageHeader } from "@/components/admin/shared/page-header";
 import { useProductManagement } from "@/hooks/admin/use-product-management";
 import { useAdminApi } from "@/hooks/admin/use-admin-api";
 import { Package } from "lucide-react";
@@ -287,9 +288,9 @@ export default function ProductsManagement() {
       setDetailsProduct((prev) =>
         prev
           ? {
-              ...prev,
-              sub_images: keepImages,
-            }
+            ...prev,
+            sub_images: keepImages,
+          }
           : null,
       );
     },
@@ -304,11 +305,11 @@ export default function ProductsManagement() {
       setDetailsProduct((prev) =>
         prev
           ? {
-              ...prev,
-              sub_images: (prev.sub_images || []).map((p) =>
-                p === oldImagePath ? tempUrl : p,
-              ),
-            }
+            ...prev,
+            sub_images: (prev.sub_images || []).map((p) =>
+              p === oldImagePath ? tempUrl : p,
+            ),
+          }
           : prev,
       );
 
@@ -360,20 +361,16 @@ export default function ProductsManagement() {
 
   return (
     <AdminLayout>
-      <div className="space-y-8 p-8 bg-gradient-to-br from-slate-50 to-white min-h-screen">
+      <div className="space-y-8 p-8 bg-slate-50 min-h-screen">
         {/* Header */}
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900 flex items-center gap-4">
-              <div className="p-3 bg-indigo-100 rounded-xl">
-                <Package className="h-8 w-8 text-indigo-600" />
-              </div>
-              Products Management
-            </h1>
-            <p className="text-slate-600 mt-4 text-lg">
-              Manage your product catalog, categories, and inventory with ease
-            </p>
-          </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <PageHeader
+            title="Products Management"
+            description="Manage your product catalog, categories, and inventory with ease"
+          />
+          <Button onClick={handleAddProduct} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-md hover:shadow-lg transition-all w-full md:w-auto mt-4 md:mt-0">
+            <Package className="h-4 w-4" /> Add Product
+          </Button>
         </div>
 
         {/* Stats Cards */}
@@ -492,15 +489,6 @@ export default function ProductsManagement() {
           isOpen={!!previewImageUrl}
           onClose={() => setPreviewImageUrl(null)}
         />
-      </div>
-      <div className="flex justify-end pr-8 pb-8">
-        <button
-          onClick={handleAddProduct}
-          className="px-4 py-3 rounded-full shadow-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-          aria-label="Add Product"
-        >
-          + New Product
-        </button>
       </div>
     </AdminLayout>
   );
