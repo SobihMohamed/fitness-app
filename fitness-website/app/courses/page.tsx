@@ -2,8 +2,7 @@ import React from "react";
 import CoursesClientPage from "@/components/client/courses/CoursesClientPage";
 import CoursesHeroSection from "@/components/client/courses/CoursesHeroSection";
 import { API_CONFIG } from "@/config/api";
-
-type Course = Record<string, any>;
+import { Course } from "@/types/course";
 
 // Revalidate every 60 seconds (ISR) instead of force-dynamic for better performance
 export const revalidate = 60;
@@ -23,7 +22,9 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
 }
 
 export default async function CoursesPage() {
-  const coursesJson = await fetchWithTimeout(API_CONFIG.USER_FUNCTIONS.courses.getAll);
+  const coursesJson = await fetchWithTimeout(
+    API_CONFIG.USER_FUNCTIONS.courses.getAll,
+  );
 
   const rawCourses: Course[] = Array.isArray(coursesJson)
     ? coursesJson
@@ -39,7 +40,7 @@ export default async function CoursesPage() {
     <div className="min-h-screen bg-slate-50">
       <CoursesHeroSection />
       {/* Client-side logic for filtering and grid rendering */}
-      <CoursesClientPage className="bg-transparent" initialCourses={initialCourses} />
+      <CoursesClientPage initialCourses={initialCourses} />
     </div>
   );
 }
