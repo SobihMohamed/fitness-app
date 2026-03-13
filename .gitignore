@@ -1,0 +1,30 @@
+#IDEs and Editors,
+.vs/
+.vscode/
+.idea/
+
+#OS generated files,
+.DS_Store
+Thumbs.db
+
+#Backend (PHP API),
+fitness-api-php/public/log.txt
+fitness-api-php/vendor/
+fitness-api-php/.env
+
+#(Optional) You can leave the frontend one as is,it will still work for the fitness-website folder.,
+#Uploads and Debug files,
+fitness-api-php/public/uploads/
+fitness-api-php/public/debug.txt
+:laughing:
+Click to react
+:sweat_smile:
+Click to react
+:100:
+Click to react
+Add Reaction
+Reply
+Forward
+More
+
+Message #general
