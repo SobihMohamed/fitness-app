@@ -216,6 +216,7 @@ export default function ServiceDetailsPage() {
 
         // Minimal snake_case payload to match likely DB columns and avoid unknown column errors
         const payload = {
+          service_id: parseInt(id as string, 10),
           start_date: form.startDate,
           end_date: endDateStr,
           injury_details: form.injuryDetails || "",

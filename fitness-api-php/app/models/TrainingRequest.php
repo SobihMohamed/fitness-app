@@ -27,7 +27,9 @@ class TrainingRequest{
   // get all
   public function getAll(){
     try {
-      return $this->db->select()->fetchAll();
+      return $this->db->select()
+      ->orderBy("request_id")
+      ->fetchAll();
     } catch(Exception $e) {
       var_dump($e->getMessage());
       return false;
@@ -65,6 +67,7 @@ class TrainingRequest{
       return $this->db
                   ->select()
                   ->where("user_id","=",$userId)
+                  ->orderBy("request_id")
                   ->fetchAll();
     } catch(Exception $e){
       var_dump($e->getMessage());
@@ -131,5 +134,17 @@ public function getExpiringSoon() {
       return false;
     }
 }
+
+  public function hasPendingRequestsByServiceId($serviceId){
+    try {
+      $results = $this->db->select()
+          ->where("service_id", "=", $serviceId)
+          ->andWhere("status", "=", "pending")
+          ->fetchAll();
+      return !empty($results);
+    } catch(Exception $e) {
+      return false;
+    }
+  }
 }
 ?>
