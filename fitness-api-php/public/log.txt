@@ -1,1 +1,1 @@
-URL Detected: Services/getAll
+URL Detected: Category/getAll
