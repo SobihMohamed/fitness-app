@@ -16,7 +16,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}) {
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
-    console.error(`Fetch failed for ${url}:`, error);
+    console.error(`Fetch failed  for ${url}:`, error);
     return null;
   }
 }
