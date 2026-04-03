@@ -56,6 +56,9 @@ const nextConfig = {
       },
     ],
   },
+  // Externalize axios (and its transitive deps mime-types/mime-db) from the
+  // server bundle so the 182 KB mime-db/db.json is never bundled.
+  serverExternalPackages: ["axios"],
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -63,9 +66,19 @@ const nextConfig = {
       "react-hook-form",
       "@hookform/resolvers",
       "zod",
+      "recharts",
     ],
     // Turbopack: dramatically faster dev-mode compilation (replaces Webpack in dev)
     turbopack: {},
+  },
+  webpack(config, { isServer, nextRuntime }) {
+    // Strip ua-parser-js from the Edge runtime (middleware).
+    // Next.js compiles ua-parser-js into next/dist/compiled and bundles it
+    // into the Edge middleware chunk even when userAgent() is never called.
+    if (nextRuntime === "edge") {
+      config.resolve.alias["next/dist/compiled/ua-parser-js"] = false;
+    }
+    return config;
   },
   // Trailing slash for better SEO and caching
   trailingSlash: true,

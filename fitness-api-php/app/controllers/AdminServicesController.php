@@ -3,6 +3,7 @@ namespace App\Controllers;
 use App\Core\AbstractController;
 use App\models\Service;
 use App\models\Admin;
+use App\models\TrainingRequest;
 
 class AdminServicesController extends AbstractController{
   private $servicesModel;
@@ -166,7 +167,14 @@ public function getAll(){
           return;
       }
 
-      // 2. Delete the Service from the database
+      // 2. Check if the service has pending training requests
+      $trainingRequestModel = new TrainingRequest();
+      if ($trainingRequestModel->hasPendingRequestsByServiceId($ServiceId)) {
+          $this->sendError("Cannot delete service with pending training requests");
+          return;
+      }
+
+      // 3. Delete the Service from the database
       $isDeleted = $this->servicesModel->deleteService($ServiceId);
       if (!$isDeleted) {
           $this->sendError("Error During Delete Service");
