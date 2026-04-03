@@ -130,11 +130,15 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    // Keep env handling consistent with lib/env.ts: prefer TARGET over BASE, fallback to localhost
+    // Keep env handling consistent with lib/env.ts: prefer TARGET over BASE, fallback to process.env.NEXT_PUBLIC_API_URL
+    // Old: const target =
+    // Old:   process.env.NEXT_PUBLIC_API_TARGET_URL ||
+    // Old:   process.env.NEXT_PUBLIC_API_BASE_URL ||
+    // Old:   "http://localhost:8000";
     const target =
       process.env.NEXT_PUBLIC_API_TARGET_URL ||
       process.env.NEXT_PUBLIC_API_BASE_URL ||
-      "http://localhost:8000";
+      process.env.NEXT_PUBLIC_API_URL;
     return [
       {
         source: "/api/:path*",

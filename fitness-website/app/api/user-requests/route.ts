@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "edge";
 
+// Old: const API_BASE =
+// Old:   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL;
 
 const ALLOWED_ENDPOINTS: Record<string, string> = {
   courses: `${API_BASE}/CoursesRequests/getMyRequests`,
